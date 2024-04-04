@@ -17,7 +17,7 @@ print("""<!DOCTYPE html>
 </head>
 <body>
     <h1>Sketch to Image Conversion</h1>
-    <form action="process_form.py" method="post" enctype="multipart/form-data">
+    <form action="process_form.py" method="post">
         <label for="image">Image File:</label>
         <input type="file" id="image" name="image"><br><br>
 

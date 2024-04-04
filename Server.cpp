@@ -156,7 +156,7 @@ void Server::executeCGIScript(const std::string& scriptPath, int clientSocket) {
         // Send HTTP response with CGI script output
         std::string response = "HTTP/1.1 200 OK\nContent-Type: text/html\n\n" + responseData;
         send(clientSocket, response.c_str(), response.size(), 0);
-        //close(clientSocket);
+        close(clientSocket);
     }
 }
 
@@ -179,8 +179,7 @@ void Server::handleRequest(int i) {
             // Execute CGI script
             std::string cgiScriptPath = extractCGIScriptPath(request);
 
-            executeCGIScript(cgiScriptPath, _sockets[i].fd);
-            close(_sockets[i].fd); // Pass client socket descriptor
+            executeCGIScript(cgiScriptPath, _sockets[i].fd);// Pass client socket descriptor
         } else {
             // Handle non-CGI request (e.g., serve static files)
             // For simplicity, sending a static response
