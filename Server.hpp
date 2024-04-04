@@ -38,15 +38,17 @@ class Server
 		std::vector<pollfd> _sockets;
 
 		void	initSocket( void );
-		void	checkConnections( void );
+		int		checkConnections( void );
 		void 	readFromClient(int i);
-		void  	sendToClient(int i);
+		void  	sendToClient(int i, char buffer[], ssize_t bytesRead);
 		std::string extractCGIScriptPath(const std::string& request);
 		bool isCGIRequest(const std::string& request);
 		void executeCGIScript(const std::string& scriptPath, int clientSocket);
 		void handleRequest(int i);
 		void serveIndexHTML(int clientSocket);
 		void cleanup();
+		void handle_upload(char buffer[], int i);
+
 
 };
 
