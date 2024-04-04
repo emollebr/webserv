@@ -12,6 +12,10 @@
 #include <cstring>
 #include <errno.h>
 #include <cstdio>
+#include <unistd.h> // For dup2, execl, close
+#include <sys/wait.h>
+#include <fstream>      // For std::ifstream
+#include <sstream> 
 
 #define PORT 9999
 #define QUEUE 10
@@ -34,8 +38,14 @@ class Server
 
 		void	initSocket( void );
 		void	checkConnections( void );
-		void 	disconnectClient(int i, ssize_t bytesRead);
-		void  	sendToClient(int i, char buffer[]);
+		void 	readFromClient(int i);
+		void  	sendToClient(int i);
+		std::string extractCGIScriptPath(const std::string& request);
+		bool isCGIRequest(const std::string& request);
+		void executeCGIScript(const std::string& scriptPath, int clientSocket);
+		void handleRequest(int i);
+		void serveIndexHTML(int clientSocket);
+		void cleanup();
 
 };
 
