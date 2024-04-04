@@ -56,21 +56,18 @@ void  Server::checkConnections()
   }
 }
 
-void  Server::readFromClient(int i) {
-  char buffer[100];
-  ssize_t bytesRead = read(_sockets[i].fd, buffer, sizeof(buffer));
-  if (bytesRead <= 0) {
-      if (bytesRead == 0 || (errno != EWOULDBLOCK && errno != EAGAIN)) {
-          // Connection closed or error occurred
-          std::cout << "Client disconnected" << std::endl;
-          close(_sockets[i].fd);
-          _sockets.erase(_sockets.begin() + i);
-      }
-  }
+void  Server::disconnectClient(int i, ssize_t bytesRead) {
+
+    if (bytesRead == 0 || (errno != EWOULDBLOCK && errno != EAGAIN)) {
+        // Connection closed or error occurred
+        std::cout << "Client disconnected" << std::endl;
+        close(_sockets[i].fd);
+        _sockets.erase(_sockets.begin() + i);
+    }
 }
 
-void  Server::sendToClient(int i) {
-  char buffer[100];
+
+void  Server::sendToClient(int i, char buffer[]) {
   std::cout << "Received: " << buffer << "\n" << std::endl;
   std::string response = "Good talking to you\n";
   send(_sockets[i].fd, response.c_str(), response.size(), 0);
@@ -82,11 +79,16 @@ Server::Server()
 
   while (true) {
     checkConnections();
+
     for (int i = _sockets.size() - 1; i >= 1; --i) {
       if (_sockets[i].revents & POLLIN) { // Check if there's data to read on client socket
-        readFromClient(i);
-      } else {
-        sendToClient(i);
+        char buffer[100];
+        ssize_t bytesRead = read(_sockets[i].fd, buffer, sizeof(buffer));
+        if (bytesRead <= 0) {
+            disconnectClient(i, bytesRead);
+        } else {
+          sendToClient(i, buffer);
+        }
       }
     }
   }
