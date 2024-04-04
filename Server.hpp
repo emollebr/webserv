@@ -14,6 +14,7 @@
 #include <cstdio>
 
 #define PORT 9999
+#define QUEUE 10
 
 class Server
 {
@@ -28,8 +29,14 @@ class Server
 
 
 	private:
-		sockaddr_in sockaddr;
-		std::vector<pollfd> connects;
+		sockaddr_in _sockaddr;
+		std::vector<pollfd> _sockets;
+
+		void	initSocket( void );
+		void	checkConnections( void );
+		void 	readFromClient(int i);
+		void  	sendToClient(int i);
+
 };
 
 std::ostream &			operator<<( std::ostream & o, Server const & i );
