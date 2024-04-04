@@ -88,44 +88,75 @@ bool Server::isCGIRequest(const std::string& request) {
     }
 
     // Check if the request URL starts with "/cgi-bin/"
-    size_t urlPos = request.find(" /");
-    if (urlPos != std::string::npos) {
-        std::string url = request.substr(urlPos + 2); // Skip space and slash
+        std::string url = request; // Skip space and slash
         size_t cgiPos = url.find("cgi-bin/");
         if (cgiPos == 0) {
             // Request URL starts with "/cgi-bin/", consider it as CGI
             return true;
         }
-    }
+    
 
     // If not a POST request or does not start with "/cgi-bin/", it's not a CGI request
     return false;
 }
 
 void Server::executeCGIScript(const std::string& scriptPath, int clientSocket) {
-    // Extract CGI script path from the request
-    // For example, if the request URL is "/cgi-bin/script.cgi",
-    // the CGI script path would be "/var/www/cgi-bin/script.cgi"
-    
+    // Create pipes for inter-process communication
+    int pipefd[2];
+    if (pipe(pipefd) == -1) {
+        perror("pipe");
+        exit(EXIT_FAILURE);
+    }
+
+    std::string scriptPath2 = "cgi-bin/script.cgi";
+    (void)scriptPath;
     pid_t pid = fork();
     if (pid == 0) { // Child process
-        // Redirect standard output to clientSocket
-        dup2(clientSocket, STDOUT_FILENO);
+        // Close read end of the pipe
+        close(pipefd[0]);
+
+        // Redirect standard output to the write end of the pipe
+        dup2(pipefd[1], STDOUT_FILENO);
+
+        // Close the original write end of the pipe
+        close(pipefd[1]);
+
         // Execute the CGI script
-        execl(scriptPath.c_str(), scriptPath.c_str(), static_cast<char*>(0));
+
+        execl(scriptPath2.c_str(), scriptPath2.c_str(), NULL);
+        
         // If execl fails, it will continue here
+        perror("execl");
         exit(EXIT_FAILURE);
     } else if (pid < 0) { // Fork failed
         perror("fork");
         exit(EXIT_FAILURE);
     } else { // Parent process
-        int status;
+        // Close write end of the pipe
+        close(pipefd[1]);
+
+        // Read output from the pipe
+        char buffer[1024];
+        ssize_t bytesRead;
+        std::string responseData;
+        while ((bytesRead = read(pipefd[0], buffer, sizeof(buffer))) > 0) {
+            responseData.append(buffer, bytesRead);
+        }
+
+        // Close read end of the pipe
+        close(pipefd[0]);
+
         // Wait for the child process to finish
+        int status;
         waitpid(pid, &status, 0);
-        // Close client socket
+
+        // Send HTTP response with CGI script output
+        std::string response = "HTTP/1.1 200 OK\nContent-Type: text/html\n\n" + responseData;
+        send(clientSocket, response.c_str(), response.size(), 0);
         close(clientSocket);
     }
 }
+
 
 void Server::handleRequest(int i) {
     char buffer[1024]; // Assuming a maximum request size of 1024 bytes
@@ -184,8 +215,8 @@ void Server::serveIndexHTML(int clientSocket) {
 }
 
 void  Server::sendToClient(int i) {
-  char buffer[100];
-  std::cout << "Received: " << buffer << "\n" << std::endl;
+  //char buffer[100];
+  //std::cout << "Received: " << buffer << "\n" << std::endl;
   (void)i;
 }
 
