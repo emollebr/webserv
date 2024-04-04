@@ -197,12 +197,6 @@ void Server::serveIndexHTML(int clientSocket) {
     close(clientSocket);
 }
 
-void  Server::sendToClient(int i) {
-  //char buffer[100];
-  //std::cout << "Received: " << buffer << "\n" << std::endl;
-  (void)i;
-}
-
 void  Server::sendToClient(int i, char buffer[], ssize_t bytesRead) {
  // Parse HTTP request
         std::string request(buffer, bytesRead);
