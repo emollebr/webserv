@@ -1,82 +1,99 @@
 #include "Server.hpp"
 
-/*
-** ------------------------------- CONSTRUCTOR --------------------------------
-*/
+
+void  Server::initSocket( void )
+{
+    pollfd serversock; //this will be the first element in our poll vector and the servers socket
+    serversock.fd = socket(AF_INET, SOCK_STREAM, 0);
+    if (serversock.fd == -1) {
+      std::cout << "Failed to create socket. errno: " << errno << std::endl;
+      exit(EXIT_FAILURE);
+    }
+    serversock.events = POLLIN; // Looking for events: IN sig
+    _sockets.push_back(serversock); //adding the server socket to the vector
+    
+    //populate the sockaddr struct
+    _sockaddr.sin_family = AF_INET;
+    _sockaddr.sin_addr.s_addr = INADDR_ANY;
+    _sockaddr.sin_port = htons(PORT); // htons is necessary to convert a number to network byte order
+    
+    if (bind(serversock.fd, (struct sockaddr*)&_sockaddr, sizeof(sockaddr)) < 0) {
+      std::cout << "Failed to bind to port 9999. errno: " << errno << std::endl;
+      exit(EXIT_FAILURE);
+    }
+    
+    if (listen(serversock.fd, QUEUE) < 0) { // Start listening. Hold at most x connections in the queue
+      std::cout << "Failed to listen on socket. errno: " << errno << std::endl;
+      exit(EXIT_FAILURE);
+    }
+
+    fcntl(serversock.fd, F_SETFL, O_NONBLOCK); // Set server socket to non-blocking mode
+}
+
+void  Server::checkConnections()
+{
+  //poll allows to monitor multiple fd's and prevent blocking
+  if (poll(&_sockets[0], _sockets.size(), -1) < 0) {
+      std::perror("poll");
+      exit(EXIT_FAILURE);
+  }
+
+  if (_sockets[0].revents & POLLIN) { // Check if there's a new connection on the server socket
+  	unsigned int addrlen = sizeof(sockaddr);
+    int new_socket = accept(_sockets[0].fd, (struct sockaddr *)&_sockaddr, (socklen_t*)&addrlen);
+    if (new_socket < 0) {
+        std::perror("accept");
+        exit(EXIT_FAILURE);
+    }
+    
+    fcntl(new_socket, F_SETFL, O_NONBLOCK); // Set new socket to non-blocking mode
+    
+    // Add new connection/socket to the vector
+    pollfd newfd;
+    newfd.fd = new_socket;
+    newfd.events = POLLIN;
+    _sockets.push_back(newfd);
+  }
+}
+
+void  Server::readFromClient(int i) {
+  char buffer[100];
+  ssize_t bytesRead = read(_sockets[i].fd, buffer, sizeof(buffer));
+  if (bytesRead <= 0) {
+      if (bytesRead == 0 || (errno != EWOULDBLOCK && errno != EAGAIN)) {
+          // Connection closed or error occurred
+          std::cout << "Client disconnected" << std::endl;
+          close(_sockets[i].fd);
+          _sockets.erase(_sockets.begin() + i);
+      }
+  }
+}
+
+void  Server::sendToClient(int i) {
+  char buffer[100];
+  std::cout << "Received: " << buffer << "\n" << std::endl;
+  std::string response = "Good talking to you\n";
+  send(_sockets[i].fd, response.c_str(), response.size(), 0);
+}
 
 Server::Server()
 {
-	int sockfd = socket(AF_INET, SOCK_STREAM, 0);
-  if (sockfd == -1) {
-    std::cout << "Failed to create socket. errno: " << errno << std::endl;
-    exit(EXIT_FAILURE);
-  }
-  
-  // Listen to port 9999 on any address
-  sockaddr.sin_family = AF_INET;
-  sockaddr.sin_addr.s_addr = INADDR_ANY;
-  sockaddr.sin_port = htons(PORT); // htons is necessary to convert a number to network byte order
-  
-  if (bind(sockfd, (struct sockaddr*)&sockaddr, sizeof(sockaddr)) < 0) {
-    std::cout << "Failed to bind to port 9999. errno: " << errno << std::endl;
-    exit(EXIT_FAILURE);
-  }
-  
-  if (listen(sockfd, 10) < 0) { // Start listening. Hold at most 10 connections in the queue
-    std::cout << "Failed to listen on socket. errno: " << errno << std::endl;
-    exit(EXIT_FAILURE);
-  }
-
-  fcntl(sockfd, F_SETFL, O_NONBLOCK); // Set server socket to non-blocking mode
-  
-  pollfd serversock;
-  serversock.fd = sockfd; // First element is the server socket
-  serversock.events = POLLIN; // Looking for events: IN sig
-  connects.push_back(serversock);
+  initSocket();
 
   while (true) {
-    int ret = poll(&connects[0], connects.size(), -1);
-    if (ret < 0) {
-        std::perror("poll");
-        exit(EXIT_FAILURE);
-    }
-	unsigned int addrlen = sizeof(sockaddr);
-    if (connects[0].revents & POLLIN) { // Check if there's a new connection on the server socket
-      int new_socket = accept(sockfd, (struct sockaddr *)&sockaddr, (socklen_t*)&addrlen);
-      if (new_socket < 0) {
-          std::perror("accept");
-          exit(EXIT_FAILURE);
-      }
-      
-      fcntl(new_socket, F_SETFL, O_NONBLOCK); // Set new socket to non-blocking mode
-      
-      // Add new connection/socket to the vector
-      pollfd newfd;
-      newfd.fd = new_socket;
-      newfd.events = POLLIN;
-      connects.push_back(newfd);
-    }
-    
-    for (size_t i = 1; i < connects.size() - 1; ++i) {
-      if (connects[i].revents & POLLIN) { // Check if there's data to read on client socket
-        char buffer[100];
-        ssize_t bytesRead = read(connects[i].fd, buffer, sizeof(buffer));
-        if (bytesRead <= 0 || (errno != EWOULDBLOCK && errno != EAGAIN)) {
-            // Connection closed or error occurred
-            close(connects[i].fd);
-            connects.erase(connects.begin() + i);
-        } else {
-          // Echo back to client
-          std::cout << "Received: " << buffer << "\n" << std::endl;
-          std::string response = "Good talking to you\n";
-          send(connects[i].fd, response.c_str(), response.size(), 0);
-        }
+    checkConnections();
+    for (int i = _sockets.size() - 1; i >= 1; --i) {
+      if (_sockets[i].revents & POLLIN) { // Check if there's data to read on client socket
+        readFromClient(i);
+      } else {
+        sendToClient(i);
       }
     }
   }
-
-  close(sockfd);
 }
+
+
+
 
 Server::Server( const Server & src )
 {
@@ -90,6 +107,7 @@ Server::Server( const Server & src )
 
 Server::~Server()
 {
+    close(_sockets[0].fd);
 }
 
 
