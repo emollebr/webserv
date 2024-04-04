@@ -34,8 +34,8 @@ class Server
 
 		void	initSocket( void );
 		void	checkConnections( void );
-		void 	readFromClient(int i);
-		void  	sendToClient(int i);
+		void 	disconnectClient(int i, ssize_t bytesRead);
+		void  	sendToClient(int i, char buffer[]);
 
 };
 
