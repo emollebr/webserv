@@ -140,26 +140,7 @@ void Server::handleRequest(int i) {
             _sockets.erase(_sockets.begin() + i);
         }
     } else {
-        // Parse HTTP request
-        std::string request(buffer, bytesRead);
-        // Check if the request is a CGI request
-        if (isCGIRequest(request)) {
-            // Execute CGI script
-            executeCGIScript(request, _sockets[i].fd); // Pass client socket descriptor
-        } else {
-            // Handle non-CGI request (e.g., serve static files)
-            // For simplicity, sending a static response
-           if (request.find("GET / ") != std::string::npos) {
-                serveIndexHTML(_sockets[i].fd);
-            } else {
-                // Handle non-index.html request
-                // For simplicity, sending a 404 Not Found response
-                std::string response = "HTTP/1.1 404 Not Found\nContent-Type: text/plain\n\n404 Not Found\n";
-                send(_sockets[i].fd, response.c_str(), response.size(), 0);
-                close(_sockets[i].fd);
-                _sockets.erase(_sockets.begin() + i);
-          }
-        }
+       sendToClient(i, buffer, bytesRead);
   }
 }
 
@@ -185,24 +166,96 @@ void Server::serveIndexHTML(int clientSocket) {
     close(clientSocket);
 }
 
-void  Server::sendToClient(int i) {
-  char buffer[100];
-  std::cout << "Received: " << buffer << "\n" << std::endl;
-  std::string response = "Good talking to you\n";
-  send(_sockets[i].fd, response.c_str(), response.size(), 0);
+void Server::handle_upload(char buffer[], int i) {
+    
+
+    // Find the boundary string in the HTTP request
+    const char* boundary = "boundary=";
+    char* boundary_start = strstr(buffer, boundary);
+    if (!boundary_start) {
+        perror("start of boundary not found");
+        return;
+    }
+    boundary_start += strlen(boundary);
+
+    // Extract the boundary string
+    char* end_of_boundary = strchr(boundary_start, '\r');
+    if (!end_of_boundary) {
+        perror("end of boundary not found");
+        return;
+    }
+    *end_of_boundary = '\0';
+
+    // Find the beginning of the file data
+    char* file_start = strstr(end_of_boundary + 2, "\r\n\r\n");
+    if (!file_start) {
+        perror("start of file not found");
+        return;
+    }
+    file_start += 4; // Move past the '\r\n\r\n'
+
+    // Find the end of the file data
+    char* file_end = strstr(file_start, boundary_start);
+    if (!file_end) {
+        perror("end of file not found");
+        return;
+    }
+
+    // Calculate the length of the file data
+    int file_length = file_end - file_start;
+
+    // Write file data to disk
+    int file_fd = open("uploaded_image.jpg", O_CREAT | O_WRONLY | O_TRUNC, S_IRUSR | S_IWUSR);
+    if (file_fd == -1) {
+        perror("error: failed to open image");
+        return;
+    }
+    int bytes_written = write(file_fd, file_start, file_length);
+    close(file_fd);
+
+    if (bytes_written != file_length) {
+        // Error writing file
+        perror("error writing file");
+        return;
+    }
+
+    // Send HTTP response indicating success
+    const char* response = "HTTP/1.1 200 OK\r\nContent-Length: 18\r\n\r\nUpload successful";
+    send(_sockets[i].fd, response, strlen(response), 0);
+}
+
+void  Server::sendToClient(int i, char buffer[], ssize_t bytesRead) {
+ // Parse HTTP request
+        std::string request(buffer, bytesRead);
+        // Check if the request is a CGI request
+        if (isCGIRequest(request)) {
+            // Execute CGI script
+            executeCGIScript(request, _sockets[i].fd); // Pass client socket descriptor
+        } else {
+            // Handle non-CGI request (e.g., serve static files)
+            // For simplicity, sending a static response
+           if (request.find("GET / ") != std::string::npos) {
+                serveIndexHTML(_sockets[i].fd);
+            } else {
+                // Handle non-index.html request
+                // For simplicity, sending a 404 Not Found response
+                std::string response = "HTTP/1.1 404 Not Found\nContent-Type: text/plain\n\n404 Not Found\n";
+                send(_sockets[i].fd, response.c_str(), response.size(), 0);
+                close(_sockets[i].fd);
+                _sockets.erase(_sockets.begin() + i);
+          }
+        }
 }
 
 Server::Server()
 {
   initSocket();
   while (true) {
-    checkConnections();
+    if (!checkConnections())
+      continue ;
     for (int i = _sockets.size() - 1; i >= 1; --i) {
-      if (_sockets[i].revents & POLLIN) { // Check if there's data to read on client socket
+      if (_sockets[i].revents & POLLIN) // Check if there's data to read on client socket
         handleRequest(i);
-      } else {
-        sendToClient(i);
-      }
     }
   }
 }

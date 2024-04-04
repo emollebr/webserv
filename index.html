@@ -9,5 +9,9 @@
     <form action="cgi-bin/script.cgi" method="post">
         <input type="submit" value="Go to Script">
     </form>
+    <form action="/upload" method="post" enctype="multipart/form-data">
+        <input type="file" name="image" accept="image/*">
+        <input type="submit" value="Upload">
+    </form>    
 </body>
 </html>
