@@ -65,11 +65,11 @@ std::string Server::extractCGIScriptPath(const std::string& request) {
         size_t cgiPos = url.find("cgi-bin/");
         if (cgiPos == 0) {
             // Extract the script path from the URL
-            size_t scriptStart = cgiPos + 9; // Skip "/cgi-bin/"
+            size_t scriptStart = cgiPos + 8; // Skip "cgi-bin/"
             size_t scriptEnd = url.find_first_of(" ?", scriptStart);
             if (scriptEnd != std::string::npos) {
                 std::string scriptPath = url.substr(scriptStart, scriptEnd - scriptStart);
-                // Append the script path to the CGI directory
+                // Append the script filename to the CGI directory
                 return "cgi-bin/" + scriptPath;
             }
         }
@@ -79,19 +79,23 @@ std::string Server::extractCGIScriptPath(const std::string& request) {
     return "";
 }
 
+
 bool Server::isCGIRequest(const std::string& request) {
     // Check if the request method is "POST"
+    std::cout << request << std::endl;
     size_t methodPos = request.find("POST");
     if (methodPos != std::string::npos) {
+      std::cout << "skibidi" << std::endl;
         // POST request, consider it as CGI
         return true;
     }
 
     // Check if the request URL starts with "/cgi-bin/"
-        std::string url = request; // Skip space and slash
-        size_t cgiPos = url.find("cgi-bin/");
+    std::string url = request; // Skip space and slash
+        size_t cgiPos = url.find("GET /cgi-bin/");
         if (cgiPos == 0) {
             // Request URL starts with "/cgi-bin/", consider it as CGI
+            std::cout << "skibidi" << std::endl;
             return true;
         }
     
@@ -108,8 +112,7 @@ void Server::executeCGIScript(const std::string& scriptPath, int clientSocket) {
         exit(EXIT_FAILURE);
     }
 
-    std::string scriptPath2 = "cgi-bin/script.cgi";
-    (void)scriptPath;
+    std::cout << scriptPath << std::endl;
     pid_t pid = fork();
     if (pid == 0) { // Child process
         // Close read end of the pipe
@@ -123,7 +126,7 @@ void Server::executeCGIScript(const std::string& scriptPath, int clientSocket) {
 
         // Execute the CGI script
 
-        execl(scriptPath2.c_str(), scriptPath2.c_str(), NULL);
+        execl(scriptPath.c_str(), scriptPath.c_str(), NULL);
         
         // If execl fails, it will continue here
         perror("execl");
@@ -153,7 +156,7 @@ void Server::executeCGIScript(const std::string& scriptPath, int clientSocket) {
         // Send HTTP response with CGI script output
         std::string response = "HTTP/1.1 200 OK\nContent-Type: text/html\n\n" + responseData;
         send(clientSocket, response.c_str(), response.size(), 0);
-        close(clientSocket);
+        //close(clientSocket);
     }
 }
 
@@ -174,7 +177,10 @@ void Server::handleRequest(int i) {
         // Check if the request is a CGI request
         if (isCGIRequest(request)) {
             // Execute CGI script
-            executeCGIScript(request, _sockets[i].fd); // Pass client socket descriptor
+            std::string cgiScriptPath = extractCGIScriptPath(request);
+
+            executeCGIScript(cgiScriptPath, _sockets[i].fd);
+            close(_sockets[i].fd); // Pass client socket descriptor
         } else {
             // Handle non-CGI request (e.g., serve static files)
             // For simplicity, sending a static response
