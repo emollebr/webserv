@@ -12,9 +12,12 @@
 #include <cstring>
 #include <errno.h>
 #include <cstdio>
+#include <fstream>
+#include <string>
 
 #define PORT 9999
 #define QUEUE 10
+#define HTML_FILE "web.html"
 
 class Server
 {
@@ -33,9 +36,9 @@ class Server
 		std::vector<pollfd> _sockets;
 
 		void	initSocket( void );
-		void	checkConnections( void );
+		int		checkConnections( void );
 		void 	disconnectClient(int i, ssize_t bytesRead);
-		void  	sendToClient(int i, char buffer[]);
+		int  	sendToClient(int i, char buffer[]);
 
 };
 
