@@ -1,18 +1,4 @@
-#!/usr/bin/env python3
-import cgi
-import os
-
-# Directory to store uploaded images
-UPLOAD_DIR = '/uploads'  # Replace '/path/to/uploads' with the actual directory path
-
-# Print the Content-Type header to indicate that this script outputs HTML
-print("Content-Type: text/html\n")
-
-# Create a FieldStorage instance to parse the form data
-
-
-# Output the HTML content (including the form)
-print("""<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -21,7 +7,7 @@ print("""<!DOCTYPE html>
 </head>
 <body>
     <h1>Sketch to Image Conversion</h1>
-    <form action="process_form.py" method="get>
+    <form action="cgi-bin/process_form.py" method="get">
         <label for="image">Image File:</label>
         <input type="file" name="image"><br><br>
 
@@ -47,18 +33,4 @@ print("""<!DOCTYPE html>
         <input type="submit" value="Convert">
     </form>
 </body>
-</html>""")
-
-# Check if the form has been submitted
-""" if 'image' in form:
-    # Retrieve the uploaded file
-    uploaded_file = form['image']
-    
-    # Save the uploaded file to the uploads directory
-    if uploaded_file.filename:
-        filepath = os.path.join(UPLOAD_DIR, uploaded_file.filename)
-        with open(filepath, 'wb') as f:
-            f.write(uploaded_file.file.read())
-        print("<p>Image saved successfully: {}</p>".format(filepath))
-    else:
-        print("<p>Error: No file selected.</p>") """
+</html>

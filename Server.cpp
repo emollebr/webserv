@@ -82,23 +82,21 @@ std::string Server::extractCGIScriptPath(const std::string& request) {
 
 bool Server::isCGIRequest(const std::string& request) {
     // Check if the request method is "POST"
-    std::cout << request << std::endl;
-    size_t methodPos = request.find("POST");
-    if (methodPos != std::string::npos) {
-      std::cout << "skibidi" << std::endl;
-        // POST request, consider it as CGI
-        return true;
-    }
-
-    // Check if the request URL starts with "/cgi-bin/"
-    std::string url = request; // Skip space and slash
-        size_t cgiPos = url.find("GET /cgi-bin/");
-        if (cgiPos == 0) {
-            // Request URL starts with "/cgi-bin/", consider it as CGI
-            std::cout << "skibidi" << std::endl;
-            return true;
+    size_t postPos = request.find("POST");
+    if (postPos == std::string::npos)
+        postPos = request.find("GET");
+    if (postPos != std::string::npos) {
+        // Request method is "POST", now check if the URL starts with "/cgi-bin/"
+        size_t urlStartPos = request.find("/", postPos); // Find the position of the first '/' after "POST"
+        if (urlStartPos != std::string::npos) {
+            size_t cgiPos = request.find("/cgi-bin/", urlStartPos);
+            if (cgiPos == urlStartPos) {
+                // Request URL starts with "/cgi-bin/", consider it as CGI
+                std::cout << "skibidi" << std::endl;
+                return true;
+            }
         }
-    
+    }
 
     // If not a POST request or does not start with "/cgi-bin/", it's not a CGI request
     return false;
@@ -156,7 +154,7 @@ void Server::executeCGIScript(const std::string& scriptPath, int clientSocket) {
         // Send HTTP response with CGI script output
         std::string response = "HTTP/1.1 200 OK\nContent-Type: text/html\n\n" + responseData;
         send(clientSocket, response.c_str(), response.size(), 0);
-        close(clientSocket);
+        
     }
 }
 
@@ -179,10 +177,21 @@ void Server::handleRequest(int i) {
             // Execute CGI script
             std::string cgiScriptPath = extractCGIScriptPath(request);
 
-            executeCGIScript(cgiScriptPath, _sockets[i].fd);// Pass client socket descriptor
+            executeCGIScript(cgiScriptPath, _sockets[i].fd);
+            close(_sockets[i].fd);// Pass client socket descriptor
         } else {
             // Handle non-CGI request (e.g., serve static files)
             // For simplicity, sending a static response
+            if (request.find("form.html") != std::string::npos)
+            {
+              std::ifstream indexFile("form.html");
+              std::stringstream buffer;
+              buffer << indexFile.rdbuf();
+              std::string indexContent = buffer.str();
+              std::string response = "HTTP/1.1 200 OK\nContent-Type: text/html\n\n" + indexContent;
+              send(_sockets[i].fd, response.c_str(), response.size(), 0);
+              close(_sockets[i].fd);
+            }
            if (request.find("GET / ") != std::string::npos) {
                 serveIndexHTML(_sockets[i].fd);
             } else {
@@ -237,6 +246,7 @@ Server::Server()
     for (int i = _sockets.size() - 1; i >= 1; --i) {
       if (_sockets[i].revents & POLLIN) { // Check if there's data to read on client socket
         handleRequest(i);
+        break;
       } else {
         sendToClient(i);
       }
