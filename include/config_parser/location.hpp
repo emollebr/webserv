@@ -6,7 +6,7 @@
 /*   By: jschott <jschott@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/04 16:55:56 by jschott           #+#    #+#             */
-/*   Updated: 2024/04/05 10:13:41 by jschott          ###   ########.fr       */
+/*   Updated: 2024/04/05 11:36:59 by jschott          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,6 +20,8 @@ class location
 {
 private:
 	std::string					_root; // /var/ww/html
+	
+// OPTIONAL VALUES
 	std::vector<std::string>	_index; // index.html index.php
 	std::vector<std::string>	_methods_allowed; // GET POST DELETE
 	std::string					_redirect; // /new-location
@@ -31,11 +33,29 @@ private:
 	bool						_allow_get;
 	bool						_allow_post;
 	
-public:
 	location();
+
+public:
+	location(std::string root);
 	location(location const & origin);
 	location & operator=(location const & origin);
 	~location();
+
+	std::vector<std::string>	getIndex();
+	bool						getIndex(std::string index);
+	std::vector<std::string>	getMethods();
+	bool						getMethods(std::string method);
+	std::string					getredirect();
+	std::string					getCGI();
+	size_t						getBodySize();
+	std::string					getDefaultFile();
+	std::string					getUploadLocation();
+	std::string					getCGIExtension();
+	bool						getAllowGET();
+	bool						getAllowPOST();
+	
 };
+
+const location*	parseLocationBlock(std::string config, int const line);
 
 #endif
