@@ -21,7 +21,7 @@ print("""<!DOCTYPE html>
 </head>
 <body>
     <h1>Sketch to Image Conversion</h1>
-    <form action="process_form.py" method="get>
+    <form action="process_form.py" method="get">
         <label for="image">Image File:</label>
         <input type="file" name="image"><br><br>
 
@@ -50,7 +50,7 @@ print("""<!DOCTYPE html>
 </html>""")
 
 # Check if the form has been submitted
-""" if 'image' in form:
+ if 'image' in form:
     # Retrieve the uploaded file
     uploaded_file = form['image']
     
@@ -61,4 +61,4 @@ print("""<!DOCTYPE html>
             f.write(uploaded_file.file.read())
         print("<p>Image saved successfully: {}</p>".format(filepath))
     else:
-        print("<p>Error: No file selected.</p>") """
+        print("<p>Error: No file selected.</p>") 

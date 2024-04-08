@@ -1,31 +1,59 @@
 #!/usr/bin/env python3
 import os
+import cgi
+import sys
 
+UPLOAD_DIR = './uploads'
+form = cgi.FieldStorage()
 # Get the query string from environment variables
-query_string = os.environ.get('QUERY_STRING', '')
-
-# Parse the query string to get the form data
-form_data = {}
-for item in query_string.split('&'):
-    key_value = item.split('=')
-    if len(key_value) == 2:
-        key, value = key_value
-        form_data[key] = value
-    elif len(key_value) == 1:
-        key = key_value[0]
-        form_data[key] = ''  # Assign an empty string if no value is provided
 
 # Retrieve form data
-prompt = form_data.get('prompt')
-prompt_style = form_data.get('prompt_style')
-style = form_data.get('style')
-seed = form_data.get('seed')
-sketch_guidance = form_data.get('sketch_guidance')
+image = form.getvalue('image')
+prompt = form.getvalue('prompt')
+prompt_style = form.getvalue('prompt_style')
+style = form.getvalue('style')
+seed = form.getvalue('seed')
+sketch_guidance = form.getvalue('sketch_guidance')
 
-# Print the form data
+
+# Check if file was uploaded
+if image:
+    # Get file name
+    filename = os.path.basename(image)
+    # Check if file data exists
+    if form['image'].file:
+        # Save the uploaded file to the uploads directory
+        filepath = os.path.join(UPLOAD_DIR, filename)
+        with open(filepath, 'wb') as f:
+            f.write(form['image'].file.read())
+        print("Content-type: text/html\r\n\r\n")
+        print("<html><body>")
+        print("<p>Image saved successfully: {}</p>".format(filepath))
+        print("</body></html>")
+    else:
+        print("Content-type: text/html\r\n\r\n")
+        print("<html><body>")
+        print("<p>Error: No file data received for 'image' field.</p>")
+        print("</body></html>")
+else:
+    print("Content-type: text/html\r\n\r\n")
+    print("<html><body>")
+    print("<p>Error: No 'image' field found in form data.</p>")
+    print("</body></html>")
+
+# print("HTTP/1.1 200 OK")
+print("Content-type: text/html\r\n\r\n")
+print("<html>")
+print("<head>")
+print("<title>Hello - Second CGI Program</title>")
+print("<html>")
+print("<head>")
 print("<h2>Form Data:</h2>")
+print("<p><strong>Image:</strong> </p>", image)
 print("<p><strong>Prompt:</strong> </p>", prompt)
 print("<p><strong>Prompt Style:</strong> </p>", prompt_style)
 print("<p><strong>Style:</strong> </p>", style)
 print("<p><strong>Seed:</strong> </p>", seed)
 print("<p><strong>Sketch Guidance:</strong> </p>", sketch_guidance)
+print("</body>")
+print("</html>")

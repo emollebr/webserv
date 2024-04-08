@@ -102,7 +102,72 @@ bool Server::isCGIRequest(const std::string& request) {
     return false;
 }
 
-void Server::executeCGIScript(const std::string& scriptPath, int clientSocket) {
+std::string extractMultipartBoundary(const std::string& request) {
+    size_t boundaryPos = request.find("boundary=");
+    if (boundaryPos != std::string::npos) {
+        size_t boundaryEndPos = request.find("\r\n", boundaryPos);
+        if (boundaryEndPos != std::string::npos) {
+            std::string boundary = request.substr(boundaryPos + 9, boundaryEndPos - boundaryPos - 9);
+            return boundary;
+        }
+    }
+    return "";
+}
+
+std::vector<std::string> splitMultipartRequest(const std::string& request, const std::string& boundary) {
+    std::vector<std::string> parts;
+    size_t boundaryPos = request.find("--" + boundary);
+    while (boundaryPos != std::string::npos) {
+        size_t partStartPos = boundaryPos + boundary.length() + 2; // Skip boundary and CRLF
+        size_t partEndPos = request.find("--" + boundary, partStartPos);
+        if (partEndPos != std::string::npos) {
+            parts.push_back(request.substr(partStartPos, partEndPos - partStartPos - 2)); // Exclude final CRLF
+            boundaryPos = request.find("--" + boundary, partEndPos + boundary.length() + 2);
+        } else {
+            break; // Boundary not found, stop parsing
+        }
+    }
+    return parts;
+}
+
+bool isFormField(const std::string& part) {
+    return part.find("Content-Disposition: form-data") != std::string::npos &&
+           part.find("filename") == std::string::npos;
+}
+
+std::string extractFormFieldData(const std::string& part) {
+    size_t dataStartPos = part.find("\r\n\r\n") + 4; // Skip headers and CRLFs
+    return part.substr(dataStartPos);
+}
+
+bool isFileField(const std::string& part) {
+    return part.find("Content-Disposition: form-data") != std::string::npos &&
+           part.find("filename") != std::string::npos;
+}
+
+void saveUploadedFile(const std::string& part) {
+    // Extract filename from Content-Disposition header
+    size_t filenamePos = part.find("filename=");
+    if (filenamePos != std::string::npos) {
+        size_t filenameStartPos = part.find("\"", filenamePos) + 1;
+        size_t filenameEndPos = part.find("\"", filenameStartPos);
+        std::string filename = part.substr(filenameStartPos, filenameEndPos - filenameStartPos);
+
+        // Extract file data
+        size_t dataStartPos = part.find("\r\n\r\n") + 4; // Skip headers and CRLFs
+        std::string fileData = part.substr(dataStartPos);
+
+        // Save file to disk
+        std::ofstream file(filename.c_str(), std::ios::binary); // Convert std::string to const char*
+        file << fileData;
+        file.close();
+    }
+}
+
+#include <unistd.h>
+#include <sys/wait.h>
+
+void Server::executeCGIScript(const std::string& scriptPath, int clientSocket, std::vector<char*> env) {
     // Create pipes for inter-process communication
     int pipefd[2];
     if (pipe(pipefd) == -1) {
@@ -110,7 +175,6 @@ void Server::executeCGIScript(const std::string& scriptPath, int clientSocket) {
         exit(EXIT_FAILURE);
     }
 
-    std::cout << scriptPath << std::endl;
     pid_t pid = fork();
     if (pid == 0) { // Child process
         // Close read end of the pipe
@@ -122,12 +186,17 @@ void Server::executeCGIScript(const std::string& scriptPath, int clientSocket) {
         // Close the original write end of the pipe
         close(pipefd[1]);
 
-        // Execute the CGI script
+        char* argv[] = {(char*)scriptPath.c_str(), 0};
 
-        execl(scriptPath.c_str(), scriptPath.c_str(), NULL);
-        
-        // If execl fails, it will continue here
-        perror("execl");
+        std::cout << "ENVIRONMENT:::::\n";
+for (size_t i = 0; i < env.size(); ++i) {
+    std::cout << env[i] << std::endl;
+}
+
+        execve(scriptPath.c_str(), argv, env.data());
+
+        // If execve fails, it will continue here
+        perror("execve");
         exit(EXIT_FAILURE);
     } else if (pid < 0) { // Fork failed
         perror("fork");
@@ -154,14 +223,22 @@ void Server::executeCGIScript(const std::string& scriptPath, int clientSocket) {
         // Send HTTP response with CGI script output
         std::string response = "HTTP/1.1 200 OK\nContent-Type: text/html\n\n" + responseData;
         send(clientSocket, response.c_str(), response.size(), 0);
-        
     }
 }
 
+void fillEnvironmentVariables(std::vector<char*>& env, const std::string& formData, const std::string& boundary) {
+    std::string queryString = "QUERY_STRING=" + formData;
+    std::string boundaryEnv = "CONTENT_TYPE=multipart/form-data; boundary=" + boundary;
+    
+    env.push_back(const_cast<char*>(queryString.c_str()));
+    env.push_back(const_cast<char*>(boundaryEnv.c_str()));
+    env.push_back(0); // End of the array must be a nullptr
+}
 
 void Server::handleRequest(int i) {
     char buffer[1024]; // Assuming a maximum request size of 1024 bytes
     ssize_t bytesRead = read(_sockets[i].fd, buffer, sizeof(buffer));
+    std::cout << buffer << std::endl;
     if (bytesRead <= 0) {
         if (bytesRead == 0 || (errno != EWOULDBLOCK && errno != EAGAIN)) {
             // Connection closed or error occurred
@@ -174,25 +251,41 @@ void Server::handleRequest(int i) {
         std::string request(buffer, bytesRead);
         // Check if the request is a CGI request
         if (isCGIRequest(request)) {
+            // Extract form data and files
+            std::string formData;
+            std::string boundary = extractMultipartBoundary(request);
+            if (!boundary.empty()) {
+                std::vector<std::string> parts = splitMultipartRequest(request, boundary);
+                std::vector<std::string>::const_iterator iter;
+                for (iter = parts.begin(); iter != parts.end(); ++iter) {
+                    const std::string& part = *iter;
+                    if (isFormField(part)) {
+                        // Extract form field data
+                        formData += extractFormFieldData(part);
+                    } else if (isFileField(part)) {
+                        // Save uploaded file to disk
+                        saveUploadedFile(part);
+                    }
+                }
+            }
             // Execute CGI script
             std::string cgiScriptPath = extractCGIScriptPath(request);
-
-            executeCGIScript(cgiScriptPath, _sockets[i].fd);
-            close(_sockets[i].fd);// Pass client socket descriptor
+            std::vector<char*> env;
+            fillEnvironmentVariables(env, formData, boundary);
+            executeCGIScript(cgiScriptPath, _sockets[i].fd, env);
+            close(_sockets[i].fd); // Close client socket descriptor
         } else {
-            // Handle non-CGI request (e.g., serve static files)
+            // Handle non-CGI request
             // For simplicity, sending a static response
-            if (request.find("form.html") != std::string::npos)
-            {
-              std::ifstream indexFile("form.html");
-              std::stringstream buffer;
-              buffer << indexFile.rdbuf();
-              std::string indexContent = buffer.str();
-              std::string response = "HTTP/1.1 200 OK\nContent-Type: text/html\n\n" + indexContent;
-              send(_sockets[i].fd, response.c_str(), response.size(), 0);
-              close(_sockets[i].fd);
-            }
-           if (request.find("GET / ") != std::string::npos) {
+            if (request.find("form.html") != std::string::npos) {
+                std::ifstream indexFile("form.html");
+                std::stringstream buffer;
+                buffer << indexFile.rdbuf();
+                std::string indexContent = buffer.str();
+                std::string response = "HTTP/1.1 200 OK\nContent-Type: text/html\n\n" + indexContent;
+                send(_sockets[i].fd, response.c_str(), response.size(), 0);
+                close(_sockets[i].fd);
+            } else if (request.find("GET / ") != std::string::npos) {
                 serveIndexHTML(_sockets[i].fd);
             } else {
                 // Handle non-index.html request
@@ -201,10 +294,11 @@ void Server::handleRequest(int i) {
                 send(_sockets[i].fd, response.c_str(), response.size(), 0);
                 close(_sockets[i].fd);
                 _sockets.erase(_sockets.begin() + i);
-          }
+            }
         }
-  }
+    }
 }
+
 
 void Server::serveIndexHTML(int clientSocket) {
     // Read contents of index.html file

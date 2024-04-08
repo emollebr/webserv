@@ -42,7 +42,8 @@ class Server
 		void  	sendToClient(int i);
 		std::string extractCGIScriptPath(const std::string& request);
 		bool isCGIRequest(const std::string& request);
-		void executeCGIScript(const std::string& scriptPath, int clientSocket);
+		void executeCGIScript(const std::string& scriptPath, int clientSocket, std::vector<char*> env);
+		void handleSocketData(int socket);
 		void handleRequest(int i);
 		void serveIndexHTML(int clientSocket);
 		void cleanup();

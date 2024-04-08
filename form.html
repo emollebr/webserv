@@ -7,10 +7,9 @@
 </head>
 <body>
     <h1>Sketch to Image Conversion</h1>
-    <form action="cgi-bin/process_form.py" method="get">
+    <form action="cgi-bin/process_form.py" method="post" enctype="multipart/form-data">
         <label for="image">Image File:</label>
-        <input type="file" name="image"><br><br>
-
+        <input type="file" name="image" id="fileid" class="form-control"><br><br>
         <label for="prompt">Prompt:</label>
         <input type="text" name="prompt"><br><br>
 
