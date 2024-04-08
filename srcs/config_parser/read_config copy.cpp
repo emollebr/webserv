@@ -1,12 +1,12 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   read_config.cpp                                    :+:      :+:    :+:   */
+/*   read_config copy.cpp                               :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: jschott <jschott@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/05 10:20:40 by jschott           #+#    #+#             */
-/*   Updated: 2024/04/08 16:42:58 by jschott          ###   ########.fr       */
+/*   Updated: 2024/04/08 18:09:57 by jschott          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,6 +16,7 @@
 #include <iostream>
 #include <algorithm>
 #include <cctype>
+#include <cstring>
 #include <stack>
 #include <vector>
 
@@ -45,20 +46,6 @@ bool isBalanced(std::stringstream& ss) {
 	
 } */
 
-std::stringstream	removeStringsFromStream(std::stringstream input) {
-	std::stringstream	buffer;
-	bool		insidestring = false;
-	char		c;
-
-	while (input.get(c)) {
-		if (c == '\'' || c == '\"')
-			insidestring = !insidestring;
-		else if (!insidestring)
-			buffer << c;
-	}
-	return buffer;
-}
-
 void	readFile2Buffer (std::string filename){
 	std::stringstream	bufferstream;
 	std::ifstream		input(filename);
@@ -79,18 +66,66 @@ void	readFile2Buffer (std::string filename){
 	std::string 		buffer = "";
 	std::string			line;
 	std::stringstream	buffing;
-	while (std::getline(bufferstream, line)) {
+	std::vector<std::string>	tokens;
+	
+	while (getline(bufferstream, line)) {
 		
-		//delete spaces
-		line.erase(std::remove_if(line.begin(), line.end(), isspace), line.end());
+		std::size_t pos;
+		std::size_t end;
+		char		limiter = '\0';
+	
+		while (!line.empty()) {
+			//if looking for closing limiter copy everything until limiter or whole string
+			if (limiter) {
+				pos = line.find(limiter);
+				tokens.front() += line.substr(0, pos);
+				line.erase(0, pos);
+				if (pos = std::string::npos)
+					limiter = '\0';
+			}
+			else {
+				// copy all tokens separated by space until first special character
+				for (char i = 0; !strchr("#\'\"", line[i]); i++) {
+					if (isspace(line[i]) && tokens.front() != "")
+						tokens.push_back("");
+					else if (!isspace(line[i]))
+						tokens.front() += line[i];
+					line.erase(i, 1);
+				}
 
-		//Delete comments
-		std::size_t pos = line.find('#');
-		if (pos != std::string::npos) {
-				line.erase(pos);
+				// erase comments
+				if (line[0] == '#')
+					line.erase(0);
+			}
+			
+			else if (line[0]){
+				limiter = line[0];
+				line.erase(0, 1);
+				pos = line.find(limiter);
+				tokens.push_back(line.substr(0, pos));
+				if (pos == std::string::npos)
+					limiter = '\0';
+			}
+
+			//if string is limited within the line, add to line
+			else if (line[0] == '\'' && 
+				(pos = line.find('\'')) != std::string::npos) {
+				tokens.push_back(line.substr(0 , pos));
+				line.erase(0, pos);
+			}
+
+			else if (line[0] == '\'' && 
+				(pos = line.find('\'')) == std::string::npos) {
+				tokens.push_back(line);
+				limiter = '\'';
+			}
+						
+				//if string is limited within the line, add to line
+				end = line.find('\'', pos);
+				tokens.push_back(line.substr(pos, end));
+				if (end == std::string::npos)
+					tokens.push_back(line.[end]);
 		}
-		
-		// buffing << line + '\n';
 	}
 
 	//reset buffstream
@@ -100,11 +135,8 @@ void	readFile2Buffer (std::string filename){
 	// std::cout << "POST CLEANING CONTENT:" << std::endl << buffing.str() << std::endl << std::endl;
 	
 
-	//make sure that every curly braket will be closed
-	if (!isBalanced(bufferstream)) {
-		std::cerr << "Brakets are not balanced" << std::endl;
-		exit (1);
-	}
+	
+	
 	//check server keyword
 	std::vector<std::string>	servers;
 	std::getline(buffing, buffer);
