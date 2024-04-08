@@ -167,7 +167,7 @@ void saveUploadedFile(const std::string& part) {
 #include <unistd.h>
 #include <sys/wait.h>
 
-void Server::executeCGIScript(const std::string& scriptPath, int clientSocket, std::vector<char*> env) {
+void Server::executeCGIScript(const std::string& scriptPath, int clientSocket, char** env) {
     // Create pipes for inter-process communication
     int pipefd[2];
     if (pipe(pipefd) == -1) {
@@ -188,12 +188,7 @@ void Server::executeCGIScript(const std::string& scriptPath, int clientSocket, s
 
         char* argv[] = {(char*)scriptPath.c_str(), 0};
 
-        std::cout << "ENVIRONMENT:::::\n";
-for (size_t i = 0; i < env.size(); ++i) {
-    std::cout << env[i] << std::endl;
-}
-
-        execve(scriptPath.c_str(), argv, env.data());
+        execve(scriptPath.c_str(), argv, env);
 
         // If execve fails, it will continue here
         perror("execve");
@@ -226,13 +221,16 @@ for (size_t i = 0; i < env.size(); ++i) {
     }
 }
 
-void fillEnvironmentVariables(std::vector<char*>& env, const std::string& formData, const std::string& boundary) {
+char** fillEnvironmentVariables(const std::string& formData, const std::string& boundary) {
     std::string queryString = "QUERY_STRING=" + formData;
-    std::string boundaryEnv = "CONTENT_TYPE=multipart/form-data; boundary=" + boundary;
-    
-    env.push_back(const_cast<char*>(queryString.c_str()));
-    env.push_back(const_cast<char*>(boundaryEnv.c_str()));
-    env.push_back(0); // End of the array must be a nullptr
+    (void)boundary;
+
+    char **env = new char*[2]; // Three elements: QUERY_STRING, CONTENT_TYPE, and null terminator
+
+    // Copy the environment variable strings to the allocated memory
+    env[0] = strdup(queryString.c_str());
+    env[2] = 0; // Null terminator to indicate the end of the array
+    return env;
 }
 
 void Server::handleRequest(int i) {
@@ -254,24 +252,26 @@ void Server::handleRequest(int i) {
             // Extract form data and files
             std::string formData;
             std::string boundary = extractMultipartBoundary(request);
-            if (!boundary.empty()) {
-                std::vector<std::string> parts = splitMultipartRequest(request, boundary);
-                std::vector<std::string>::const_iterator iter;
-                for (iter = parts.begin(); iter != parts.end(); ++iter) {
-                    const std::string& part = *iter;
-                    if (isFormField(part)) {
-                        // Extract form field data
-                        formData += extractFormFieldData(part);
-                    } else if (isFileField(part)) {
-                        // Save uploaded file to disk
-                        saveUploadedFile(part);
+            if (request.find("POST") != std::string::npos) {
+                // For POST requests, extract form data from the request body
+                size_t contentLengthPos = request.find("Content-Length:");
+                if (contentLengthPos != std::string::npos) {
+                    size_t bodyStartPos = request.find("\r\n\r\n", contentLengthPos);
+                    if (bodyStartPos != std::string::npos) {
+                        formData = request.substr(bodyStartPos + 4);
                     }
+                }
+            } else if (request.find("GET") != std::string::npos) {
+                // For GET requests, extract form data from the query string
+                size_t queryStartPos = request.find("?");
+                if (queryStartPos != std::string::npos) {
+                    formData = request.substr(queryStartPos + 1);
                 }
             }
             // Execute CGI script
             std::string cgiScriptPath = extractCGIScriptPath(request);
-            std::vector<char*> env;
-            fillEnvironmentVariables(env, formData, boundary);
+            
+            char **env = fillEnvironmentVariables(formData, boundary);
             executeCGIScript(cgiScriptPath, _sockets[i].fd, env);
             close(_sockets[i].fd); // Close client socket descriptor
         } else {
