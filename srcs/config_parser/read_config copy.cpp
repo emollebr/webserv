@@ -6,7 +6,7 @@
 /*   By: jschott <jschott@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/05 10:20:40 by jschott           #+#    #+#             */
-/*   Updated: 2024/04/09 11:50:46 by jschott          ###   ########.fr       */
+/*   Updated: 2024/04/09 12:03:03 by jschott          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -79,12 +79,15 @@ void	readFile2Buffer (std::string filename){
 				pos = line.find(limiter);
 				tokens.back() += line.substr(0, pos);
 				line = line.erase(0, pos);
-				if (pos == std::string::npos)
+				// std::cout << line << std::endl;
+				if (pos != std::string::npos){
 					limiter = '\0';
+					line = line.erase(0, 1);
+				}
 			}
 			if (limiter == '\0') {
 				// copy all tokens separated by space until first special character
-				while (line[0] && !strchr("#\'\"", line[0])) {
+				while (line[0] && !strchr("#;\'\"", line[0])) {
 					// if (!isspace(line[0]))
 						// std::cout << line[0] << " ";
 				
@@ -99,7 +102,7 @@ void	readFile2Buffer (std::string filename){
 				}
 
 				// erase comments
-				if (line[0] == '#')
+				if (strchr("#;", line[0]))
 					line = line.erase();
 
 				//if string is limited within the line, add to line
