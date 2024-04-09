@@ -6,7 +6,7 @@
 /*   By: jschott <jschott@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/05 10:20:40 by jschott           #+#    #+#             */
-/*   Updated: 2024/04/08 18:09:57 by jschott          ###   ########.fr       */
+/*   Updated: 2024/04/09 11:50:46 by jschott          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -65,72 +65,71 @@ void	readFile2Buffer (std::string filename){
 	//Clean input from spaces and comments
 	std::string 		buffer = "";
 	std::string			line;
-	std::stringstream	buffing;
 	std::vector<std::string>	tokens;
+	char				limiter = '\0';
 	
+	tokens.push_back("");
 	while (getline(bufferstream, line)) {
 		
 		std::size_t pos;
-		std::size_t end;
-		char		limiter = '\0';
 	
 		while (!line.empty()) {
 			//if looking for closing limiter copy everything until limiter or whole string
 			if (limiter) {
 				pos = line.find(limiter);
-				tokens.front() += line.substr(0, pos);
-				line.erase(0, pos);
-				if (pos = std::string::npos)
+				tokens.back() += line.substr(0, pos);
+				line = line.erase(0, pos);
+				if (pos == std::string::npos)
 					limiter = '\0';
 			}
-			else {
+			if (limiter == '\0') {
 				// copy all tokens separated by space until first special character
-				for (char i = 0; !strchr("#\'\"", line[i]); i++) {
-					if (isspace(line[i]) && tokens.front() != "")
+				while (line[0] && !strchr("#\'\"", line[0])) {
+					// if (!isspace(line[0]))
+						// std::cout << line[0] << " ";
+				
+					//create new token if space is found and current token is not empty
+					if (isspace(line[0]) && tokens.back() != "")
 						tokens.push_back("");
-					else if (!isspace(line[i]))
-						tokens.front() += line[i];
-					line.erase(i, 1);
+					//write nonspace char to token
+					else if (line[0] && !isspace(line[0]))
+						tokens.back() += line[0];
+					line = line.erase(0, 1);
+					// std::cout << line << std::endl;
 				}
 
 				// erase comments
 				if (line[0] == '#')
-					line.erase(0);
-			}
-			
-			else if (line[0]){
-				limiter = line[0];
-				line.erase(0, 1);
-				pos = line.find(limiter);
-				tokens.push_back(line.substr(0, pos));
-				if (pos == std::string::npos)
-					limiter = '\0';
-			}
+					line = line.erase();
 
-			//if string is limited within the line, add to line
-			else if (line[0] == '\'' && 
-				(pos = line.find('\'')) != std::string::npos) {
-				tokens.push_back(line.substr(0 , pos));
-				line.erase(0, pos);
-			}
-
-			else if (line[0] == '\'' && 
-				(pos = line.find('\'')) == std::string::npos) {
-				tokens.push_back(line);
-				limiter = '\'';
-			}
-						
 				//if string is limited within the line, add to line
-				end = line.find('\'', pos);
-				tokens.push_back(line.substr(pos, end));
-				if (end == std::string::npos)
-					tokens.push_back(line.[end]);
+				else if (line[0] == '\'') {
+					//erase limiter
+					line = line.erase(0, 1);
+					//look for closing limiter
+					pos = line.find('\'');
+					// save 
+					// std::cout <<  line.substr(0 , pos) << std::endl;
+					tokens.push_back(line.substr(0 , pos));
+					if (pos == std::string::npos) {
+						limiter = '\'';
+					// std::cout << "limiter: " << limiter << std::endl;
+						line = line.erase(0, pos);
+					}
+					else
+						line = line.erase();
+					// std::cout << "line: " << line << std::endl;
+				}
+			}
 		}
 	}
 
+	for (std::vector<std::string>::iterator it = tokens.begin(); it != tokens.end(); it++)
+		std::cout << *it << std::endl;
+	
 	//reset buffstream
-	bufferstream.clear();
-	bufferstream.str(buffer);
+	// bufferstream.clear();
+	// bufferstream.str(buffer);
 
 	// std::cout << "POST CLEANING CONTENT:" << std::endl << buffing.str() << std::endl << std::endl;
 	
@@ -138,21 +137,21 @@ void	readFile2Buffer (std::string filename){
 	
 	
 	//check server keyword
-	std::vector<std::string>	servers;
-	std::getline(buffing, buffer);
-		// std::cout << buffer;
-	while (std::getline(buffing, line)){
-		// std::cout << "hello";
-		if (!line.compare(0,7,"server{")){
-			servers.push_back(buffer);
-			std::cout << "SERVER BLOCK:" << std::endl << buffer << std::endl << std::endl;
-			buffer = line + '\n';
-			line.clear();
-		}
-		else
-			buffer += line + "\n";
-	}
-	servers.push_back(buffer);
+	// std::vector<std::string>	servers;
+	// std::getline(buffing, buffer);
+	// 	// std::cout << buffer;
+	// while (std::getline(buffing, line)){
+	// 	// std::cout << "hello";
+	// 	if (!line.compare(0,7,"server{")){
+	// 		servers.push_back(buffer);
+	// 		std::cout << "SERVER BLOCK:" << std::endl << buffer << std::endl << std::endl;
+	// 		buffer = line + '\n';
+	// 		line.clear();
+	// 	}
+	// 	else
+	// 		buffer += line + "\n";
+	// }
+	// servers.push_back(buffer);
 	// std::cout << buffer;
 
 	//hand over server block to server parser
