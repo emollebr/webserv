@@ -6,7 +6,7 @@
 /*   By: jschott <jschott@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/05 10:20:40 by jschott           #+#    #+#             */
-/*   Updated: 2024/04/09 16:48:58 by jschott          ###   ########.fr       */
+/*   Updated: 2024/04/09 18:20:37 by jschott          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -49,7 +49,7 @@ bool isBalanced(std::stringstream& ss) {
 	std::string close = "}\'\"";
 	
 	for (size_t i = 0; i < strlen(open.c_str()); i++) {
-		std::cout << "checking for: " << open[i] << " and " << close[i] << std::endl;
+		// std::cout << "checking for: " << open[i] << " and " << close[i] << std::endl;
 		while (ss.get(c)) {
 			if (c == open[i]) {
 				stack.push(c);  // Push open brace onto the stack
@@ -68,13 +68,8 @@ bool isBalanced(std::stringstream& ss) {
     return stack.empty();
 }
 
-/* void* endofstring(std::stringstream& ss) {
-	
-	
-	
-} */
-
-void	populateTokens(std::stringstream &bufferstream, std::vector<std::string>	&tokens) {
+//Clean input from comments and put input in tokens
+void	populateTokens(std::stringstream &bufferstream, std::deque<std::string>	&tokens) {
 	std::string			line;
 	char				limiter = '\0';
 
@@ -156,24 +151,22 @@ void	readFile2Buffer (std::string filename){
 	}
 
 	//Create Tokens from Input
-	std::vector<std::string>	tokens;
+	std::deque<std::string>	tokens;
 	populateTokens(bufferstream, tokens);
+	bufferstream.clear();
 
 	//Print Tokens [HELPER FUNCTION]
-	for (std::vector<std::string>::iterator it = tokens.begin(); it != tokens.end(); it++)
+	for (std::deque<std::string>::iterator it = tokens.begin(); it != tokens.end(); it++)
 		std::cout << *it << std::endl;
-	
-	//reset buffstream
-	// bufferstream.clear();
-	// bufferstream.str(buffer);
-
-	// std::cout << "POST CLEANING CONTENT:" << std::endl << buffing.str() << std::endl << std::endl;
-	
 
 	//CHECK FIRST TOKEN
-
+	while (!tokens.empty()) {
+		
+		std::string pos;
 		//IF SERVER CHECK NEXT TOKEN
-			
+			pos = tokens.front();
+			if (pos == TokenType::Server)
+				std::c
 			// IF ISDIRECTIVE CHECK FOR ;
 				//IF FOUND CREATE TUPLE
 			
@@ -181,6 +174,15 @@ void	readFile2Buffer (std::string filename){
 				// FIND OPENING BRAKET
 					// CHECK NEXT TOKEN
 					// PARSE DIRECTIVES base on ;
+	}
+	
+
+	
+	//HOW TO CLEAN A STRINGSTREAM
+	//reset buffstream
+	// bufferstream.clear();
+	// bufferstream.str(buffer);
+
 			
 }
 
