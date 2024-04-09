@@ -1,0 +1,58 @@
+body {
+    margin: 0;
+}
+
+header {
+    background-color: #333;
+    color: white;
+    padding: 20px;
+}
+
+.header-container {
+    display: flex;
+    align-items: center;
+}
+
+header img {
+    width: 300px;
+    margin-right: 10px;
+}
+
+/* Style for the file list */
+#fileList {
+    list-style-type: none;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between; /* Add this line to align buttons to the right */
+}
+
+/* Style for each list item */
+li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    border-bottom: 1px solid #ccc;
+}
+
+/* Style for the GET and DELETE buttons */
+button {
+    padding: 5px 10px;
+    cursor: pointer;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    margin-left: auto; /* Align the button to the right */
+}
+
+/* Hover effect for buttons */
+button:hover {
+    background-color: #45a049;
+}
+
+/* Style for the download link (hidden) */
+a {
+    display: none;
+}

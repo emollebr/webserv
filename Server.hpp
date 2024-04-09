@@ -16,10 +16,14 @@
 #include <sys/wait.h>
 #include <fstream>      // For std::ifstream
 #include <sstream> 
+#include <climits>
+#include <list>
+#include "Request.hpp"
 
 #define PORT 9999
 #define QUEUE 10
 #define HTML_FILE "web.html"
+#define BUF_SIZE 3145000
 
 class Server
 {
@@ -34,12 +38,20 @@ class Server
 
 
 	private:
-		sockaddr_in _sockaddr;
-		std::vector<pollfd> _sockets;
+		sockaddr_in 					_sockaddr;
+		std::vector<pollfd> 			_sockets;
+		std::map<int, Request*>			_request;
 
 		void	initSocket( void );
 		int		checkConnections( void );
 		void 	readFromClient(int i);
+
+		void    detectRequestType(int client);
+		int 	handleGet(int client);
+		int 	handlePost(int client);
+		int 	handleDelete(int client);
+		int 	handleUnknown(int client);
+
 		void  	sendToClient(int i, char buffer[], ssize_t bytesRead);
 		std::string extractCGIScriptPath(const std::string& request);
 		bool isCGIRequest(const std::string& request);
@@ -47,7 +59,7 @@ class Server
 		void handleRequest(int i);
 		void serveIndexHTML(int clientSocket);
 		void cleanup();
-		void handle_upload(char buffer[], int i);
+
 
 
 };
