@@ -31,19 +31,14 @@ void    Request::parseBody( std::istringstream& iss) {
     }
 }
 
-Request::Request(char *buffer, int client) : _clientfd(client) {
+Request::Request(char *buffer, int client) : _client(client) {
     
     std::istringstream iss(buffer);
     std::string line;
-    std::getline(iss, line);
 
     //parse type and object
-    size_t firstSpacePos = line.find(' ');
-    size_t secondSpacePos = line.find(' ', firstSpacePos + 1);
-
-    _type = line.substr(0, firstSpacePos);
-    _object = line.substr(firstSpacePos + 1, secondSpacePos - firstSpacePos - 1);
-
+    iss >> _type >> _object;
+ 
     // Parse headers
     while (std::getline(iss, line) && line != "\r") {
         size_t pos = line.find(": ");
@@ -75,7 +70,7 @@ Request::Request(char *buffer, int client) : _clientfd(client) {
     return ;
  }
 
-void Request::handleUpload() {
+const char* Request::handleUpload() {
     const char* filename = createFileName();
     //std:: cout << "handleUpload(): Filename: " << filename << std::endl;
     // Write file data to disk
@@ -85,7 +80,7 @@ void Request::handleUpload() {
 
     // Send HTTP response indicating success
     const char* response = "HTTP/1.1 200 OK\r\nContent-Length: 18\r\n\r\nUpload successful";
-    send(_clientfd, response, strlen(response), 0);
+    return response;
 }
 
  void Request::appendToBody(const char* buffer) {
@@ -144,9 +139,7 @@ const char* Request::createFileName() {
     
     size_t startPos = filename_start + 10;
     size_t endPos = content.find_last_not_of(" \"\t\r\n") + 1;
-    std::string filename = content.substr(startPos, endPos - startPos);
-    std::cout << "WE READING WHAT??::\n" << filename << std::endl;
-    
+    std::string filename = content.substr(startPos, endPos - startPos);    
 
 /*    if (fileExists(ret)) {
       char* newFilename = generateNewFilename(filename);
