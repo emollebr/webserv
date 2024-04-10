@@ -45,6 +45,8 @@ class Server
 		void	initSocket( void );
 		int		checkConnections( void );
 		void 	readFromClient(int i);
+		void    disconnectClient(int bytesRead, int i);
+
 
 		void    detectRequestType(int client);
 		int 	handleGet(int client);

@@ -20,7 +20,7 @@ private:
     std::map<std::string, std::string>   _headers;
     std::string                         _boundary;
     char*                                   _body;
-    int                                  _clientfd;
+    int                                  _client;
     bool                                _isFullBody;
 
 public:
@@ -30,7 +30,7 @@ public:
         std::cout << "Request deleted" << std::endl;
     };
 
-    void                    handleUpload( void );
+    const char*                handleUpload( void );
     void        parseBody( std::istringstream& iss);
     void        appendToBody(const char* buffer);
     const char*                 createFileName();
@@ -52,11 +52,15 @@ public:
         return _type;
     };
 
+    const std::string& getObject() const {
+        return _object;
+    };
+
     const std::string& getBoundary() const {
         return _boundary;
     };
 
     const int& getClient() const {
-        return _clientfd;
+        return _client;
     };
 };
