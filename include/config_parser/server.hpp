@@ -6,7 +6,7 @@
 /*   By: jschott <jschott@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/04 16:51:38 by jschott           #+#    #+#             */
-/*   Updated: 2024/04/05 12:21:20 by jschott          ###   ########.fr       */
+/*   Updated: 2024/04/10 15:59:30 by jschott          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -28,6 +28,9 @@ private:
 //OPTIONAL INFORMATION
 	std::string const						_server_name;
 	std::string	const						_error_path;
+
+	std::vector<std::string>	_directives = {"listen", "location", "host",
+												 "host", "error_path"};
 
 	server();
 
