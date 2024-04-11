@@ -188,61 +188,64 @@ int 	Server::handleDelete(int client) {
     return 0;
 }
 
-int Server::handleUnknown(int client) {
+int Server::handleUnknown(int fd) {
     std::string response = "HTTP/1.1 404 Not Found\nContent-Type: text/plain\n\n404 Not Found\n";
-    send(_sockets[client].fd, response.c_str(), response.size(), 0);
+    send(fd, response.c_str(), response.size(), 0);
     return 0;
 }
 
-int 	Server::handleGet(int client) {
-    serveIndexHTML(_sockets[client].fd);
+int 	Server::handleGet(int fd) {
+    serveIndexHTML(fd);
     //send the specified _object
     std::cout << "send response to client" << std::endl;
     return 0;
 }
 
-int 	Server::handlePost(int client) {
-    if (!_request[client]->isFullRequest())
-        return 1;
-    const char* response = _request[client]->handleUpload();
-    send(_sockets[client].fd, response, strlen(response), 0);
+int 	Server::handlePost(int fd) {
+    if (_request.find(fd) != _request.end() && !_request[fd].isFullRequest()) {
+        return 1; // Return 1 if the request is not a full request
+    }
+    const char* response = _request[fd].handleUpload();
+    send(fd, response, strlen(response), 0);
     return 0;
 }
 
 void    Server::detectRequestType(int client) {
+    int fd = _sockets[client].fd;
     std::string types[3] ={"GET", "POST", "DELETE"};
     int (Server::*requestFun[3])(int) = {&Server::handleGet, &Server::handlePost, &Server::handleDelete};
-    std::string requestType = _request[client]->getType();
+    std::string requestType = _request[fd].getType();
 
     for (int i = 0; i < 3; i++) {
         if (requestType == types[i]) {
-            if ((this->*requestFun[i])(client) == 1)
+            if ((this->*requestFun[i])(fd) == 1)
                 return ; //unfinished POST request fx.
             break;
         }
     }
-    delete _request[client];
-    close(_sockets[client].fd);
-    //_sockets.erase(_sockets.begin() + client);
+    _request.erase(fd);
+    close(fd);
+    _sockets.erase(_sockets.begin() + client);
 }
 
 
 void Server::handleRequest(int i) {
+    int fd = _sockets[i].fd;
     char buffer[1024]; // Assuming a maximum request size of 1024 bytes
-    ssize_t bytesRead = read(_sockets[i].fd, buffer, sizeof(buffer));
-    std::cout << "BUFFER:\n" << buffer << "\nEND OF BUFFER" << std::endl;
-
+    ssize_t bytesRead = read(fd, buffer, sizeof(buffer));
+    std::cout << "NEW REQUEST FROM FD: " << fd << std::endl;
+    //std::cout << "BUFFER:\n" << buffer << "\nEND OF BUFFER" << std::endl;
     if (bytesRead <= 0) {
         disconnectClient(bytesRead, i);
     } else {
-        if (!_request[i]) {
-            std::cout << "No request for client " << i << std::endl;
-            _request[i] = new Request(buffer, i);
-            printRequest(*_request[i]);
+        if (_request.count(fd) == 0) {
+            std::cout << "No request for client " << fd << std::endl;
+            _request.insert(std::make_pair(fd, Request(buffer, fd)));
+            printRequest(_request[fd]);
         }
-        else if (_request[i]->getType() == "POST") {
+        else if (_request[fd].getType() == "POST") {
             std::cout << "Pending POST request for client " << i << std::endl;
-            _request[i]->appendToBody(buffer);
+            _request[fd].appendToBody(buffer);
         }
         detectRequestType(i);
     }
@@ -318,7 +321,7 @@ Server::Server( const Server & src )
 
 Server::~Server()
 {
-     for (size_t i = _sockets.size(); i >= 0; --i) {
+     for (int i = _sockets.size(); i >= 0; --i) {
         close(_sockets[i].fd);
     }
 }
