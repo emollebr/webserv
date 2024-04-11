@@ -6,7 +6,7 @@
 /*   By: jschott <jschott@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/05 10:20:40 by jschott           #+#    #+#             */
-/*   Updated: 2024/04/10 16:45:39 by jschott          ###   ########.fr       */
+/*   Updated: 2024/04/11 17:04:46 by jschott          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -63,14 +63,14 @@ std::deque<std::string>::iterator getClosingBraket (std::deque<std::string> queu
 	//set closing limiter
 	limiter_close = close[open.find(limiter_open)];
 
-	// std::cout << " looking for: " << limiter_close << std::endl;
-
+	// std::cout << "finding closing limiter " << limiter_close << " to opening limiter " << limiter_open << std::endl;
 	
 	//iterate through dequeue and return closing limiter if found
 	std::stack<std::string> stack;
-	
-	for (std::deque<std::string>::iterator pos = ++start; pos != queue.end(); pos++){
+	for (std::deque<std::string>::iterator pos = start + 1; pos != queue.end(); pos++){
 
+		// std::cout << "comparing " << *pos << " with " << limiter_close << std::endl;
+		// break ;
 		if (*pos == limiter_close) {
 			if (limiter_open == limiter_close || stack.empty())
 				return pos;
@@ -113,29 +113,27 @@ bool isBalanced(std::stringstream& ss) {
 }
 
 void	 parseDirective(std::deque<std::string>::iterator begin, std::deque<std::string>::iterator end){
-	std::cout << "Parsing from " << *begin << " to " << *end << std::endl;
-	
-	while (begin != end){
-		std::cout  << *begin << std::endl;
-		begin++;
-	}
+	std::cout << "Parsing Directive from " << *begin << " to " << *end << std::endl;
+	// while (begin != end){
+		// std::cout  << *begin << std::endl;
+		// begin++;
+	// }
 
-	if (begin == end)
-		return ;
+	// if (begin == end)
+		// return ;
 }
 
 void	parseLocation(std::deque<std::string>::iterator begin, std::deque<std::string>::iterator end) {
-	std::cout << "Parsing from " << *begin << " to " << *end << std::endl;
-	while (begin != end){
-		std::cout  << *begin << std::endl;
-		begin++;
-	}
-
+	std::cout << "Parsing Location from " << *begin << " to " << *end << std::endl;
+	// while (begin != end){
+	// 	std::cout  << *begin << std::endl;
+	// 	begin++;
+	// }
 }
 
 void	parseBlock(std::deque<std::string> tokens, std::deque<std::string>::iterator begin, std::deque<std::string>::iterator end){
 	
-	// std::cout << "Parsing from " << *begin << " to " << *end << std::endl;
+	std::cout << "Parsing Server from " << *begin << " to " << *end << std::endl;
 	// while (begin != end){
 	// 	std::cout << *begin << std::endl;
 	// 	begin++;
@@ -149,35 +147,46 @@ void	parseBlock(std::deque<std::string> tokens, std::deque<std::string>::iterato
 												"redirect", "CGI", "max_body_size",
 												"default_file", "upload_location", 
 												"cgi_extension", "allow_get", "allow_post"};
-	if (*begin == "location"){
-		tokens.pop_front();
-		while (tokens.front() == "")
-			tokens.pop_front();
-		std::deque<std::string>::iterator blockstart = tokens.begin();
-		std::deque<std::string>::iterator blockend;
-		//CHECK FOR OPENING BRAKET AND FIND CLOSING TO PARSE BLOCK
-		if (*blockstart == "{" &&
-				((blockend = getClosingBraket(tokens, blockstart)) != tokens.end())) {
-			parseLocation(blockstart, blockend);
-			tokens.erase(tokens.begin(), ++blockend);
-		}
-	}
-	// IF IS DIRECTIVE CHECK FOR ;
-	// if (*begin != server_directives.back()){
-		std::deque<std::string>::iterator directiveend = begin;
-		while (directiveend != end){
-			//IF FOUND ; CREATE TUPLE
-			if (*directiveend == ";") {
-				parseDirective(begin + 1, directiveend);
-				break ;
-				}
-			directiveend++;
-		}
-		if (directiveend == end) {
-			std::cerr << "ERROR: Missing ; to end Directive" << std::endl;
-		}
-	// }
 	
+	while (begin != end) {
+		// std::cout << "PARSING SERVER" << std::endl;
+		if (*begin == "location"){
+			begin++;
+			while (*begin == "")
+				begin++;
+			std::string location_path = *begin++;
+			std::cout <<"HELLO"<< *begin<<" "<<*end<<std::endl;
+			std::deque<std::string>::iterator blockstart = begin;
+			std::deque<std::string>::iterator blockend;
+			//CHECK FOR OPENING BRAKET AND FIND CLOSING TO PARSE BLOCK
+			if (blockstart != end && *blockstart == "{" &&
+					((blockend = getClosingBraket(tokens, blockstart)) > end)){ //!= tokens.end())) {
+				parseLocation(blockstart + 1, blockend - 1);
+				begin = blockend;
+				std::cout <<"HELLO"<< &begin<<" "<<&end<<std::endl;
+				std::cout <<"HELLO"<< *begin<<" "<<*end<<std::endl;
+				std::cout <<"HELLO"<< *(++begin)<<" "<<*end<<std::endl;
+				std::cout <<"HELLO"<< &begin<<" "<<&end<<std::endl;
+			}
+		}
+		// IF IS DIRECTIVE CHECK FOR ;
+		else {
+			std::deque<std::string>::iterator directiveend = begin ;
+			while (directiveend != end){
+				// std::cout <<"HELLO"<< &begin<<*end<<std::endl;//
+				//IF FOUND ; CREATE TUPLE
+				if (*directiveend == ";") {
+					parseDirective(begin, directiveend - 1);
+					begin = directiveend + 1;
+					break ;
+					}
+				directiveend++;
+			}
+			
+		}
+		
+	}
+	std::cout <<"BYE"<<std::endl;
 	// if (begin == end)
 	// 	return ;
 }
@@ -278,7 +287,11 @@ void	readFile2Buffer (std::string filename){
 		while (tokens.front() == "")
 			tokens.pop_front();
 		// HANDLE SERVER TOKENS
-		if (tokens.front() == "server") {
+		if (!tokens.empty() && tokens.front() != "server") {
+			std::cerr << "Error: Cannot parse line:" << std::endl << tokens.front() << std::endl;
+			break ;
+		}
+		else if (!tokens.empty()) {	
 			tokens.pop_front();
 			while (tokens.front() == "")
 				tokens.pop_front();
@@ -287,8 +300,10 @@ void	readFile2Buffer (std::string filename){
 			//CHECK FOR OPENING BRAKET AND FIND CLOSING TO PARSE BLOCK
 			if (*blockstart == "{" &&
 					((blockend = getClosingBraket(tokens, blockstart)) != tokens.end())) {
-				parseBlock(tokens, blockstart, blockend);
+				tokens.erase(tokens.begin(), ++blockstart);
+				parseBlock(tokens, blockstart, blockend - 1);
 				tokens.erase(tokens.begin(), ++blockend);
+				printTokens(tokens);
 			}
 		}
 		// std::cout << "Next Up: " << tokens.front() << std::endl;
