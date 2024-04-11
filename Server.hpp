@@ -23,7 +23,7 @@
 #define PORT 9999
 #define QUEUE 10
 #define HTML_FILE "web.html"
-#define BUF_SIZE 3145000
+#define BUF_SIZE 31450000000000000
 
 class Server
 {
@@ -40,7 +40,7 @@ class Server
 	private:
 		sockaddr_in 					_sockaddr;
 		std::vector<pollfd> 			_sockets;
-		std::map<int, Request*>			_request;
+		std::map<int, Request>			_request;
 
 		void	initSocket( void );
 		int		checkConnections( void );
