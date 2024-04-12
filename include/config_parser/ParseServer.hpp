@@ -1,12 +1,12 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   server.hpp                                         :+:      :+:    :+:   */
+/*   ParseServer.hpp                                    :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: jschott <jschott@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/04 16:51:38 by jschott           #+#    #+#             */
-/*   Updated: 2024/04/12 10:58:59 by jschott          ###   ########.fr       */
+/*   Updated: 2024/04/12 15:53:57 by jschott          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,12 +18,12 @@
 #include <vector>
 #include "location.hpp"
 
-class server
+class ParseServer
 {
 private:
-	std::vector<size_t>								_listen; // ports 0-1023 well-known | 1024-49151 registered | 49152-65535 dynamic & private port
+	std::vector<size_t>					_listen; // ports 0-1023 well-known | 1024-49151 registered | 49152-65535 dynamic & private port
 	std::map<std::string, location*>	_locations;
-	std::string										_host;
+	std::string							_host;
 
 //OPTIONAL INFORMATION
 	std::string const						_server_name;
@@ -32,17 +32,17 @@ private:
 	std::vector<std::string>	_directives = {"listen", "location", "host",
 												 "host", "error_path"};
 
-	server();
+	ParseServer();
 
 
 public:
-	server(std::vector<size_t> ports);
-	server(server const & origin);
-	server(std::string name, std::vector<int> listen, std::string err, location location);
-	server & operator= (server const & origin);
-	~server();
+	ParseServer(std::vector<size_t> ports);
+	ParseServer(server const & origin);
+	ParseServer(std::string name, std::vector<int> listen, std::string err, std::map<std::string, location*> location);
+	ParseServer & operator= (server const & origin);
+	~ParseServer();
 
-	void 				addLocation(location location);
+	void 				addLocation(std::pair<std::string, *location> location);
 	void				setErrorPath(std::string error_path);
 	void				setServerName(std::string server_name);
 
@@ -53,6 +53,6 @@ public:
 	std::string	const							getErrorPath();
 };
 
-const server*	parseServer(std::string serverConfig);
+const server*	parseServer(td::deque<std::string> tokens, std::deque<std::string>::iterator begin, std::deque<std::string>::iterator end);
 
 #endif 
