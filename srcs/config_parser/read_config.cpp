@@ -6,7 +6,7 @@
 /*   By: jschott <jschott@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/05 10:20:40 by jschott           #+#    #+#             */
-/*   Updated: 2024/04/12 12:31:28 by jschott          ###   ########.fr       */
+/*   Updated: 2024/04/12 15:02:56 by jschott          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -51,7 +51,7 @@ void	printTokens(std::deque<std::string> tokens){
 
 // finds the closing limiter in a dequeue of tokens to a given opening limiter char
 // returns iterator to the position, NULL if limiter is not closed within the dequeue
-std::deque<std::string>::iterator getClosingBraket (std::deque<std::string> queue, std::deque<std::string>::iterator start) {
+std::deque<std::string>::iterator getClosingBraket (std::deque<std::string>& queue, std::deque<std::string>::iterator start) {
 	std::string	open =	"{[(\'\"`";
 	std::string	close =	"}])\'\"`";
 	std::string	limiter_open = *start;
@@ -68,20 +68,15 @@ std::deque<std::string>::iterator getClosingBraket (std::deque<std::string> queu
 	
 	//iterate through dequeue and return closing limiter if found
 	std::stack<std::string> stack;
-	for (std::deque<std::string>::iterator pos = start + 1; pos != queue.end(); pos++){
-
-		// std::cout << "comparing " << *pos << " with " << limiter_close << std::endl;
-		// break ;
+	for (std::deque<std::string>::iterator pos = start + 1; pos < queue.end(); pos++) {
 		if (*pos == limiter_close) {
 			if (limiter_open == limiter_close || stack.empty())
 				return pos;
-			else if (!stack.empty()){
+			else if (!stack.empty())
 				stack.pop();
-			}
 		}
-		else if (*pos == limiter_open){
+		else if (*pos == limiter_open)
 			stack.push(*pos);
-		}
 	}
 	return notfound;
 }
@@ -108,20 +103,13 @@ bool isBalanced(std::stringstream& ss) {
 		}
 		
 	}
-
     // Check if there are any unclosed braces left on the stack
     return stack.empty();
 }
 
 void	 parseDirective(std::deque<std::string>::iterator begin, std::deque<std::string>::iterator end){
 	std::cout << "		Parsing Directive from " << *begin << " to " << *end << std::endl;
-	// while (begin != end){
-		// std::cout  << *begin << std::endl;
-		// begin++;
-	// }
-
-	// if (begin == end)
-		// return ;
+	
 }
 
 void	parseLocation(std::deque<std::string>::iterator begin, std::deque<std::string>::iterator end) {
@@ -219,13 +207,12 @@ void	populateTokens(std::stringstream &bufferstream, std::deque<std::string>	&to
 
 				// erase comments after '#' and ';'
 				if ('#' == line[0])
-				// if (strchr("#", line[0]))
 					line = line.erase();
 				else if (line[0] == ';') {
 					tokens.push_back(";");
+					tokens.push_back("");
 					line = line.erase();
 				}
-
 				//if string is limited within the line, add to line
 				else if (!line.empty()){
 					limiter = line[0];
@@ -245,6 +232,7 @@ void	populateTokens(std::stringstream &bufferstream, std::deque<std::string>	&to
 			}
 		}
 	}
+	tokens.pop_back();
 }
 
 void	readFile2Buffer (std::string filename){
@@ -272,15 +260,19 @@ void	readFile2Buffer (std::string filename){
 	populateTokens(bufferstream, tokens);
 	bufferstream.clear();
 
+	// printTokens(tokens);
+
 	//CHECK FIRST TOKEN
 	while (!tokens.empty()) {
+		
 		
 		//SKIP EMPTY TOKENS
 		while (tokens.front() == "")
 			tokens.pop_front();
+		std::cout << tokens.front() << std::endl;
 		// HANDLE SERVER TOKENS
 		if (!tokens.empty() && tokens.front() != "server") {
-			std::cerr << "Error: Cannot parse line:" << std::endl << tokens.front() << std::endl;
+			std::cerr << "Error: Cannot parse line:" << tokens.front() << std::endl;
 			break ;
 		}
 		else if (!tokens.empty()) {	
@@ -289,13 +281,13 @@ void	readFile2Buffer (std::string filename){
 				tokens.pop_front();
 			std::deque<std::string>::iterator blockstart = tokens.begin();
 			std::deque<std::string>::iterator blockend;
+		// std::cout << tokens.front() << std::endl;
 			//CHECK FOR OPENING BRAKET AND FIND CLOSING TO PARSE BLOCK
 			if (*blockstart == "{" &&
 					((blockend = getClosingBraket(tokens, blockstart)) != tokens.end())) {
 				tokens.erase(tokens.begin(), ++blockstart);
 				parseBlock(tokens, blockstart, blockend - 1);
 				tokens.erase(tokens.begin(), ++blockend);
-				printTokens(tokens);
 			}
 		}
 		// std::cout << "Next Up: " << tokens.front() << std::endl;
