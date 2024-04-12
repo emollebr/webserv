@@ -6,26 +6,26 @@
     <title>Simple Website</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Brush Script MT', cursive;
             margin: 0;
             padding: 0;
-            background-color: #f0f0f0;
+            background-color: #ffffff;
         }
         .container {
             width: 80%;
             margin: 0 auto;
             padding: 20px;
-            background-color: #fff;
+            background-color: #031c2e;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
             border-radius: 5px;
             margin-top: 50px;
         }
         h1 {
             text-align: center;
-            color: #333;
+            color: #ffffff;
         }
         p {
-            color: #666;
+            color: #ffffff;
         }
         .center {
             text-align: center;
@@ -38,8 +38,26 @@
         <p>This is a basic HTML page served by a simple server.</p>
         <p>You can modify this HTML to suit your needs.</p>
         <p>Happy coding!</p>
+        <title>Button to Another Page</title>
+    </head>
+    <body>
+        <h1>FOR THE HORDE</h1>
+        <button id="goToPageButton">Doxx the Alliance</button>
+    
+        <script>
+            // Function to navigate to another page
+            function goToPage() {
+                // Replace 'destination.html' with the URL of the page you want to navigate to
+                window.location.href = 'file_manager.html';
+            }
+    
+            // Add click event listener to the button
+            document.getElementById('goToPageButton').addEventListener('click', goToPage);
+        </script>
+    </body>
+    </html>
         <div class="center">
-            <img src="https://via.placeholder.com/200" alt="Placeholder Image">
+            <img src="sylvana.png" alt="Sylvana">
         </div>
     </div>
 </body>
