@@ -15,13 +15,15 @@
 
 class Request {
 private:
-    std::string                             _type;
-    std::string                            _object;
+    std::string                           _method;
+    std::string                           _object;
+    std::string                         _protocol;
     std::map<std::string, std::string>   _headers;
     std::string                         _boundary;
     char*                                   _body;
-    int                                  _client;
-    bool                                _isFullBody;
+    int                                   _client;
+    bool                              _isFullBody;
+    //struct timeval                       _timeout;
 
 public:
     Request(char *buffer, int client);
@@ -48,12 +50,16 @@ public:
         return _body;
     };
 
-    const std::string& getType() const {
-        return _type;
+    const std::string& getMethod() const {
+        return _method;
     };
 
     const std::string& getObject() const {
         return _object;
+    };
+
+    const std::string& getProtocol() const {
+        return _protocol;
     };
 
     const std::string& getBoundary() const {
@@ -64,3 +70,6 @@ public:
         return _client;
     };
 };
+
+
+std::ostream &operator<<(std::ostream &str, Request &rp);

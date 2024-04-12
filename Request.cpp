@@ -22,7 +22,6 @@ static std::string  parseBoundary(std::string contentType) {
 void    Request::parseBody( std::istringstream& iss) {
     std::string line;
     while (std::getline(iss, line)) {
-        std:: cout << "Line: " << line << std::endl;
         size_t pos = line.find(_boundary);
         if (pos == std::string::npos)
             appendToBody(line.c_str());
@@ -36,9 +35,9 @@ Request::Request(char *buffer, int client) : _client(client) {
     std::istringstream iss(buffer);
     std::string line;
 
-    //parse type and object
-    iss >> _type >> _object;
- 
+    //parse
+    iss >> _method >> _object >> _protocol;
+    std::getline(iss, line);
     // Parse headers
     while (std::getline(iss, line) && line != "\r") {
         size_t pos = line.find(": ");
@@ -48,12 +47,14 @@ Request::Request(char *buffer, int client) : _client(client) {
             _headers[key] = value;
         }
     }
-
+    //GET has no body
     _body = NULL;
   
-    if (_type.find("POST") != std::string::npos) {
+    if (_method == "POST") {
         _boundary = parseBoundary(_headers["Content-Type"]);
         //get content headers
+        while (std::getline(iss, line) && line == "\r")
+            continue;
         while (std::getline(iss, line) && line != "\r") {
             size_t pos = line.find(": ");
             if (pos != std::string::npos) {
@@ -68,18 +69,18 @@ Request::Request(char *buffer, int client) : _client(client) {
 
     std::cout << "Created new request" << std::endl;
     return ;
- }
+}
 
 const char* Request::handleUpload() {
     const char* filename = createFileName();
-    //std:: cout << "handleUpload(): Filename: " << filename << std::endl;
+    std:: cout << "handleUpload(): Filename: " << filename << std::endl;
     // Write file data to disk
     std::ofstream file(filename, std::ios::binary);
     file << _body;
     file.close();
 
     // Send HTTP response indicating success
-    const char* response = "HTTP/1.1 200 OK\r\nContent-Length: 18\r\n\r\nUpload successful";
+    const char* response = "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 18\r\n\r\nUpload successful";
     return response;
 }
 
@@ -104,12 +105,12 @@ const char* Request::handleUpload() {
     _body = newBody;
 }
 
-/* static bool fileExists(const char* filename) {
-    std::ifstream file(filename);
+static bool fileExists(std::string filename) {
+    std::ifstream file(filename.c_str());
     return file.good();
 }
- */
-/* // Function to generate a new filename if the original filename already exists
+
+// Function to generate a new filename if the original filename already exists
 std::string generateNewFilename(const std::string& originalFilename) {
     std::string newFilename = originalFilename;
     std::string extension;
@@ -120,16 +121,17 @@ std::string generateNewFilename(const std::string& originalFilename) {
     }
 
     int counter = 1;
-
+    std::ostringstream oss;
+    oss << "(" << counter << ")";
     // Keep incrementing counter and appending it to the filename until a unique filename is found
-    while (fileExists(newFilename + "(" + std::to_string(counter) + ")" + extension)) {
+    while (fileExists(newFilename.c_str() + oss.str() + extension)) {
         counter++;
+        oss << "(" << counter << ")";
     }
 
-    // Construct the new filename with the counter and extension
-    newFilename = newFilename + "(" + std::to_string(counter) + ")" + extension;
+    newFilename = newFilename + oss.str() + extension;
     return newFilename;
-} */
+}
 
 
 const char* Request::createFileName() {
@@ -139,14 +141,29 @@ const char* Request::createFileName() {
     
     size_t startPos = filename_start + 10;
     size_t endPos = content.find_last_not_of(" \"\t\r\n") + 1;
-    std::string filename = content.substr(startPos, endPos - startPos);    
+    std::string filename = "database/uploads/" + content.substr(startPos, endPos - startPos);    
 
-/*    if (fileExists(ret)) {
-      char* newFilename = generateNewFilename(filename);
-      delete[] filename;
-      return newFilename;
-  } */
+   if (fileExists(filename.c_str())) {
+      std::string tmp = generateNewFilename(filename);
+      filename = tmp;
+    }
 
-  char* result = strdup(filename.data()); // Allocate memory and copy the data
-return result;
+    char* result = strdup(filename.data()); // Allocate memory and copy the data
+    return result;
 }
+
+std::ostream &operator<<(std::ostream &str, Request &rp)
+{
+    str << "Client FD: " << rp.getClient() << std::endl;
+    str << "Method: " << rp.getMethod() << std::endl;
+    str << "Path: " << rp.getObject() << std::endl;
+    str << "Protocol: " << rp.getProtocol() << std::endl;
+    str << "Headers: " << std::endl;
+    std::map<std::string, std::string> headers = rp.getHeaders();
+    for (std::map<std::string, std::string>::iterator it = headers.begin(); it != headers.end(); ++it) {
+        str << "\t" << it->first << ": " << it->second << std::endl;
+    }
+    if (rp.getMethod() == "POST")
+        str << "Body: " << rp.getBody() <<std::endl;
+    return (str);
+};

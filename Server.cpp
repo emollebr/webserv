@@ -1,20 +1,5 @@
 #include "Server.hpp"
 
-static void printRequest(Request& req) {
-    std::cout << "Type: " << req.getType() << std::endl;
-    std::cout << "Object: " << req.getObject() << std::endl;
-    std::cout << "Headers: " << std::endl;
-    for (std::map<std::string, std::string>::const_iterator it = req.getHeaders().begin(); it != req.getHeaders().end(); ++it) {
-        std::cout << it->first << ": " << it->second << std::endl;
-    }
-    std::cout << "Client FD: " << req.getClient() << std::endl;
-    if (req.getType() == "POST") {
-        std::cout << "Boundary: " << req.getBoundary() << std::endl;
-        std::cout << "Body: " << req.getBody() << std::endl;
-    }
-
-}
-
 void  Server::initSocket( void )
 {
     pollfd serversock; //this will be the first element in our poll vector and the servers socket
@@ -95,24 +80,15 @@ std::string Server::extractCGIScriptPath(const std::string& request) {
     return "";
 }
 
-bool Server::isCGIRequest(const std::string& request) {
-    // Check if the request method is "POST"
-    size_t methodPos = request.find("POST");
-    if (methodPos != std::string::npos) {
-        // POST request, consider it as CGI
+bool Server::isCGIRequest(int fd) {
+// Check if the request URL starts with "/cgi-bin/"
+    std::string url = _request[fd]->getObject(); // Skip space and slash
+    size_t cgiPos = url.find("cgi-bin/");
+    if (cgiPos == 0) {
+        // Request URL starts with "/cgi-bin/", consider it as CGI
         return true;
     }
-
-    // Check if the request URL starts with "/cgi-bin/"
-        std::string url = request; // Skip space and slash
-        size_t cgiPos = url.find("cgi-bin/");
-        if (cgiPos == 0) {
-            // Request URL starts with "/cgi-bin/", consider it as CGI
-            return true;
-        }
-    
-
-    // If not a POST request or does not start with "/cgi-bin/", it's not a CGI request
+    // If does not start with "/cgi-bin/", it's not a CGI request
     return false;
 }
 
@@ -182,117 +158,6 @@ void    Server::disconnectClient(int bytesRead, int i) {
     }
 }
 
-int 	Server::handleDelete(int client) {
-    (void)client;
-    //delete the soecified _object
-    return 0;
-}
-
-int Server::handleUnknown(int fd) {
-    std::string response = "HTTP/1.1 404 Not Found\nContent-Type: text/plain\n\n404 Not Found\n";
-    send(fd, response.c_str(), response.size(), 0);
-    return 0;
-}
-
-int 	Server::handleGet(int fd) {
-    serveIndexHTML(fd);
-    //send the specified _object
-    std::cout << "send response to client" << std::endl;
-    return 0;
-}
-
-int 	Server::handlePost(int fd) {
-    if (_request.find(fd) != _request.end() && !_request[fd].isFullRequest()) {
-        return 1; // Return 1 if the request is not a full request
-    }
-    const char* response = _request[fd].handleUpload();
-    send(fd, response, strlen(response), 0);
-    return 0;
-}
-
-void    Server::detectRequestType(int client) {
-    int fd = _sockets[client].fd;
-    std::string types[3] ={"GET", "POST", "DELETE"};
-    int (Server::*requestFun[3])(int) = {&Server::handleGet, &Server::handlePost, &Server::handleDelete};
-    std::string requestType = _request[fd].getType();
-
-    for (int i = 0; i < 3; i++) {
-        if (requestType == types[i]) {
-            if ((this->*requestFun[i])(fd) == 1)
-                return ; //unfinished POST request fx.
-            break;
-        }
-    }
-    _request.erase(fd);
-    close(fd);
-    _sockets.erase(_sockets.begin() + client);
-}
-
-
-void Server::handleRequest(int i) {
-    int fd = _sockets[i].fd;
-    char buffer[1024]; // Assuming a maximum request size of 1024 bytes
-    ssize_t bytesRead = read(fd, buffer, sizeof(buffer));
-    std::cout << "NEW REQUEST FROM FD: " << fd << std::endl;
-    //std::cout << "BUFFER:\n" << buffer << "\nEND OF BUFFER" << std::endl;
-    if (bytesRead <= 0) {
-        disconnectClient(bytesRead, i);
-    } else {
-        if (_request.count(fd) == 0) {
-            std::cout << "No request for client " << fd << std::endl;
-            _request.insert(std::make_pair(fd, Request(buffer, fd)));
-            printRequest(_request[fd]);
-        }
-        else if (_request[fd].getType() == "POST") {
-            std::cout << "Pending POST request for client " << i << std::endl;
-            _request[fd].appendToBody(buffer);
-        }
-        detectRequestType(i);
-    }
-}
-
-void Server::serveIndexHTML(int clientSocket) {
-    // Read contents of index.html file
-    std::ifstream indexFile("index.html");
-    if (!indexFile) {
-        // Error opening index.html file
-        std::cerr << "Failed to open index.html file" << std::endl;
-        std::string response = "HTTP/1.1 404 Not Found\nContent-Type: text/plain\n\n404 Not Found\n";
-        send(clientSocket, response.c_str(), response.size(), 0);
-        return;
-    }
-    std::stringstream buffer;
-    buffer << indexFile.rdbuf();
-    std::string indexContent = buffer.str();
-
-    // Send HTTP response with index.html content
-    std::string response = "HTTP/1.1 200 OK\nContent-Type: text/html\n\n" + indexContent;
-    send(clientSocket, response.c_str(), response.size(), 0);
-}
-
-void  Server::sendToClient(int i, char buffer[], ssize_t bytesRead) {
- // Parse HTTP request
-        std::string request(buffer, bytesRead);
-        // Check if the request is a CGI request
-        if (isCGIRequest(request)) {
-            // Execute CGI script
-            executeCGIScript(request, _sockets[i].fd); // Pass client socket descriptor
-        } else {
-            // Handle non-CGI request (e.g., serve static files)
-            // For simplicity, sending a static response
-           if (request.find("GET / ") != std::string::npos) {
-                serveIndexHTML(_sockets[i].fd);
-            } else {
-                // Handle non-index.html request
-                // For simplicity, sending a 404 Not Found response
-                std::string response = "HTTP/1.1 404 Not Found\nContent-Type: text/plain\n\n404 Not Found\n";
-                send(_sockets[i].fd, response.c_str(), response.size(), 0);
-                close(_sockets[i].fd);
-                _sockets.erase(_sockets.begin() + i);
-          }
-        }
-}
-
 Server::Server()
 {
   initSocket();
@@ -305,9 +170,6 @@ Server::Server()
     }
   }
 }
-
-
-
 
 Server::Server( const Server & src )
 {

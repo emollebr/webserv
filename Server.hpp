@@ -23,7 +23,9 @@
 #define PORT 9999
 #define QUEUE 10
 #define HTML_FILE "web.html"
-#define BUF_SIZE 31450000000000000
+#define BUF_SIZE 987654
+
+void handleListFiles(int clientSocket);
 
 class Server
 {
@@ -40,30 +42,24 @@ class Server
 	private:
 		sockaddr_in 					_sockaddr;
 		std::vector<pollfd> 			_sockets;
-		std::map<int, Request>			_request;
+		std::map<int, Request*>			_request;
 
 		void	initSocket( void );
 		int		checkConnections( void );
 		void 	readFromClient(int i);
 		void    disconnectClient(int bytesRead, int i);
 
-
+		void 	handleRequest(int i);
 		void    detectRequestType(int client);
-		int 	handleGet(int client);
-		int 	handlePost(int client);
-		int 	handleDelete(int client);
-		int 	handleUnknown(int client);
+		int 	handleDelete(int fd);
+		int 	handleUnknown(int fd);
+		int 	handleGet(int fd);
+		int 	handlePost(int fd);
 
-		void  	sendToClient(int i, char buffer[], ssize_t bytesRead);
 		std::string extractCGIScriptPath(const std::string& request);
-		bool isCGIRequest(const std::string& request);
+		bool isCGIRequest(int fd);
 		void executeCGIScript(const std::string& scriptPath, int clientSocket);
-		void handleRequest(int i);
-		void serveIndexHTML(int clientSocket);
 		void cleanup();
-
-
-
 };
 
 std::ostream &			operator<<( std::ostream & o, Server const & i );
