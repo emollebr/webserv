@@ -58,7 +58,7 @@ int 	Server::handleDelete(int fd) {
 }
 
 int Server::handleUnknown(int fd) {
-    std::string response = "HTTP/1.1 404 Not Found\nContent-Type: text/plain\n\n404 Not Found\n";
+    std::string response = "HTTP/1.1 400 Bad Request\nContent-Type: text/plain\n\n400 Bad Request\n";
     send(fd, response.c_str(), response.size(), 0);
     return 0;
 }
@@ -66,7 +66,7 @@ int Server::handleUnknown(int fd) {
 int 	Server::handleGet(int fd) {
     std::string object = _request[fd]->getObject();
     if (object == "/")
-        object += "index.html";
+        object += "home.html";
     if (object == "/list_files") {
         handleListFiles(fd);
         return 0;
