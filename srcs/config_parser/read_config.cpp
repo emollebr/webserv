@@ -6,7 +6,7 @@
 /*   By: jschott <jschott@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/05 10:20:40 by jschott           #+#    #+#             */
-/*   Updated: 2024/04/11 17:04:46 by jschott          ###   ########.fr       */
+/*   Updated: 2024/04/12 12:31:28 by jschott          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -31,6 +31,7 @@
 #include <stack>
 #include <vector>
 #include <set>
+#include <tuple>
 
 //NEEDS TO GO IN HEADER FILE
 enum class TokenType {
@@ -113,7 +114,7 @@ bool isBalanced(std::stringstream& ss) {
 }
 
 void	 parseDirective(std::deque<std::string>::iterator begin, std::deque<std::string>::iterator end){
-	std::cout << "Parsing Directive from " << *begin << " to " << *end << std::endl;
+	std::cout << "		Parsing Directive from " << *begin << " to " << *end << std::endl;
 	// while (begin != end){
 		// std::cout  << *begin << std::endl;
 		// begin++;
@@ -124,21 +125,25 @@ void	 parseDirective(std::deque<std::string>::iterator begin, std::deque<std::st
 }
 
 void	parseLocation(std::deque<std::string>::iterator begin, std::deque<std::string>::iterator end) {
-	std::cout << "Parsing Location from " << *begin << " to " << *end << std::endl;
-	// while (begin != end){
-	// 	std::cout  << *begin << std::endl;
-	// 	begin++;
-	// }
+	std::cout << "	Parsing Location from " << *begin << " to " << *end << std::endl;
+	std::deque<std::string>::iterator directiveend = std::find(begin, end, ";") ;
+	//IF FOUND ; CREATE TUPLE
+	while (begin < end){
+		directiveend = std::find(begin, end, ";") ;
+		if (directiveend <= end) {
+			parseDirective(begin, directiveend - 1);
+			begin = directiveend + 1;
+		}
+		else {
+			std::cerr << "Error: Cannot parse directive" << std::endl;
+			return ;
+		}
+	}
 }
 
 void	parseBlock(std::deque<std::string> tokens, std::deque<std::string>::iterator begin, std::deque<std::string>::iterator end){
 	
-	std::cout << "Parsing Server from " << *begin << " to " << *end << std::endl;
-	// while (begin != end){
-	// 	std::cout << *begin << std::endl;
-	// 	begin++;
-	// }
-	
+	std::cout << "Parsing Server from " << *begin << " to " << *end << std::endl;	
 
 	//TBD THIS IS WITHIN CLASSES
 	std::set<std::string>	server_directives = {"listen", "location", "host",
@@ -148,47 +153,34 @@ void	parseBlock(std::deque<std::string> tokens, std::deque<std::string>::iterato
 												"default_file", "upload_location", 
 												"cgi_extension", "allow_get", "allow_post"};
 	
-	while (begin != end) {
-		// std::cout << "PARSING SERVER" << std::endl;
+	std::deque<std::string>::iterator statementend;
+
+	while (begin < end) {
 		if (*begin == "location"){
 			begin++;
 			while (*begin == "")
 				begin++;
-			std::string location_path = *begin++;
-			std::cout <<"HELLO"<< *begin<<" "<<*end<<std::endl;
-			std::deque<std::string>::iterator blockstart = begin;
-			std::deque<std::string>::iterator blockend;
+			std::pair<std::string, std::string> location_block;
+			location_block.first = *begin++;
+			while (*begin == "")
+				begin++;
 			//CHECK FOR OPENING BRAKET AND FIND CLOSING TO PARSE BLOCK
-			if (blockstart != end && *blockstart == "{" &&
-					((blockend = getClosingBraket(tokens, blockstart)) > end)){ //!= tokens.end())) {
-				parseLocation(blockstart + 1, blockend - 1);
-				begin = blockend;
-				std::cout <<"HELLO"<< &begin<<" "<<&end<<std::endl;
-				std::cout <<"HELLO"<< *begin<<" "<<*end<<std::endl;
-				std::cout <<"HELLO"<< *(++begin)<<" "<<*end<<std::endl;
-				std::cout <<"HELLO"<< &begin<<" "<<&end<<std::endl;
+			if (begin != end && *begin == "{" &&
+					((statementend = getClosingBraket(tokens, begin)) <= tokens.end())){
+				parseLocation(begin + 1, statementend - 1);
+				begin = statementend + 1;
 			}
 		}
-		// IF IS DIRECTIVE CHECK FOR ;
-		else {
-			std::deque<std::string>::iterator directiveend = begin ;
-			while (directiveend != end){
-				// std::cout <<"HELLO"<< &begin<<*end<<std::endl;//
-				//IF FOUND ; CREATE TUPLE
-				if (*directiveend == ";") {
-					parseDirective(begin, directiveend - 1);
-					begin = directiveend + 1;
-					break ;
-					}
-				directiveend++;
-			}
-			
+		// IF IS DIRECTIVE CHECK FOR ';', IF FOUND CREATE TUPLE
+		else if ((statementend = std::find(begin, end, ";")) <= end ) {
+			parseDirective(begin, statementend - 1);
+			begin = std::find(begin, end, ";") + 1;
 		}
+
+		else
+			std::cerr << "Error: Cannot parse config." << std::endl;
 		
 	}
-	std::cout <<"BYE"<<std::endl;
-	// if (begin == end)
-	// 	return ;
 }
 
 //Clean input from comments and put input in tokens
