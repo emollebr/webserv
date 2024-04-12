@@ -6,7 +6,7 @@
 /*   By: jschott <jschott@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/05 10:20:40 by jschott           #+#    #+#             */
-/*   Updated: 2024/04/12 15:02:56 by jschott          ###   ########.fr       */
+/*   Updated: 2024/04/12 15:31:39 by jschott          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -113,7 +113,7 @@ void	 parseDirective(std::deque<std::string>::iterator begin, std::deque<std::st
 }
 
 void	parseLocation(std::deque<std::string>::iterator begin, std::deque<std::string>::iterator end) {
-	std::cout << "	Parsing Location from " << *begin << " to " << *end << std::endl;
+	std::cout << TEXT_BOLD << "	Parsing Location from " << *begin << " to " << *end << std::endl;
 	std::deque<std::string>::iterator directiveend = std::find(begin, end, ";") ;
 	//IF FOUND ; CREATE TUPLE
 	while (begin < end){
@@ -123,13 +123,14 @@ void	parseLocation(std::deque<std::string>::iterator begin, std::deque<std::stri
 			begin = directiveend + 1;
 		}
 		else {
-			std::cerr << "Error: Cannot parse directive" << std::endl;
+			std::cerr << COLOR_ERROR << "Error: Cannot parse directive" << std::endl << COLOR_STANDARD;
 			return ;
 		}
 	}
+	std::cout << TEXT_NOFORMAT;
 }
 
-void	parseBlock(std::deque<std::string> tokens, std::deque<std::string>::iterator begin, std::deque<std::string>::iterator end){
+void	parseServer(std::deque<std::string> tokens, std::deque<std::string>::iterator begin, std::deque<std::string>::iterator end){
 	
 	std::cout << "Parsing Server from " << *begin << " to " << *end << std::endl;	
 
@@ -166,7 +167,7 @@ void	parseBlock(std::deque<std::string> tokens, std::deque<std::string>::iterato
 		}
 
 		else
-			std::cerr << "Error: Cannot parse config." << std::endl;
+			std::cerr << COLOR_ERROR  << "Error: Cannot parse config." << std::endl << COLOR_STANDARD;
 		
 	}
 }
@@ -242,7 +243,7 @@ void	readFile2Buffer (std::string filename){
 
 	//check that file existst && try to acccess file
 	if (!input.is_open()){
-		std::cerr << "Error: Couldn't open file" << std::endl;
+		std::cerr << COLOR_ERROR  << "Error: Couldn't open file" << std::endl << COLOR_STANDARD;
 		exit (1);	
 	}
 	//read file to buffer stringstream & close it
@@ -251,7 +252,7 @@ void	readFile2Buffer (std::string filename){
 
 	//Check that brakets and quotes are balanced
 	// if (!isBalanced(braketbuffer)) {
-	// 	std::cerr << "Error: Brakets or quotes are not balances" << std::endl;
+	// 	std::cerr << COLOR_ERROR  << "Error: Brakets or quotes are not balances" << std::endl << COLOR_STANDARD;
 	// 	exit (1);
 	// }
 
@@ -272,7 +273,7 @@ void	readFile2Buffer (std::string filename){
 		std::cout << tokens.front() << std::endl;
 		// HANDLE SERVER TOKENS
 		if (!tokens.empty() && tokens.front() != "server") {
-			std::cerr << "Error: Cannot parse line:" << tokens.front() << std::endl;
+			std::cerr << COLOR_ERROR  << "Error: Cannot parse line:" << tokens.front() << std::endl << COLOR_STANDARD;
 			break ;
 		}
 		else if (!tokens.empty()) {	
@@ -286,15 +287,12 @@ void	readFile2Buffer (std::string filename){
 			if (*blockstart == "{" &&
 					((blockend = getClosingBraket(tokens, blockstart)) != tokens.end())) {
 				tokens.erase(tokens.begin(), ++blockstart);
-				parseBlock(tokens, blockstart, blockend - 1);
+				parseServer(tokens, blockstart, blockend - 1);
 				tokens.erase(tokens.begin(), ++blockend);
 			}
 		}
 		// std::cout << "Next Up: " << tokens.front() << std::endl;
 	}
-	
-
-	
 	//HOW TO CLEAN A STRINGSTREAM
 	//reset buffstream
 	// bufferstream.clear();
@@ -302,6 +300,8 @@ void	readFile2Buffer (std::string filename){
 
 			
 }
+
+	
 
 int main (int argc, char** argv){
 
