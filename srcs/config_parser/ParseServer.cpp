@@ -6,81 +6,98 @@
 /*   By: jschott <jschott@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/12 15:33:23 by jschott           #+#    #+#             */
-/*   Updated: 2024/04/12 15:58:02 by jschott          ###   ########.fr       */
+/*   Updated: 2024/04/15 14:32:01 by jschott          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "ParseServer.hpp"
 
 ParseServer::ParseServer(std::vector<size_t> ports){
-	for (std::vector<size_t>::iterator it = ports.begin(); begin != ports.end(); it++)
-		this->_ports.push_back(it);		
+	for (std::vector<size_t>::iterator it = ports.begin(); it < ports.end(); it++)
+		this->_listen.push_back(*it);		
 }
 
-ParseServer::ParseServer(server const & origin);{
+ParseServer::ParseServer(ParseServer const & origin) {
 	*this = origin;
 }
 
-ParseServer::ParseServer(std::string name, std::vector<size_t> listen, std::string err, std::map<std::string, location*> location){
-	this->_server_name = name;
-	for (std::vector<size_t>::iterator it = listen.begin(); begin != listen.end(); it++)
-		this->_listen.push_back(it);
-	this->_error_path = err;
-	for (std::map<std::string, iterator it = location.begin(); begin != location.end(); it++)
-		this->_locations.push_back(*it);
+ParseServer::ParseServer(std::string name, std::vector<size_t> listen, std::string err, std::map<std::string, ParseLocation*> location){
+	_server_name = name;
+	_listen = listen;
+	_error_path = err;
+	_locations = location;
 }
 
-ParseServer & ParseServer::operator= (server const & origin);{
-	
+ParseServer & ParseServer::operator= (ParseServer const & origin) {
+	if (this == &origin)
+		return *this;
+	_listen = origin._listen;
+	_locations = origin._locations;
+	_host = origin._host;
+	_server_name = origin._server_name;
+	_error_path = origin._error_path;
+	return *this;
 }
 
-ParseServer::ParseServer~server();{
+ParseServer::~ParseServer() {
+	for (std::map<std::string, ParseLocation*>::iterator it = _locations.begin();
+				it != _locations.end(); it++)
+		delete ((*it).second);
 }
 
-void ParseServer::addLocation(std::pair<std::string, *location> location);{
-	this->_locations.push_back(location);
+void ParseServer::addLocation(std::pair<std::string, ParseLocation*> location) {
+	_locations.emplace(location);
 }
 
-void ParseServer::setErrorPath(std::string error_path);{
-	return (this->_error_path);
+void ParseServer::setErrorPath(std::string error_path) {
+	_error_path = error_path;
 }
 
-void ParseServer::setServerName(std::string server_name);{
-	return (this->_server_name);
+void ParseServer::setServerName(std::string server_name) {
+	_server_name = server_name;
 }
 
-std::vector<size_t> ParseServer::getListenPorts();{
-	return (this->_ports);
+std::vector<size_t> ParseServer::getListenPorts() {
+	if (_listen.empty())
+		return std::vector<size_t>();
+	std::vector<std::size_t> ports;
+	ports = _listen;
+	return (ports);
 }
 
-std::map<std::string, location> const ParseServer::getLocations();{
-	return (this->_locations)
+std::map<std::string, ParseLocation*> const ParseServer::getLocations() {
+	if (_listen.empty())
+		return std::map<std::string, ParseLocation*>();
+	std::map<std::string, ParseLocation*>	locations;
+	locations = _locations;
+	return (locations);
 }
 
-location const ParseServer::getLocation(std::string directory);{
-	return (this->_locations.find(directory)->second);
+ParseLocation const ParseServer::getLocation(std::string directory) {
+	if	(_locations.find(directory) != _locations.end())
+		return (*(*_locations.find(directory)).second);
 }
 
-std::string const ParseServer::getServerName();{
-	this->_server_name = server_name;	
+std::string const ParseServer::getServerName() {
+	return _server_name;	
 }
 
-std::string	const ParseServer::getErrorPath();{
-	this->_error_path = error_path;	
+std::string	const ParseServer::getErrorPath() {
+	return _error_path;	
 }
 
 
-const server*	parseServer(std::deque<std::string> tokens, std::deque<std::string>::iterator begin, std::deque<std::string>::iterator end){
+const ParseServer*	parseServer(std::deque<std::string> tokens, std::deque<std::string>::iterator begin, std::deque<std::string>::iterator end){
 	
 	std::cout << "Parsing Server from " << *begin << " to " << *end << std::endl;	
 
 	//TBD THIS IS WITHIN CLASSES
-	std::set<std::string>	server_directives = {"listen", "location", "host",
+	/* std::set<std::string>	server_directives = {"listen", "location", "host",
 												 "host", "error"};
 	std::set<std::string>	location_directives = {"root", "index", "methods_allowed",
 												"redirect", "CGI", "max_body_size",
 												"default_file", "upload_location", 
-												"cgi_extension", "allow_get", "allow_post"};
+												"cgi_extension", "allow_get", "allow_post"}; */
 	
 	std::deque<std::string>::iterator statementend;
 
