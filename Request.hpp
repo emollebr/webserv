@@ -20,22 +20,20 @@ private:
     std::string                         _protocol;
     std::map<std::string, std::string>   _headers;
     std::string                         _boundary;
-    char*                                   _body;
+    std::string                             _body;
     int                                   _client;
     bool                              _isFullBody;
-    //struct timeval                       _timeout;
 
 public:
     Request(char *buffer, int client);
     ~Request() {
-        delete[] _body;
         std::cout << "Request deleted" << std::endl;
     };
 
     const char*                handleUpload( void );
     void        parseBody( std::istringstream& iss);
     void        appendToBody(const char* buffer);
-    const char*                 createFileName();
+    const char*                 createFilePath();
 
 
     bool    isFullRequest() const {
@@ -46,7 +44,7 @@ public:
         return _headers;
     };
 
-    const char* getBody() const {
+    const std::string& getBody() const {
         return _body;
     };
 
@@ -69,7 +67,7 @@ public:
     const int& getClient() const {
         return _client;
     };
-};
 
+};
 
 std::ostream &operator<<(std::ostream &str, Request &rp);

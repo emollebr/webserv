@@ -45,6 +45,15 @@ int  Server::checkConnections()
         std::perror("accept");
         exit(EXIT_FAILURE);
     }
+    //set timeout for connection
+    struct timeval timeout;
+    timeout.tv_sec = 10;  // 10 seconds timeout
+    timeout.tv_usec = 0;
+    if (setsockopt(new_socket, SOL_SOCKET, SO_RCVTIMEO, (const char*)&timeout, sizeof(timeout)) < 0) {
+        perror("Error setting timeout");
+        close(new_socket);
+        return 1;
+    }
     
     fcntl(new_socket, F_SETFL, O_NONBLOCK); // Set new socket to non-blocking mode
     
@@ -54,6 +63,7 @@ int  Server::checkConnections()
     newfd.events = POLLIN;
     _sockets.push_back(newfd);
   }
+
   return newEvents;
 }
 

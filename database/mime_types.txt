@@ -1,0 +1,10 @@
+
+    .html text/html
+    .htm text/html
+    .js text/javascript
+    .txt text/plain
+    .css text/css
+    .jpg image/jpeg
+    .jpeg image/jpeg
+    .png image/png
+    .gif image/gif

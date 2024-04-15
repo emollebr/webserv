@@ -17,7 +17,8 @@ void Server::handleRequest(int i) {
         }
         else if (_request[fd]->getMethod() == "POST") {
             std::cout << "Pending POST request for client " << i << std::endl;
-            _request[fd]->appendToBody(buffer);
+            std::istringstream iss(buffer);
+            _request[fd]->parseBody(iss);
         }
         detectRequestType(i);
     }
@@ -58,9 +59,44 @@ int 	Server::handleDelete(int fd) {
 }
 
 int Server::handleUnknown(int fd) {
-    std::string response = "HTTP/1.1 400 Bad Request\nContent-Type: text/plain\n\n400 Bad Request\n";
+    std::string response = "HTTP/1.1 405 Method Not Allowed\nContent-Type: text/plain\n\n405 Method Not Allowed\n";
     send(fd, response.c_str(), response.size(), 0);
     return 0;
+}
+// Function to get MIME type based on file extension
+std::string getMimeType(const std::string& filename) {
+    static std::map<std::string, std::string> mimeMap;
+
+    if (mimeMap.empty()) {
+            // Open JSON file
+            std::ifstream file("./database/mime_types.txt");
+            if (!file.is_open()) {
+                std::cerr << "Error opening JSON file." << std::endl;
+                return "application/octet-stream"; // Default MIME type if file cannot be opened
+            }
+
+            // Parse JSON
+            std::string line;
+            while (std::getline(file, line)) {
+                std::istringstream iss(line);
+                std::string extension, mimeType;
+                if (iss >> extension >> mimeType) {
+                    mimeMap[extension] = mimeType;
+                }
+            }
+        }
+
+    // Find extension
+    size_t dotPos = filename.rfind('.');
+    if (dotPos != std::string::npos) {
+        std::string extension = filename.substr(dotPos);
+        // Look up MIME type in the map
+        std::map<std::string, std::string>::iterator it = mimeMap.find(extension);
+        if (it != mimeMap.end()) {
+            return it->second; // Return MIME type if found
+        }
+    }
+    return "application/octet-stream"; // Default MIME type if extension not found
 }
 
 int 	Server::handleGet(int fd) {
@@ -71,10 +107,11 @@ int 	Server::handleGet(int fd) {
         handleListFiles(fd);
         return 0;
     }
-    //complete the path
-    object = "database" + object;
+    if (object.find("database") == std::string::npos)
+        object = "database" + object;
+
     std::ifstream file(object.c_str());
-    std::cout << "In GET handling: serving: " << object << std::endl;
+    std::cout << "In GET handling: serving: " << object << " MIME: " << getMimeType(object) << std::endl;
     if (!file) {
         // Error opening index.html file
         std::cerr << "Failed to open " << object << " file" << std::endl;
@@ -88,10 +125,11 @@ int 	Server::handleGet(int fd) {
     std::string content = buffer.str();
 
     // Send HTTP response with content
-    std::string response = "HTTP/1.1 200 OK\nContent-Type: text/html\n\n" + content;
+    std::string response = "HTTP/1.1 200 OK\nContent-Type: " + getMimeType(object) + "\n\n" + content;
     send(fd, response.c_str(), response.size(), 0);
     return 0;
 }
+
 
 int 	Server::handlePost(int fd) {
     if (isCGIRequest(fd))
