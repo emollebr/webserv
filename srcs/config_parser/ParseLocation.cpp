@@ -6,7 +6,7 @@
 /*   By: jschott <jschott@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/15 12:09:36 by jschott           #+#    #+#             */
-/*   Updated: 2024/04/15 14:48:13 by jschott          ###   ########.fr       */
+/*   Updated: 2024/04/15 15:05:59 by jschott          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -98,5 +98,20 @@ bool ParseLocation::getAllowPOST(){
 }
 
 const ParseLocation * parseLocation(std::deque<std::string>::iterator begin, std::deque<std::string>::iterator end){
-	
+	std::cout << TEXT_BOLD << "	Parsing Location from " << *begin << " to " << *end << std::endl;
+	std::deque<std::string>::iterator directiveend = std::find(begin, end, ";") ;
+	//IF FOUND ; CREATE TUPLE
+	while (begin < end){
+		directiveend = std::find(begin, end, ";") ;
+		if (directiveend <= end) {
+			parseDirective(begin, directiveend - 1);
+			begin = directiveend + 1;
+		}
+		else {
+			std::cerr << COLOR_ERROR << "Error: Cannot parse directive" << std::endl << COLOR_STANDARD;
+			return ;
+		}
+	}
+	std::cout << TEXT_NOFORMAT;
+	ParseLocation *location = new("root");
 }
