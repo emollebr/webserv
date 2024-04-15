@@ -23,8 +23,10 @@ void    Request::parseBody( std::istringstream& iss) {
     std::string line;
     while (std::getline(iss, line)) {
         size_t pos = line.find(_boundary);
-        if (pos == std::string::npos)
-            appendToBody(line.c_str());
+        if (pos == std::string::npos) {
+            _isFullBody = false;
+            _body.append(line);
+        }
         else
             _isFullBody = true;
     }
@@ -47,8 +49,6 @@ Request::Request(char *buffer, int client) : _client(client) {
             _headers[key] = value;
         }
     }
-    //GET has no body
-    _body = NULL;
   
     if (_method == "POST") {
         _boundary = parseBoundary(_headers["Content-Type"]);
@@ -72,37 +72,29 @@ Request::Request(char *buffer, int client) : _client(client) {
 }
 
 const char* Request::handleUpload() {
-    const char* filename = createFileName();
-    std:: cout << "handleUpload(): Filename: " << filename << std::endl;
+    const char* filepath = createFilePath();
+    const char* response = "HTTP/1.1 500 Internal Server Error\r\nContent-Type: text/plain\r\nContent-Length: 18\r\n\r\nError saving file";
+    std:: cout << "handleUpload(): Filename: " << filepath << std::endl;
     // Write file data to disk
-    std::ofstream file(filename, std::ios::binary);
-    file << _body;
+    int	fd;
+	if ( (fd = open(filepath, O_RDWR|O_CREAT, S_IRWXU|S_IRWXO|S_IRWXG)) == -1 )
+		std::cout << "Error: could not open file \"" << filepath << "\" with exeution rights " << std::endl;
+
+    std::ofstream file(filepath, std::ios::out | std::ios::trunc | std::ios::binary);
+    if ( !file.is_open() ) {
+		std::cout << "Error: open file \"" << filepath << "\" failed" << std::endl;
+		return NULL;
+	}
+    if (!file.write(reinterpret_cast<const char*>(_body.c_str()), _body.size())) {
+		file.close();
+		return NULL;
+	}
+    close(fd);
     file.close();
 
     // Send HTTP response indicating success
-    const char* response = "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 18\r\n\r\nUpload successful";
+   response = "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 18\r\n\r\nUpload successful";
     return response;
-}
-
- void Request::appendToBody(const char* buffer) {
-    // Calculate the total size including existing _body and new buffer
-    size_t totalSize = strlen(buffer);
-    if (_body != NULL)
-        totalSize += strlen(_body);
-
-    // Allocate memory for the updated _body
-    char* newBody = new char[totalSize + 1];
-
-     if (_body != NULL) {
-        strcpy(newBody, _body);
-        strcat(newBody, buffer);
-    }
-    else
-        strcpy(newBody, buffer);
-
-    // Delete old _body and update _body pointer
-    delete[] _body;
-    _body = newBody;
 }
 
 static bool fileExists(std::string filename) {
@@ -134,7 +126,7 @@ std::string generateNewFilename(const std::string& originalFilename) {
 }
 
 
-const char* Request::createFileName() {
+const char* Request::createFilePath() {
 
     std::string content = _headers["Content-Disposition"];
     size_t filename_start = content.find("filename=");

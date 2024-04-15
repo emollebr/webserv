@@ -4,7 +4,7 @@ document.addEventListener('DOMContentLoaded', function () {
         event.preventDefault(); // Prevent default form submission
         var formData = new FormData(this); // Create FormData object
         // Send POST request to server with FormData
-        fetch('/upload', {
+        fetch('/', {
             method: 'POST',
             body: formData
         })
@@ -61,7 +61,7 @@ function refreshFileList() {
         if (event.target.classList.contains('deleteButton')) {
             var filename = event.target.getAttribute('data-filename');
             // Send DELETE request to server with filename
-            fetch(`database/uploads/${filename}`, {
+            fetch(`uploads/${filename}`, {
                 method: 'DELETE'
             })
             .then(response => {
@@ -84,7 +84,7 @@ function refreshFileList() {
         if (event.target.classList.contains('downloadButton')) {
             var filename = event.target.getAttribute('data-filename');
             // Send GET request to server to download the file
-            fetch(`/uploads/${filename}`, {
+            fetch(`uploads/${filename}`, {
                 method: 'GET'
             })
             .then(response => {

@@ -23,7 +23,7 @@
 #define PORT 9999
 #define QUEUE 10
 #define HTML_FILE "web.html"
-#define BUF_SIZE 987654
+#define BUF_SIZE 9876543
 
 void handleListFiles(int clientSocket);
 
