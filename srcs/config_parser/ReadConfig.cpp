@@ -6,21 +6,21 @@
 /*   By: jschott <jschott@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/05 10:20:40 by jschott           #+#    #+#             */
-/*   Updated: 2024/04/15 14:27:18 by jschott          ###   ########.fr       */
+/*   Updated: 2024/04/15 16:20:53 by jschott          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "ReadConfig.hpp"
 
 //NEEDS TO GO IN HEADER FILE
-enum class TokenType {
+/* enum class TokenType {
     Server,
     Listen,
     Host,
     Location,
     Root,
 	Variable
-};
+}; */
 
 void	printTokens(std::deque<std::string> tokens){
 	//Print Tokens [HELPER FUNCTION]
@@ -217,7 +217,7 @@ void	populateTokens(std::stringstream &bufferstream, std::deque<std::string>	&to
 
 void	readFile2Buffer (std::string filename){
 	std::stringstream	bufferstream;
-	std::ifstream		input(filename);
+	std::ifstream		input(filename.c_str());
 	
 
 	//check that file existst && try to acccess file
