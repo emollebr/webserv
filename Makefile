@@ -10,13 +10,13 @@
 #																			  #
 # **************************************************************************** #
 
-NAME = PmergeMe
+NAME = webserv
 
 # SOURCES
-SRC_PATH =	src/s/config_parser
+SRC_PATH =	srcs/config_parser/
 SRC_FILES =	ReadConfig.cpp \
 			ParseServer.cpp \
-			ParseLocation.hpp
+			ParseLocation.cpp
 SRCS := $(addprefix $(SRC_PATH), $(SRC_FILES))
 
 # OBJECTS
@@ -24,7 +24,7 @@ OBJ_PATH = obj/
 OBJS = $(addprefix $(OBJ_PATH), $(SRC_FILES:.cpp=.o))
 
 # INCLUDES
-INCL_PATH =	include/config_parser
+INCL_PATH =	include/config_parser/
 HDRS = 		ReadConfig.hpp \
 			ParseServer.hpp \
 			ParseLocation.hpp

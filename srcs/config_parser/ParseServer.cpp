@@ -6,11 +6,12 @@
 /*   By: jschott <jschott@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/12 15:33:23 by jschott           #+#    #+#             */
-/*   Updated: 2024/04/15 14:32:01 by jschott          ###   ########.fr       */
+/*   Updated: 2024/04/15 16:49:13 by jschott          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "ParseServer.hpp"
+#include "ParseLocation.hpp"
 
 ParseServer::ParseServer(std::vector<size_t> ports){
 	for (std::vector<size_t>::iterator it = ports.begin(); it < ports.end(); it++)
@@ -46,7 +47,7 @@ ParseServer::~ParseServer() {
 }
 
 void ParseServer::addLocation(std::pair<std::string, ParseLocation*> location) {
-	_locations.emplace(location);
+	_locations.insert(location);
 }
 
 void ParseServer::setErrorPath(std::string error_path) {
@@ -76,6 +77,7 @@ std::map<std::string, ParseLocation*> const ParseServer::getLocations() {
 ParseLocation const ParseServer::getLocation(std::string directory) {
 	if	(_locations.find(directory) != _locations.end())
 		return (*(*_locations.find(directory)).second);
+	return (*(*_locations.end()).second);
 }
 
 std::string const ParseServer::getServerName() {
@@ -113,7 +115,7 @@ const ParseServer*	parseServer(std::deque<std::string> tokens, std::deque<std::s
 			//CHECK FOR OPENING BRAKET AND FIND CLOSING TO PARSE BLOCK
 			if (begin != end && *begin == "{" &&
 					((statementend = getClosingBraket(tokens, begin)) <= tokens.end())){
-				parseLocation(begin + 1, statementend - 1);
+				ParseLocation(begin + 1, statementend - 1);
 				begin = statementend + 1;
 			}
 		}
@@ -127,4 +129,5 @@ const ParseServer*	parseServer(std::deque<std::string> tokens, std::deque<std::s
 			std::cerr << COLOR_ERROR  << "Error: Cannot parse config." << std::endl << COLOR_STANDARD;
 		
 	}
+	return NULL;
 }

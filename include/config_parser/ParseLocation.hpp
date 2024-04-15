@@ -6,7 +6,7 @@
 /*   By: jschott <jschott@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/04 16:55:56 by jschott           #+#    #+#             */
-/*   Updated: 2024/04/15 14:46:36 by jschott          ###   ########.fr       */
+/*   Updated: 2024/04/15 16:34:04 by jschott          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -35,15 +35,16 @@ private:
 	bool						_allow_get;
 	bool						_allow_post;
 	
-	std::vector<std::string>	_directives = {"root", "index", "methods_allowed",
+	/* std::vector<std::string>	_directives = {"root", "index", "methods_allowed",
 												"redirect", "CGI", "max_body_size",
 												"default_file", "upload_location", 
 												"cgi_extension", "allow_get", "allow_post"};
-
+ */
 	ParseLocation();
 
 public:
 	ParseLocation(std::string root);
+	ParseLocation(std::deque<std::string>::iterator begin, std::deque<std::string>::iterator end);
 	ParseLocation(ParseLocation const & origin);
 	ParseLocation & operator=(ParseLocation const & origin);
 	~ParseLocation();
@@ -63,7 +64,5 @@ public:
 	bool						hasMethod(std::string method);
 	
 };
-
-const ParseLocation*	parseLocation(std::deque<std::string>::iterator begin, std::deque<std::string>::iterator end);
 
 #endif
