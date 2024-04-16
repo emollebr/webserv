@@ -6,7 +6,7 @@
 /*   By: jschott <jschott@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/04 16:51:38 by jschott           #+#    #+#             */
-/*   Updated: 2024/04/05 12:21:20 by jschott          ###   ########.fr       */
+/*   Updated: 2024/04/16 14:40:08 by jschott          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,7 +21,7 @@
 class server
 {
 private:
-	std::vector<size_t>						_listen; // ports 0-1023 well-known | 1024-49151 registered | 49152-65535 dynamic & private port
+	std::vector<size_t>						_ports; // ports 0-1023 well-known | 1024-49151 registered | 49152-65535 dynamic & private port
 	std::map<std::string, location*> const	_locations;
 	std::string								_host;
 
