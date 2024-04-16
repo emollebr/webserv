@@ -6,7 +6,7 @@
 /*   By: jschott <jschott@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/05 10:20:40 by jschott           #+#    #+#             */
-/*   Updated: 2024/04/15 16:20:53 by jschott          ###   ########.fr       */
+/*   Updated: 2024/04/16 17:59:10 by jschott          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -267,6 +267,8 @@ void	readFile2Buffer (std::string filename){
 					((blockend = getClosingBraket(tokens, blockstart)) != tokens.end())) {
 				tokens.erase(tokens.begin(), ++blockstart);
 				parseServer(tokens, blockstart, blockend - 1);
+				// ParseServer const *test = parseServer(tokens, blockstart, blockend - 1);
+				// std::cout << test << std::endl;
 				tokens.erase(tokens.begin(), ++blockend);
 			}
 		}

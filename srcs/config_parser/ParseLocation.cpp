@@ -6,11 +6,22 @@
 /*   By: jschott <jschott@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/15 12:09:36 by jschott           #+#    #+#             */
-/*   Updated: 2024/04/15 16:53:40 by jschott          ###   ########.fr       */
+/*   Updated: 2024/04/16 17:02:32 by jschott          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "ParseLocation.hpp"
+
+ParseLocation::ParseLocation(){
+	std::string	directives[] = {"root", "index", "methods_allowed",
+									"redirect", "CGI", "max_body_size",
+									"default_file", "upload_location", 
+									"cgi_extension", "allow_get", "allow_post", 
+									"autoindex"};
+	int size = sizeof(directives) / sizeof(directives[0]);
+	for (int i = 0; i < size; i++)
+		_directives_index[directives[i]] = false;
+}
 
 ParseLocation::ParseLocation(std::string root){
 	_root = root;	
