@@ -6,7 +6,7 @@
 /*   By: jschott <jschott@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/04 16:55:56 by jschott           #+#    #+#             */
-/*   Updated: 2024/04/16 09:47:48 by jschott          ###   ########.fr       */
+/*   Updated: 2024/04/17 14:39:48 by jschott          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -38,8 +38,9 @@ private:
 	
 
 	std::map<std::string, bool>	_directives_index;
+	std::map<std::string, void (ParseLocation::*)(std::deque<std::string>::iterator begin, std::deque<std::string>::iterator end)> _validation_index;
 
-	ParseLocation();
+	void						init();
 
 public:
 	ParseLocation(std::string root);
@@ -48,20 +49,37 @@ public:
 	ParseLocation & operator=(ParseLocation const & origin);
 	~ParseLocation();
 
-	std::vector<std::string>	getIndeces();
-	std::vector<std::string>	getMethods();
-	std::string					getRedirect();
-	std::string					getCGI();
-	size_t						getBodySize();
-	std::string					getDefaultFile();
-	std::string					getUploadLocation();
-	std::string					getCGIExtension();
-	bool						getAllowGET();
-	bool						getAllowPOST();
+	std::string					getRoot() const;
+	std::vector<std::string>	getIndeces() const;
+	std::vector<std::string>	getMethods() const;
+	std::string					getRedirect() const;
+	std::string					getCGI() const;
+	size_t						getBodySize() const;
+	std::string					getDefaultFile() const;
+	std::string					getUploadLocation() const;
+	std::string					getCGIExtension() const;
+	bool						getAllowGET() const;
+	bool						getAllowPOST() const;
+	bool						getAutoindex() const;
+
+	void						parseLocationDirective(std::deque<std::string>::iterator begin, std::deque<std::string>::iterator end);
+	void						validateRoot(std::deque<std::string>::iterator begin, std::deque<std::string>::iterator end);
+	void						validateIndeces(std::deque<std::string>::iterator begin, std::deque<std::string>::iterator end);
+	void						validateMethods(std::deque<std::string>::iterator begin, std::deque<std::string>::iterator end);
+	void						validateRedirect(std::deque<std::string>::iterator begin, std::deque<std::string>::iterator end);
+	void						validateCGI(std::deque<std::string>::iterator begin, std::deque<std::string>::iterator end);
+	void						validateBodySize(std::deque<std::string>::iterator begin, std::deque<std::string>::iterator end);
+	void						validateDefaultFile(std::deque<std::string>::iterator begin, std::deque<std::string>::iterator end);
+	void						validateUploadLocation(std::deque<std::string>::iterator begin, std::deque<std::string>::iterator end);
+	void						validateCGIExtension(std::deque<std::string>::iterator begin, std::deque<std::string>::iterator end);
+	void						validateAllowGET(std::deque<std::string>::iterator begin, std::deque<std::string>::iterator end);
+	void						validateAllowPOST(std::deque<std::string>::iterator begin, std::deque<std::string>::iterator end);
+	void						validateAutoindex(std::deque<std::string>::iterator begin, std::deque<std::string>::iterator end);
 
 	bool						hasIndex(std::string index);
 	bool						hasMethod(std::string method);
-	
 };
+
+std::ostream& operator<<(std::ostream& os, const ParseLocation& locationconf);
 
 #endif

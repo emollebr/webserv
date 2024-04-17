@@ -6,21 +6,28 @@
 /*   By: jschott <jschott@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/15 12:09:36 by jschott           #+#    #+#             */
-/*   Updated: 2024/04/16 17:02:32 by jschott          ###   ########.fr       */
+/*   Updated: 2024/04/17 15:39:51 by jschott          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "ParseLocation.hpp"
 
-ParseLocation::ParseLocation(){
-	std::string	directives[] = {"root", "index", "methods_allowed",
-									"redirect", "CGI", "max_body_size",
+void ParseLocation::init(){
+	std::string	directives[] = {"root", "index", "methods",
+									"redirect", "CGI", "max_body",
 									"default_file", "upload_location", 
 									"cgi_extension", "allow_get", "allow_post", 
 									"autoindex"};
+	typedef void (ParseLocation::*ParseLocationFunction)(std::deque<std::string>::iterator begin, std::deque<std::string>::iterator end);
+	ParseLocationFunction functions[] = {&ParseLocation::validateRoot, &ParseLocation::validateIndeces, &ParseLocation::validateMethods, 
+											&ParseLocation::validateRedirect, &ParseLocation::validateCGI, &ParseLocation::validateBodySize, 
+											&ParseLocation::validateDefaultFile, &ParseLocation::validateUploadLocation, &ParseLocation::validateCGIExtension, 
+											&ParseLocation::validateAllowGET, &ParseLocation::validateAllowPOST, &ParseLocation::validateAutoindex};
 	int size = sizeof(directives) / sizeof(directives[0]);
-	for (int i = 0; i < size; i++)
+	for (int i = 0; i < size; i++){
 		_directives_index[directives[i]] = false;
+		_validation_index[directives[i]] = functions[i];
+	}
 }
 
 ParseLocation::ParseLocation(std::string root){
@@ -51,7 +58,7 @@ ParseLocation & ParseLocation::operator=(ParseLocation const & origin){
 ParseLocation::~ParseLocation(){
 }
 
-std::vector<std::string>	ParseLocation::getIndeces(){
+std::vector<std::string>	ParseLocation::getIndeces() const{
 	if (_indeces.empty())
 		return std::vector<std::string>();
 	std::vector<std::string>	Indeces;
@@ -63,7 +70,7 @@ std::vector<std::string>	ParseLocation::getIndeces(){
 	return (_);
 } */
 
-std::vector<std::string> ParseLocation::getMethods(){
+std::vector<std::string> ParseLocation::getMethods() const{
 	if (_methods_allowed.empty())
 		return std::vector<std::string>();
 	std::vector<std::string>	methods;
@@ -77,36 +84,127 @@ bool ParseLocation::hasMethod(std::string method){
 	return false;
 }
 
-std::string	ParseLocation::getRedirect(){
+std::string		ParseLocation::getRoot() const {
+	return _root;
+}
+
+
+std::string	ParseLocation::getRedirect() const{
 	return _redirect;
 }
 
-std::string	ParseLocation::getCGI(){
+std::string	ParseLocation::getCGI() const{
 	return _CGI;
 }
 
-size_t ParseLocation::getBodySize(){
+size_t ParseLocation::getBodySize() const{
 	return _max_body_size;	
 }
 
-std::string ParseLocation::getDefaultFile(){
+std::string ParseLocation::getDefaultFile() const{
 	return _default_file;
 }
 
-std::string ParseLocation::getUploadLocation(){
+std::string ParseLocation::getUploadLocation() const{
 	return _upload_location;
 }
 
-std::string ParseLocation::getCGIExtension(){
+std::string ParseLocation::getCGIExtension() const{
 	return _cgi_extension;
 }
 
-bool ParseLocation::getAllowGET(){
+bool ParseLocation::getAllowGET() const{
 	return _allow_get;
 }
 
-bool ParseLocation::getAllowPOST(){
+bool ParseLocation::getAllowPOST() const{
 	return _allow_post;
+}
+
+bool ParseLocation::getAutoindex() const {
+	return _autoindex;
+}
+
+void ParseLocation::parseLocationDirective(std::deque<std::string>::iterator begin, std::deque<std::string>::iterator end) {
+	init();
+	std::cout << "	Parsing Location Directive from " << *begin << " to " << *end << std::endl;
+	if (_directives_index.find(*begin) == _directives_index.end()) {
+		return ; //THROW EXCEPTION
+	}
+	std::map<std::string, void (ParseLocation::*)(std::deque<std::string>::iterator, std::deque<std::string>::iterator)>::iterator function = _validation_index.find(*begin);
+	if (function != _validation_index.end()) {
+		(this->*(function->second))(begin+1, end);
+	}
+}
+
+void ParseLocation::validateRoot(std::deque<std::string>::iterator begin, std::deque<std::string>::iterator end){
+	std::cout << "validating " << *begin << *end;
+	// if (begin == end)	{
+	// 	std::cout << "ubbi" << std::endl;
+	// 	return ;
+	// }
+	_root = (*begin);
+	std::cout << _root << std::endl;
+}
+
+void ParseLocation::validateIndeces(std::deque<std::string>::iterator begin, std::deque<std::string>::iterator end){
+	// if (begin == end)
+	// 	return ;
+	while (begin <= end)
+		_indeces.push_back(*begin++);
+}
+
+void ParseLocation::validateMethods(std::deque<std::string>::iterator begin, std::deque<std::string>::iterator end){
+	// if (begin == end)
+	// 	return ;
+	while (begin < end)
+		_methods_allowed.push_back(*begin++);
+	
+}
+
+void ParseLocation::validateRedirect(std::deque<std::string>::iterator begin, std::deque<std::string>::iterator end){
+	if (begin == end)
+		_redirect = *begin;
+}
+
+void ParseLocation::validateCGI(std::deque<std::string>::iterator begin, std::deque<std::string>::iterator end){
+	if (begin == end)
+		_CGI = *begin;
+}
+
+void ParseLocation::validateBodySize(std::deque<std::string>::iterator begin, std::deque<std::string>::iterator end){
+	if (begin == end)
+		_max_body_size = atoi((*begin).c_str());
+}
+
+void ParseLocation::validateDefaultFile(std::deque<std::string>::iterator begin, std::deque<std::string>::iterator end){
+	if (begin == end)
+		_default_file = *begin;
+}
+
+void ParseLocation::validateUploadLocation(std::deque<std::string>::iterator begin, std::deque<std::string>::iterator end){
+	if (begin == end)
+		_upload_location = *begin;
+}
+
+void ParseLocation::validateCGIExtension(std::deque<std::string>::iterator begin, std::deque<std::string>::iterator end){
+	if (begin == end)
+		_cgi_extension = *begin;
+}
+
+void ParseLocation::validateAllowGET(std::deque<std::string>::iterator begin, std::deque<std::string>::iterator end){
+	if (begin == end)
+		return ;
+}
+
+void ParseLocation::validateAllowPOST(std::deque<std::string>::iterator begin, std::deque<std::string>::iterator end){
+	if (begin == end)
+		return ;
+}
+
+void ParseLocation::validateAutoindex(std::deque<std::string>::iterator begin, std::deque<std::string>::iterator end){
+	if (begin == end)
+		return ;
 }
 
 ParseLocation::ParseLocation(std::deque<std::string>::iterator begin, std::deque<std::string>::iterator end){
@@ -116,11 +214,26 @@ ParseLocation::ParseLocation(std::deque<std::string>::iterator begin, std::deque
 	while (begin < end){
 		directiveend = std::find(begin, end, ";") ;
 		if (directiveend <= end) {
-			parseDirective(begin, directiveend - 1);
+			parseLocationDirective(begin, directiveend - 1);
 			begin = directiveend + 1;
 		}
 		else 
 			std::cerr << COLOR_ERROR << "Error: Cannot parse directive" << std::endl << COLOR_STANDARD;
 	}
 	std::cout << TEXT_NOFORMAT;
+}
+
+std::ostream& operator<<(std::ostream& os, const ParseLocation& locationconf) {
+	os << "++START LOCATION CONFIGURATION++" << std::endl << std::endl;
+	os << "	root:				" << locationconf.getRoot() << std::endl;
+	os << "	indices:			" << "TBD" << std::endl;
+	os << "	methods:			" << "TBD" << std::endl;
+	os << "	redirect:			" << locationconf.getRedirect() << std::endl;
+	os << "	CGI:				" << locationconf.getCGI() << std::endl;
+	os << "	max body size:		" << locationconf.getBodySize() << std::endl;
+	os << "	default file:		" << locationconf.getDefaultFile() << std::endl;
+	os << "	upload location:	" << locationconf.getUploadLocation() << std::endl;
+	os << "	CGI extension:		" << locationconf.getCGIExtension() << std::endl;
+	os << "	Autoindex:			" << locationconf.getAutoindex() << std::endl;
+	return os;
 }

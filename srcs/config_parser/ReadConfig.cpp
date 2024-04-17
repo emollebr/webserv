@@ -6,7 +6,7 @@
 /*   By: jschott <jschott@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/05 10:20:40 by jschott           #+#    #+#             */
-/*   Updated: 2024/04/16 17:59:10 by jschott          ###   ########.fr       */
+/*   Updated: 2024/04/17 11:48:04 by jschott          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -90,66 +90,6 @@ void	 parseDirective(std::deque<std::string>::iterator begin, std::deque<std::st
 	std::cout << "		Parsing Directive from " << *begin << " to " << *end << std::endl;
 	
 }
-
-/* void	parseLocation(std::deque<std::string>::iterator begin, std::deque<std::string>::iterator end) {
-	std::cout << TEXT_BOLD << "	Parsing Location from " << *begin << " to " << *end << std::endl;
-	std::deque<std::string>::iterator directiveend = std::find(begin, end, ";") ;
-	//IF FOUND ; CREATE TUPLE
-	while (begin < end){
-		directiveend = std::find(begin, end, ";") ;
-		if (directiveend <= end) {
-			parseDirective(begin, directiveend - 1);
-			begin = directiveend + 1;
-		}
-		else {
-			std::cerr << COLOR_ERROR << "Error: Cannot parse directive" << std::endl << COLOR_STANDARD;
-			return ;
-		}
-	}
-	std::cout << TEXT_NOFORMAT;
-} */
-
-/* void	parseServer(std::deque<std::string> tokens, std::deque<std::string>::iterator begin, std::deque<std::string>::iterator end){
-	
-	std::cout << "Parsing Server from " << *begin << " to " << *end << std::endl;	
-
-	//TBD THIS IS WITHIN CLASSES
-	std::set<std::string>	server_directives = {"listen", "location", "host",
-												 "host", "error"};
-	std::set<std::string>	location_directives = {"root", "index", "methods_allowed",
-												"redirect", "CGI", "max_body_size",
-												"default_file", "upload_location", 
-												"cgi_extension", "allow_get", "allow_post"};
-	
-	std::deque<std::string>::iterator statementend;
-
-	while (begin < end) {
-		if (*begin == "location"){
-			begin++;
-			while (*begin == "")
-				begin++;
-			std::pair<std::string, std::string> location_block;
-			location_block.first = *begin++;
-			while (*begin == "")
-				begin++;
-			//CHECK FOR OPENING BRAKET AND FIND CLOSING TO PARSE BLOCK
-			if (begin != end && *begin == "{" &&
-					((statementend = getClosingBraket(tokens, begin)) <= tokens.end())){
-				parseLocation(begin + 1, statementend - 1);
-				begin = statementend + 1;
-			}
-		}
-		// IF IS DIRECTIVE CHECK FOR ';', IF FOUND CREATE TUPLE
-		else if ((statementend = std::find(begin, end, ";")) <= end ) {
-			parseDirective(begin, statementend - 1);
-			begin = std::find(begin, end, ";") + 1;
-		}
-
-		else
-			std::cerr << COLOR_ERROR  << "Error: Cannot parse config." << std::endl << COLOR_STANDARD;
-		
-	}
-} */
 
 //Clean input from comments and put input in tokens
 void	populateTokens(std::stringstream &bufferstream, std::deque<std::string>	&tokens) {
@@ -266,7 +206,9 @@ void	readFile2Buffer (std::string filename){
 			if (*blockstart == "{" &&
 					((blockend = getClosingBraket(tokens, blockstart)) != tokens.end())) {
 				tokens.erase(tokens.begin(), ++blockstart);
-				parseServer(tokens, blockstart, blockend - 1);
+				// parseServer(tokens, blockstart, blockend - 1);
+				ParseServer test(tokens, blockstart, blockend - 1);
+				std::cout << test << std::endl;
 				// ParseServer const *test = parseServer(tokens, blockstart, blockend - 1);
 				// std::cout << test << std::endl;
 				tokens.erase(tokens.begin(), ++blockend);
