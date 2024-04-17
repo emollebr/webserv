@@ -6,7 +6,7 @@
 /*   By: jschott <jschott@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/04 16:55:56 by jschott           #+#    #+#             */
-/*   Updated: 2024/04/17 14:39:48 by jschott          ###   ########.fr       */
+/*   Updated: 2024/04/17 15:57:53 by jschott          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -43,6 +43,7 @@ private:
 	void						init();
 
 public:
+	ParseLocation();
 	ParseLocation(std::string root);
 	ParseLocation(std::deque<std::string>::iterator begin, std::deque<std::string>::iterator end);
 	ParseLocation(ParseLocation const & origin);

@@ -6,7 +6,7 @@
 /*   By: jschott <jschott@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/15 12:09:36 by jschott           #+#    #+#             */
-/*   Updated: 2024/04/17 15:39:51 by jschott          ###   ########.fr       */
+/*   Updated: 2024/04/17 17:18:53 by jschott          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -28,6 +28,10 @@ void ParseLocation::init(){
 		_directives_index[directives[i]] = false;
 		_validation_index[directives[i]] = functions[i];
 	}
+}
+
+ParseLocation::ParseLocation(){
+	init();
 }
 
 ParseLocation::ParseLocation(std::string root){
@@ -127,24 +131,21 @@ bool ParseLocation::getAutoindex() const {
 
 void ParseLocation::parseLocationDirective(std::deque<std::string>::iterator begin, std::deque<std::string>::iterator end) {
 	init();
-	std::cout << "	Parsing Location Directive from " << *begin << " to " << *end << std::endl;
 	if (_directives_index.find(*begin) == _directives_index.end()) {
 		return ; //THROW EXCEPTION
 	}
 	std::map<std::string, void (ParseLocation::*)(std::deque<std::string>::iterator, std::deque<std::string>::iterator)>::iterator function = _validation_index.find(*begin);
 	if (function != _validation_index.end()) {
-		(this->*(function->second))(begin+1, end);
+		(this->*(function->second))(begin + 1, end);
 	}
 }
 
 void ParseLocation::validateRoot(std::deque<std::string>::iterator begin, std::deque<std::string>::iterator end){
-	std::cout << "validating " << *begin << *end;
-	// if (begin == end)	{
+	if (begin == end)	
+		_root = (*begin);
 	// 	std::cout << "ubbi" << std::endl;
 	// 	return ;
 	// }
-	_root = (*begin);
-	std::cout << _root << std::endl;
 }
 
 void ParseLocation::validateIndeces(std::deque<std::string>::iterator begin, std::deque<std::string>::iterator end){
@@ -208,7 +209,7 @@ void ParseLocation::validateAutoindex(std::deque<std::string>::iterator begin, s
 }
 
 ParseLocation::ParseLocation(std::deque<std::string>::iterator begin, std::deque<std::string>::iterator end){
-	std::cout << TEXT_BOLD << "	Parsing Location from " << *begin << " to " << *end << std::endl;
+	// std::cout << TEXT_BOLD << "	Parsing Location from " << *begin << " to " << *end << std::endl;
 	std::deque<std::string>::iterator directiveend = std::find(begin, end, ";") ;
 	//IF FOUND ; CREATE TUPLE
 	while (begin < end){
@@ -224,16 +225,17 @@ ParseLocation::ParseLocation(std::deque<std::string>::iterator begin, std::deque
 }
 
 std::ostream& operator<<(std::ostream& os, const ParseLocation& locationconf) {
-	os << "++START LOCATION CONFIGURATION++" << std::endl << std::endl;
-	os << "	root:				" << locationconf.getRoot() << std::endl;
-	os << "	indices:			" << "TBD" << std::endl;
-	os << "	methods:			" << "TBD" << std::endl;
-	os << "	redirect:			" << locationconf.getRedirect() << std::endl;
-	os << "	CGI:				" << locationconf.getCGI() << std::endl;
-	os << "	max body size:		" << locationconf.getBodySize() << std::endl;
-	os << "	default file:		" << locationconf.getDefaultFile() << std::endl;
-	os << "	upload location:	" << locationconf.getUploadLocation() << std::endl;
-	os << "	CGI extension:		" << locationconf.getCGIExtension() << std::endl;
-	os << "	Autoindex:			" << locationconf.getAutoindex() << std::endl;
+	// os << "++START LOCATION CONFIGURATION++" << std::endl << std::endl;
+	os << "		root		" << locationconf.getRoot() << ";" << std::endl;
+	os << "		indices		" << "TBD" << ";" << std::endl;
+	os << "		methods		" << "TBD" << ";" << std::endl;
+	os << "		redirect	" << locationconf.getRedirect() << ";" << std::endl;
+	os << "		CGI		" << locationconf.getCGI() << ";" << std::endl;
+	os << "		body_size	" << locationconf.getBodySize() << ";" << std::endl;
+	os << "		default file	" << locationconf.getDefaultFile() << ";" << std::endl;
+	os << "		upload location	" << locationconf.getUploadLocation() << ";" << std::endl;
+	os << "		CGI extension	" << locationconf.getCGIExtension() << ";" << std::endl;
+	os << "		autoindex	" << locationconf.getAutoindex() << ";" << std::endl;
+	os << "	}";
 	return os;
 }
