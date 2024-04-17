@@ -1,7 +1,7 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   ParseLocation.hpp                                  :+:      :+:    :+:   */
+/*   LocationConfig.hpp                                  :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: jschott <jschott@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
@@ -10,15 +10,15 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#ifndef PARSELOCATION_HPP
-# define PARSELOCATION_HPP
+#ifndef LOCATIONCONFIG_HPP
+# define LOCATIONCONFIG_HPP
 
 #include <string>
 #include <vector>
 #include <deque>
 #include "ReadConfig.hpp"
 
-class ParseLocation
+class LocationConfig
 {
 private:
 	std::string					_root; // /var/ww/html
@@ -38,17 +38,17 @@ private:
 	
 
 	std::map<std::string, bool>	_directives_index;
-	std::map<std::string, void (ParseLocation::*)(std::deque<std::string>::iterator begin, std::deque<std::string>::iterator end)> _validation_index;
+	std::map<std::string, void (LocationConfig::*)(std::deque<std::string>::iterator begin, std::deque<std::string>::iterator end)> _validation_index;
 
 	void						init();
 
 public:
-	ParseLocation();
-	ParseLocation(std::string root);
-	ParseLocation(std::deque<std::string>::iterator begin, std::deque<std::string>::iterator end);
-	ParseLocation(ParseLocation const & origin);
-	ParseLocation & operator=(ParseLocation const & origin);
-	~ParseLocation();
+	LocationConfig();
+	LocationConfig(std::string root);
+	LocationConfig(std::deque<std::string>::iterator begin, std::deque<std::string>::iterator end);
+	LocationConfig(LocationConfig const & origin);
+	LocationConfig & operator=(LocationConfig const & origin);
+	~LocationConfig();
 
 	std::string					getRoot() const;
 	std::vector<std::string>	getIndeces() const;
@@ -81,6 +81,6 @@ public:
 	bool						hasMethod(std::string method);
 };
 
-std::ostream& operator<<(std::ostream& os, const ParseLocation& locationconf);
+std::ostream& operator<<(std::ostream& os, const LocationConfig& locationconf);
 
 #endif
