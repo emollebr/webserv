@@ -11,8 +11,10 @@
 </head>
 <body>
 <h1>Alliance Doxxing</h1>
-<form id="uploadForm">
-    <input type="file" id="fileInput" name="file">
+<form id="uploadForm" action="/" method="post" enctype="form-data">
+		<label for="file">File:</label>
+		<input type="file" id="file" name="file" required>
+		<br>
     <button type="submit">Upload</button>
 </form>
 

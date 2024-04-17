@@ -20,24 +20,26 @@ private:
     std::string                         _protocol;
     std::map<std::string, std::string>   _headers;
     std::string                         _boundary;
-    std::string                             _body;
     int                                   _client;
-    bool                              _isFullBody;
+    bool                              _isFullRequest;
+    std::string                             _body;
+    long long int                   _bytesCounter;
+    long long int                  _contentLength;
 
 public:
-    Request(char *buffer, int client);
+
+    Request(char *buffer, int client, int bytesRead);
     ~Request() {
         std::cout << "Request deleted" << std::endl;
     };
 
-    const char*                handleUpload( void );
-    void        parseBody( std::istringstream& iss);
-    void        appendToBody(const char* buffer);
-    const char*                 createFilePath();
+    const char*                         handleUpload( void );
+    void     pendingPostRequest(char* buffer, int bytesRead);
+    const char*                             createFilePath();
 
 
     bool    isFullRequest() const {
-       return _isFullBody;
+       return _isFullRequest;
     };
 
     const std::map<std::string, std::string>& getHeaders() const {
