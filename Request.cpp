@@ -19,29 +19,20 @@ static std::string  parseBoundary(std::string contentType) {
     }
 }
 
-void    Request::parseBody( std::istringstream& iss) {
-    std::string line;
-    while (std::getline(iss, line)) {
-        size_t pos = line.find(_boundary);
-        if (pos == std::string::npos) {
-            _isFullBody = false;
-            _body.append(line);
-        }
-        else
-            _isFullBody = true;
-    }
-}
-
-Request::Request(char *buffer, int client) : _client(client) {
+Request::Request(char *buffer, int client, int bytesRead) : _client(client) {
     
     std::istringstream iss(buffer);
     std::string line;
+    int bytesProcessed = 0;
 
     //parse
     iss >> _method >> _object >> _protocol;
+    bytesProcessed += _method.size() + _object.size() + _protocol.size() + 3;
     std::getline(iss, line);
     // Parse headers
     while (std::getline(iss, line) && line != "\r") {
+        std::cout << "line: " << line << std::endl;
+        bytesProcessed += line.size() + 1;
         size_t pos = line.find(": ");
         if (pos != std::string::npos) {
             std::string key = line.substr(0, pos);
@@ -53,9 +44,12 @@ Request::Request(char *buffer, int client) : _client(client) {
     if (_method == "POST") {
         _boundary = parseBoundary(_headers["Content-Type"]);
         //get content headers
-        while (std::getline(iss, line) && line == "\r")
+        while (std::getline(iss, line) && line == "\r") {
+            bytesProcessed += 1;
             continue;
+        }
         while (std::getline(iss, line) && line != "\r") {
+            std::cout << "line: " << line << std::endl;
             size_t pos = line.find(": ");
             if (pos != std::string::npos) {
                 std::string key = line.substr(0, pos);
@@ -63,12 +57,33 @@ Request::Request(char *buffer, int client) : _client(client) {
                 _headers[key] = value;
             }
         }
+
+        //save content length from header
+        std::map<std::string, std::string>::const_iterator it = _headers.find("Content-Length");
+        //if (it == _headers.end())
+        //    return "405 Bad Request";
+        std::istringstream ss(it->second);
+        ss >> _contentLength;
+    
         //get body
-        parseBody(iss);
+        while (iss >> line) {
+            _body += line;
+        }
+        _bytesCounter = bytesRead - bytesProcessed - 3; //3 is for the /r/n/r
+        _isFullRequest = (_bytesCounter < _contentLength) ? false : true;
     }
 
-    std::cout << "Created new request" << std::endl;
+    std::cout << "Created new request\nbytes read= " <<  _bytesCounter << std::endl;
     return ;
+
+}
+
+void    Request::pendingPostRequest(char* buffer, int bytesRead) {
+        std::istringstream iss(buffer);
+        _body.append(std::string(buffer, bytesRead));
+        _bytesCounter += bytesRead;
+        _isFullRequest = (_bytesCounter < _contentLength) ? false : true;
+        std::cout << "bytes read: " << _bytesCounter << "/" << _contentLength << std::endl;
 }
 
 const char* Request::handleUpload() {
@@ -85,7 +100,7 @@ const char* Request::handleUpload() {
 		std::cout << "Error: open file \"" << filepath << "\" failed" << std::endl;
 		return NULL;
 	}
-    if (!file.write(reinterpret_cast<const char*>(_body.c_str()), _body.size())) {
+    if (!file.write(reinterpret_cast<const char*>(_body.c_str()), _body.size() - _boundary.size())) {
 		file.close();
 		return NULL;
 	}

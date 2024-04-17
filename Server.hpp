@@ -18,12 +18,14 @@
 #include <sstream> 
 #include <climits>
 #include <list>
+#include <string>
 #include "Request.hpp"
 
 #define PORT 9999
 #define QUEUE 10
 #define HTML_FILE "web.html"
-#define BUF_SIZE 9876543
+#define BUF_SIZE 58761
+# define MAX_REQ_SIZE 8192
 
 void handleListFiles(int clientSocket);
 
@@ -47,10 +49,10 @@ class Server
 		void	initSocket( void );
 		int		checkConnections( void );
 		void 	readFromClient(int i);
-		void    disconnectClient(int bytesRead, int i);
+		void    disconnectClient(int i);
 
 		void 	handleRequest(int i);
-		void    detectRequestType(int client);
+		int    detectRequestType(int client);
 		int 	handleDelete(int fd);
 		int 	handleUnknown(int fd);
 		int 	handleGet(int fd);

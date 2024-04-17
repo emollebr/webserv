@@ -23,6 +23,7 @@ void  Server::initSocket( void )
     
     if (listen(serversock.fd, QUEUE) < 0) { // Start listening. Hold at most x connections in the queue
       std::cout << "Failed to listen on socket. errno: " << errno << std::endl;
+      close(serversock.fd);
       exit(EXIT_FAILURE);
     }
 
@@ -32,6 +33,7 @@ void  Server::initSocket( void )
 int  Server::checkConnections()
 {
   //poll allows to monitor multiple fd's for events
+  std::cout << "checkConnections: waiting for new event" << std::endl;
   int newEvents = poll(&_sockets[0], _sockets.size(), -1);
   if (newEvents  < 0) {
       std::perror("poll");
@@ -159,13 +161,11 @@ void Server::executeCGIScript(const std::string& scriptPath, int clientSocket) {
     }
 }
 
-void    Server::disconnectClient(int bytesRead, int i) {
-    if (bytesRead == 0 || (errno != EWOULDBLOCK && errno != EAGAIN)) {
-            // Connection closed or error occurred
-            std::cout << "Client disconnected" << std::endl;
-            close(_sockets[i].fd);
-            _sockets.erase(_sockets.begin() + i);
-    }
+void    Server::disconnectClient(int i) {
+    // Connection closed or error occurred
+    std::cout << "Client disconnected" << std::endl;
+    close(_sockets[i].fd);
+    _sockets.erase(_sockets.begin() + i);
 }
 
 Server::Server()
