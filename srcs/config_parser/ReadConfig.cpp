@@ -6,7 +6,7 @@
 /*   By: jschott <jschott@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/05 10:20:40 by jschott           #+#    #+#             */
-/*   Updated: 2024/04/17 11:48:04 by jschott          ###   ########.fr       */
+/*   Updated: 2024/04/17 17:32:31 by jschott          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -42,8 +42,6 @@ std::deque<std::string>::iterator getClosingBraket (std::deque<std::string>& que
 		return notfound;
 	//set closing limiter
 	limiter_close = close[open.find(limiter_open)];
-
-	// std::cout << "finding closing limiter " << limiter_close << " to opening limiter " << limiter_open << std::endl;
 	
 	//iterate through dequeue and return closing limiter if found
 	std::stack<std::string> stack;
@@ -68,7 +66,6 @@ bool isBalanced(std::stringstream& ss) {
 	std::string close = "}])\'\"`";
 	
 	for (size_t i = 0; i < strlen(open.c_str()); i++) {
-		// std::cout << "checking for: " << open[i] << " and " << close[i] << std::endl;
 		while (ss.get(c)) {
 			if (c == open[i]) {
 				stack.push(c);  // Push open brace onto the stack
@@ -189,7 +186,6 @@ void	readFile2Buffer (std::string filename){
 		//SKIP EMPTY TOKENS
 		while (tokens.front() == "")
 			tokens.pop_front();
-		std::cout << tokens.front() << std::endl;
 		// HANDLE SERVER TOKENS
 		if (!tokens.empty() && tokens.front() != "server") {
 			std::cerr << COLOR_ERROR  << "Error: Cannot parse line:" << tokens.front() << std::endl << COLOR_STANDARD;
@@ -201,20 +197,14 @@ void	readFile2Buffer (std::string filename){
 				tokens.pop_front();
 			std::deque<std::string>::iterator blockstart = tokens.begin();
 			std::deque<std::string>::iterator blockend;
-		// std::cout << tokens.front() << std::endl;
 			//CHECK FOR OPENING BRAKET AND FIND CLOSING TO PARSE BLOCK
 			if (*blockstart == "{" &&
 					((blockend = getClosingBraket(tokens, blockstart)) != tokens.end())) {
 				tokens.erase(tokens.begin(), ++blockstart);
-				// parseServer(tokens, blockstart, blockend - 1);
 				ParseServer test(tokens, blockstart, blockend - 1);
-				std::cout << test << std::endl;
-				// ParseServer const *test = parseServer(tokens, blockstart, blockend - 1);
-				// std::cout << test << std::endl;
 				tokens.erase(tokens.begin(), ++blockend);
 			}
 		}
-		// std::cout << "Next Up: " << tokens.front() << std::endl;
 	}
 	//HOW TO CLEAN A STRINGSTREAM
 	//reset buffstream

@@ -6,7 +6,7 @@
 /*   By: jschott <jschott@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/04 16:51:38 by jschott           #+#    #+#             */
-/*   Updated: 2024/04/17 15:40:15 by jschott          ###   ########.fr       */
+/*   Updated: 2024/04/17 17:34:14 by jschott          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,7 +26,7 @@ class ParseServer
 {
 private:
 	std::vector<size_t>						_ports; // ports 0-1023 well-known | 1024-49151 registered | 49152-65535 dynamic & private port
-	std::map<std::string, ParseLocation*>	_locations;
+	std::map<std::string, ParseLocation>	_locations;
 	std::string								_host;
 	
 
@@ -48,21 +48,23 @@ private:
 
 public:
 
+	ParseServer();
 	ParseServer(std::vector<size_t> ports);
 	ParseServer(ParseServer const & origin);
-	ParseServer(std::vector<std::string> name, std::vector<size_t> listen, std::string err, std::map<std::string, ParseLocation*> location);
+	ParseServer(std::vector<std::string> name, std::vector<size_t> listen, std::string err, std::map<std::string, ParseLocation> location);
 	ParseServer(std::deque<std::string> tokens, std::deque<std::string>::iterator begin, std::deque<std::string>::iterator end);
 	ParseServer & operator= (ParseServer const & origin);
 	
 	~ParseServer();
 
-	// void 				addLocation(std::pair<std::string, ParseLocation*> location);
-	void 				addLocation(std::string location, ParseLocation* config);
+	// void 				addLocation(std::pair<std::string, ParseLocation> location);
+	void 				addLocation(std::string location, ParseLocation config);
 	void				setErrorPath(std::string error_path);
 	void				setServerName(std::vector<std::string> server_name);
 
 	std::vector<size_t>							getListenPorts() const;
-	std::map<std::string, ParseLocation*> const	getLocations() const;
+	std::string									getHost() const;
+	std::map<std::string, ParseLocation> const	getLocations() const;
 	ParseLocation const							getLocation(std::string directory);
 	std::vector<std::string> const				getServerName();
 	std::string	const							getErrorPath() const;
