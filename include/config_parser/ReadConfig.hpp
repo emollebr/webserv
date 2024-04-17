@@ -6,7 +6,7 @@
 /*   By: jschott <jschott@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/15 14:23:34 by jschott           #+#    #+#             */
-/*   Updated: 2024/04/15 16:32:36 by jschott          ###   ########.fr       */
+/*   Updated: 2024/04/17 17:57:00 by jschott          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -31,8 +31,8 @@
 #include <stack>
 #include <vector>
 #include <set>
-#include "ParseServer.hpp"
-#include "ParseLocation.hpp"
+#include "ServerConfig.hpp"
+#include "LocationConfig.hpp"
 // #include <tuple>
 
 void								parseDirective(std::deque<std::string>::iterator begin, std::deque<std::string>::iterator end);
