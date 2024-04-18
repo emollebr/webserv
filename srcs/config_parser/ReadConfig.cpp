@@ -6,36 +6,26 @@
 /*   By: jschott <jschott@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/05 10:20:40 by jschott           #+#    #+#             */
-/*   Updated: 2024/04/17 17:54:44 by jschott          ###   ########.fr       */
+/*   Updated: 2024/04/18 10:52:36 by jschott          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "ReadConfig.hpp"
 
-//NEEDS TO GO IN HEADER FILE
-/* enum class TokenType {
-    Server,
-    Listen,
-    Host,
-    Location,
-    Root,
-	Variable
-}; */
-
+//Print Tokens [HELPER FUNCTION]
 void	printTokens(std::deque<std::string> tokens){
-	//Print Tokens [HELPER FUNCTION]
-	for (std::deque<std::string>::iterator it = tokens.begin(); it != tokens.end(); it++)
+	for (tokeniterator it = tokens.begin(); it != tokens.end(); it++)
 		std::cout<< *it << std::endl;
 }
 
 // finds the closing limiter in a dequeue of tokens to a given opening limiter char
 // returns iterator to the position, NULL if limiter is not closed within the dequeue
-std::deque<std::string>::iterator getClosingBraket (std::deque<std::string>& queue, std::deque<std::string>::iterator start) {
+tokeniterator getClosingBraket (std::deque<std::string>& queue, tokeniterator start) {
 	std::string	open =	"{[(\'\"`";
 	std::string	close =	"}])\'\"`";
 	std::string	limiter_open = *start;
 	std::string	limiter_close;
-	std::deque<std::string>::iterator notfound = queue.end();
+	tokeniterator notfound = queue.end();
 
 	//return NULL if limiter_open is unknows
 	if (open.find(limiter_open) == open.length())
@@ -45,7 +35,7 @@ std::deque<std::string>::iterator getClosingBraket (std::deque<std::string>& que
 	
 	//iterate through dequeue and return closing limiter if found
 	std::stack<std::string> stack;
-	for (std::deque<std::string>::iterator pos = start + 1; pos < queue.end(); pos++) {
+	for (tokeniterator pos = start + 1; pos < queue.end(); pos++) {
 		if (*pos == limiter_close) {
 			if (limiter_open == limiter_close || stack.empty())
 				return pos;
@@ -83,7 +73,7 @@ bool isBalanced(std::stringstream& ss) {
     return stack.empty();
 }
 
-void	 parseDirective(std::deque<std::string>::iterator begin, std::deque<std::string>::iterator end){
+void	 parseDirective(tokeniterator begin, tokeniterator end){
 	std::cout << "		Parsing Directive from " << *begin << " to " << *end << std::endl;
 	
 }
@@ -195,8 +185,8 @@ void	readFile2Buffer (std::string filename){
 			tokens.pop_front();
 			while (tokens.front() == "")
 				tokens.pop_front();
-			std::deque<std::string>::iterator blockstart = tokens.begin();
-			std::deque<std::string>::iterator blockend;
+			tokeniterator blockstart = tokens.begin();
+			tokeniterator blockend;
 			//CHECK FOR OPENING BRAKET AND FIND CLOSING TO PARSE BLOCK
 			if (*blockstart == "{" &&
 					((blockend = getClosingBraket(tokens, blockstart)) != tokens.end())) {
@@ -206,10 +196,6 @@ void	readFile2Buffer (std::string filename){
 			}
 		}
 	}
-	//HOW TO CLEAN A STRINGSTREAM
-	//reset buffstream
-	// bufferstream.clear();
-	// bufferstream.str(buffer);
 
 			
 }
