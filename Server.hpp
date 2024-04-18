@@ -20,15 +20,23 @@
 #include <climits>
 #include <list>
 #include <string>
+#include <dirent.h>
+#include <sstream>
 #include "Request.hpp"
 
 #define PORT 9999
 #define QUEUE 10
+#define BUF_SIZE 761
+#define DATABASE_DIR "database"
+#define UPLOADS_DIR "database/uploads"
+#define HTML_HOME "/home.html"
 #define HTML_FILE "web.html"
-#define BUF_SIZE 58761
-# define MAX_REQ_SIZE 8192
+#define HTML_FILE_MANAGER "file_manager.html"
 
-void handleListFiles(int clientSocket);
+void 								handleListFiles(int clientSocket);
+std::vector<std::string> 	listFiles(const std::string& directoryPath);
+std::string 					getMimeType(const std::string& filename);
+std::string 							finishPath(std::string object);
 
 class Server
 {
@@ -53,11 +61,6 @@ class Server
 		void    disconnectClient(int i);
 
 		void 	handleRequest(int i);
-		int    detectRequestType(int client);
-		int 	handleDelete(int fd);
-		int 	handleUnknown(int fd);
-		int 	handleGet(int fd);
-		int 	handlePost(int fd);
 
 		std::string extractCGIScriptPath(const std::string& request);
 		bool isCGIRequest(int fd);

@@ -1,1 +1,1 @@
-HelloThis is a file to be uploadedhope it works
+POST / HTTP/1.1Host: 127.0.0.1:9999User-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:125.0) Gecko/20100101 Firefox/125.0Accept: */*Accept-Language: en-US,en;q=0.5Accept-Encoding: gzip, deflate, brReferer: http://127.0.0.1:9999/file_manager.htmlContent-Type: multipart/form-data; boundary=---------------------------6694820972563588794877394947Content-Length: 46417Origin: http://127.0.0.1:9999Connection: keep-aliveSec-Fetch-Dest: emptySec-Fetch-Mode: corsSec-Fetch-Site: same-origin

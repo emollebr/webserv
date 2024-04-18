@@ -6,25 +6,53 @@
     <title>File Manager</title>
     <link rel="stylesheet" type="text/css" href="file_manager_style.css">
 </head>
-<title>File Manager</title>
-<script src="file_manager.js" defer></script>
-</head>
 <body>
-<h1>Alliance Doxxing</h1>
-<form id="uploadForm" action="/" method="post" enctype="form-data">
-		<label for="file">File:</label>
-		<input type="file" id="file" name="file" required>
-		<br>
-    <button type="submit">Upload</button>
-</form>
+    <h1>Alliance Doxxing</h1>
+    <form id="uploadForm" action="/" method="post" enctype="multipart/form-data">
+        <label for="file">File:</label>
+        <input type="file" id="file" name="file" required>
+        <br>
+        <button type="submit">Upload</button>
+    </form>
 
-<h3>Uploaded Files</h3>
-<div id="fileList">
-    <!-- Files will be listed here -->
-</div>
+    <h3>Uploaded Files</h3>
+    <div id="fileList">
+        <!-- Files will be listed here -->
+    </div>
+
+    <div class="header-container">
+        <img src="sylvana.png" alt="Header Image">
+    </div>
+
+    <script src="file_manager.js" defer></script>
+    <script>
+
+        // Add event listener for delete buttons to display confirmation popup
+        document.addEventListener('click', function (event) {
+            if (event.target.classList.contains('deleteButton')) {
+                var filename = event.target.getAttribute('data-filename');
+                var confirmation = confirm("Are you sure you want to delete '" + filename + "'?");
+                if (confirmation) {
+                    // Send DELETE request to server with filename
+                    fetch(`uploads/${filename}`, {
+                        method: 'DELETE'
+                    })
+                    .then(response => {
+                        if (response.ok) {
+                            alert('File deleted successfully!');
+                            // Refresh file list after successful delete
+                            window.location.reload();
+                        } else {
+                            alert('Failed to delete file!');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('An error occurred while deleting file.');
+                    });
+                }
+            }
+        });
+    </script>
 </body>
-</html>
-
-<div class="header-container">
-    <img src="sylvana.png" alt="Header Image">
 </html>

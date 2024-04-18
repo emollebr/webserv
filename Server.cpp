@@ -33,7 +33,6 @@ void  Server::initSocket( void )
 int  Server::checkConnections()
 {
   //poll allows to monitor multiple fd's for events
-  std::cout << "checkConnections: waiting for new event" << std::endl;
   int newEvents = poll(&_sockets[0], _sockets.size(), -1);
   if (newEvents  < 0) {
       std::perror("poll");
@@ -166,6 +165,32 @@ void    Server::disconnectClient(int i) {
     std::cout << "Client disconnected" << std::endl;
     close(_sockets[i].fd);
     _sockets.erase(_sockets.begin() + i);
+}
+
+void Server::handleRequest(int i) {
+    int fd = _sockets[i].fd;
+    ssize_t	bytesRead;
+    char	buffer[BUF_SIZE] = {0};
+    bytesRead = recv(fd, &buffer, BUF_SIZE, O_NONBLOCK);
+    if (bytesRead <= 0)
+		return disconnectClient(i); //error
+	fflush( stdout );
+
+    if (_request.count(fd) == 0) {
+        std::cout << "No pending request for client " << fd << std::endl;
+        _request.insert(std::make_pair(fd, new Request(buffer, fd, bytesRead)));
+        std::cout << *_request[fd] << std::endl;
+    }
+    else if (_request[fd]->getMethod() == "POST") {
+        _request[fd]->_pendingPostRequest(buffer, bytesRead);
+    }
+    if (_request[fd]->detectRequestType() == 0) {
+        delete _request[fd];
+        _request.erase(fd);
+        close(fd);
+        _sockets.erase(_sockets.begin() + i);
+    }
+    return;
 }
 
 Server::Server()
