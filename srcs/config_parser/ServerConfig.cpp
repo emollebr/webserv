@@ -6,7 +6,7 @@
 /*   By: jschott <jschott@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/12 15:33:23 by jschott           #+#    #+#             */
-/*   Updated: 2024/04/18 10:55:58 by jschott          ###   ########.fr       */
+/*   Updated: 2024/04/18 15:06:55 by jschott          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -74,7 +74,7 @@ ServerConfig::ServerConfig(std::deque<std::string> tokens, tokeniterator begin, 
 		}
 
 		else
-			std::cerr << COLOR_ERROR  << "Error: Cannot parse config." << std::endl << COLOR_STANDARD;
+			throw InvalidDirectiveException (); // unknown directive
 		
 	}
 	std::cout << *this << std::endl;
@@ -160,16 +160,23 @@ std::string	const ServerConfig::getErrorPath() const{
 void	ServerConfig::parseServerDirective(tokeniterator begin, 
 											tokeniterator end){
 	if (_directives_set.find(*begin) == _directives_set.end())
-		return ; //THROW EXCEPTION
+		throw InvalidDirectiveException(); // no parameters
 	if ((*_directives_set.find(*begin)).second)
-		return ; //THROW EXPECTION
+		throw InvalidDirectiveException(); // no known directive found
 	std::map<std::string, void (ServerConfig::*)
 		(tokeniterator, tokeniterator)>
 		::iterator function = _directives_validation_funcs.find(*begin);
 	if (function != _directives_validation_funcs.end()) {
-		(this->*(function->second))(begin + 1, end);
-		(*_directives_set.find(*begin)).second = true;
+		try {
+			(this->*(function->second))(begin + 1, end);
+			(*_directives_set.find(*begin)).second = true;
+		}
+		catch (const InvalidDirectiveException& e){
+			std::cerr << e.what() << std::endl;			
+		}
 	}
+	else
+		throw InvalidDirectiveException(); // no validation function found
 }
 
 
