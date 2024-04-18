@@ -14,6 +14,7 @@
 #include <cstdio>
 #include <unistd.h> // For dup2, execl, close
 #include <sys/wait.h>
+#include <sys/stat.h>
 #include <fstream>      // For std::ifstream
 #include <sstream> 
 #include <climits>
