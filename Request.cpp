@@ -1,22 +1,14 @@
 #include "Request.hpp"
 #include "Server.hpp"
 
-static std::string  parseBoundary(std::string contentType) {
-
-    std::string boundary;
-    size_t boundaryPos = contentType.find("boundary=");
-    if (boundaryPos != std::string::npos) {
-        size_t endPos = contentType.find_last_not_of(" \t\r\n") + 1;
-        size_t startPos = boundaryPos + 9;
-
-        boundary = "--" + (contentType.substr(startPos, endPos - startPos)) + "--"; // 9 is the length of "boundary="
-        std::cout << "Boundary: \n" << boundary << std::endl;
-        return boundary;
-    }
-    else {
-        std::runtime_error("No boundary found in request header\n");
-        return "";
-    }
+ssize_t &Request::_getFormBodyLength(ssize_t &bodyLength)
+{
+    ssize_t contentLength = std::atol(_headers["Content-Length"].c_str());
+    bodyLength = contentLength - (((_boundary.size() + 2) * 2) + 2);
+    bodyLength = bodyLength - (52 + _form.name.size() + _form.fileName.size()); // 52 characters in the content-disposition header
+    bodyLength = bodyLength - (14 + _form.contentType.size()); // 14 characters for content-type
+    bodyLength = bodyLength - 12; // trailing /n & /r
+    return (bodyLength);
 }
 
 Request::Request(char *buffer, int client, int bytesRead) : _client(client) {
@@ -25,13 +17,13 @@ Request::Request(char *buffer, int client, int bytesRead) : _client(client) {
     std::string line;
     int bytesProcessed = 0;
 
+    std::cout << buffer << std::endl;
     //parse
     iss >> _method >> _object >> _protocol;
     bytesProcessed += _method.size() + _object.size() + _protocol.size() + 3;
     std::getline(iss, line);
     // Parse headers
-    while (std::getline(iss, line) && line != "\r") {
-        std::cout << "line: " << line << std::endl;
+    while (std::getline(iss, line)  && line != "\r") {
         bytesProcessed += line.size() + 1;
         size_t pos = line.find(": ");
         if (pos != std::string::npos) {
@@ -42,14 +34,13 @@ Request::Request(char *buffer, int client, int bytesRead) : _client(client) {
     }
   
     if (_method == "POST") {
-        _boundary = parseBoundary(_headers["Content-Type"]);
+         _boundary = _headers["Content-Type"];
+        _boundary.erase(0, 30); // 30 characters to boundary
         //get content headers
-        while (std::getline(iss, line) && line == "\r") {
-            bytesProcessed += 1;
+        while (std::getline(iss, line)  && line == "\r") {
             continue;
         }
         while (std::getline(iss, line) && line != "\r") {
-            std::cout << "line: " << line << std::endl;
             size_t pos = line.find(": ");
             if (pos != std::string::npos) {
                 std::string key = line.substr(0, pos);
@@ -64,59 +55,35 @@ Request::Request(char *buffer, int client, int bytesRead) : _client(client) {
         //    return "405 Bad Request";
         std::istringstream ss(it->second);
         ss >> _contentLength;
-    
-        // Get the position where the body starts
-        std::streampos bodyStartPos = iss.tellg();
 
-        // Seek to the start of the body in the buffer
-        iss.seekg(bodyStartPos);
+        char *bodyStart = std::strstr(buffer, "\r\n\r\n");
+    if (bodyStart != NULL) {
+        // Skip an additional 3 occurrences of "\r\n"
+        for (int i = 0; i < 5; ++i) {
+            bodyStart = std::strstr(bodyStart + 2, "\r\n");
+            if (bodyStart == NULL) {
+                break; // Stop if we reach the end of the buffer
+            }
+        }
 
-        // Create a new std::istringstream for reading the body
-        std::istringstream bodyStream(std::string(buffer + bodyStartPos));
-
-        // Read the remaining content of the buffer and append it to the body
-        _body.append(bodyStream.str());
+        if (bodyStart != NULL) {
+            bodyStart += 2; // Move past the last "\r\n"
+            size_t bodySize = bytesRead - (bodyStart - buffer); // Calculate the size of the binary data
+            _body.append(bodyStart, bodySize); // Append the binary data
+        }
+    }
         
-        _bytesCounter = bytesRead - bytesProcessed - 3; //3 is for the /r/n/r
+        _bytesCounter = bytesRead - bytesProcessed;
         _isFullRequest = (_bytesCounter < _contentLength) ? false : true;
     }
 
-    std::cout << "Created new request\nbytes read= " <<  _bytesCounter << std::endl;
     return ;
-
 }
 
-void    Request::pendingPostRequest(char* buffer, int bytesRead) {
-        _body.append(std::string(buffer, bytesRead));
-        _bytesCounter += bytesRead;
-        _isFullRequest = (_bytesCounter < _contentLength) ? false : true;
-        std::cout << "bytes read: " << _bytesCounter << "/" << _contentLength << std::endl;
-}
-
-const char* Request::handleUpload() {
-    const char* filepath = createFilePath();
-    const char* response = "HTTP/1.1 500 Internal Server Error\r\nContent-Type: text/plain\r\nContent-Length: 18\r\n\r\nError saving file";
-    std:: cout << "handleUpload(): Filename: " << filepath << std::endl;
-    // Write file data to disk
-    int	fd;
-	if ( (fd = open(filepath, O_RDWR|O_CREAT, S_IRWXU|S_IRWXO|S_IRWXG)) == -1 )
-		std::cout << "Error: could not open file \"" << filepath << "\" with exeution rights " << std::endl;
-
-    std::ofstream file(filepath, std::ios::out | std::ios::trunc | std::ios::binary);
-    if ( !file.is_open() ) {
-		std::cout << "Error: open file \"" << filepath << "\" failed" << std::endl;
-		return NULL;
-	}
-    if (!file.write(reinterpret_cast<const char*>(_body.c_str()), _body.size() - _boundary.size() - 3)) {
-		file.close();
-		return NULL;
-	}
-    close(fd);
-    file.close();
-
-    // Send HTTP response indicating success
-   response = "HTTP/1.1 201 Created\r\nContent-Type: text/plain\r\nContent-Length: 18\r\n\r\nUpload successful";
-    return response;
+void    Request::_pendingPostRequest(char* buffer, int bytesRead) {
+    _body.append(std::string(buffer, bytesRead));
+    _bytesCounter += bytesRead;
+    _isFullRequest = (_bytesCounter < _contentLength) ? false : true;
 }
 
 static bool fileExists(std::string filename) {
@@ -140,6 +107,7 @@ std::string generateNewFilename(const std::string& originalFilename) {
     // Keep incrementing counter and appending it to the filename until a unique filename is found
     while (fileExists(newFilename.c_str() + oss.str() + extension)) {
         counter++;
+        oss.str("");
         oss << "(" << counter << ")";
     }
 
@@ -148,7 +116,7 @@ std::string generateNewFilename(const std::string& originalFilename) {
 }
 
 
-const char* Request::createFilePath() {
+const char* Request::_createFilePath() {
 
     std::string content = _headers["Content-Disposition"];
     size_t filename_start = content.find("filename=");

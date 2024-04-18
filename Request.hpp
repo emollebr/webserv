@@ -26,6 +26,34 @@ private:
     long long int                   _bytesCounter;
     long long int                  _contentLength;
 
+        class formObject
+    {
+        public:
+                formObject() {bodyLength = 0;};
+                ~formObject() {};
+                std::string name;
+                std::string fileName;
+                std::string contentType;
+                std::string body;
+                ssize_t bodyLength;
+    };
+    
+    formObject _form;
+
+    int 	handlePost( void );
+    int 	handleGet( void );
+    int     handleUnknown( void );
+    int 	handleDelete( void );
+
+    bool    isFullRequest() const {
+        return _isFullRequest;
+    };
+
+    ssize_t&        _getFormBodyLength(ssize_t &bodyLength);
+    const char*                         _handleUpload( void );
+    const char*                             _createFilePath();
+    std::string  _parseBoundary(std::string contentType);
+
 public:
 
     Request(char *buffer, int client, int bytesRead);
@@ -33,14 +61,8 @@ public:
         std::cout << "Request deleted" << std::endl;
     };
 
-    const char*                         handleUpload( void );
-    void     pendingPostRequest(char* buffer, int bytesRead);
-    const char*                             createFilePath();
-
-
-    bool    isFullRequest() const {
-       return _isFullRequest;
-    };
+    int                                 detectRequestType();
+    void     _pendingPostRequest(char* buffer, int bytesRead);
 
     const std::map<std::string, std::string>& getHeaders() const {
         return _headers;

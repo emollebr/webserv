@@ -2,7 +2,7 @@ NAME := webserv
 C := c++
 CFLAGS := -g -Wall -Wextra -Werror -std=c++98 
 INC:= -I.
-SRCS:= main.cpp Server.cpp Request.cpp RequestHandling.cpp
+SRCS:= main.cpp Server.cpp Request.cpp RequestHandling.cpp utils.cpp
 OBJS := $(SRCS:.cpp=.o)
 ##########################################################################
 

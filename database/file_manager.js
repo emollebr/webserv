@@ -11,6 +11,7 @@ document.addEventListener('DOMContentLoaded', function () {
         .then(response => {
             if (response.ok) {
                 alert('File uploaded successfully!');
+                document.getElementById('uploadForm').reset();
                 // Refresh file list after successful upload
                 refreshFileList();
             } else {
@@ -42,6 +43,7 @@ function refreshFileList() {
                     <span>${trimmedFile}</span>
                     <button class="deleteButton" data-filename="${trimmedFile}">Delete</button>
                     <button class="downloadButton" data-filename="${trimmedFile}">Download</button>
+                    <button class="viewButton" data-filename="${trimmedFile}">View</button> <!-- Add View button -->
                 `;
                 fileList.appendChild(listItem);
             }
@@ -107,6 +109,9 @@ function refreshFileList() {
                 console.error('Error:', error);
                 alert('An error occurred while downloading file.');
             });
+        } else if (event.target.classList.contains('viewButton')) { // View button click handler
+            var filename = event.target.getAttribute('data-filename');
+            window.open(`uploads/${filename}`, '_blank'); // Open file in new tab
         }
     });
 });
