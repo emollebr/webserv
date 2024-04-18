@@ -107,7 +107,7 @@ int 	Server::handleGet(int fd) {
     if (object.find("database") == std::string::npos)
         object = "database" + object;
 
-    std::ifstream file(object.c_str());
+    std::ifstream file(object.c_str(), std::ios::binary);
     std::cout << "In GET handling: serving: " << object << std::endl;
     if (!file) {
         // Error opening index.html file
@@ -116,14 +116,35 @@ int 	Server::handleGet(int fd) {
         send(fd, response.c_str(), response.size(), 0);
         return 0;
     }
-    //read contents
-    std::stringstream buffer;
-    buffer << file.rdbuf();
-    std::string content = buffer.str();
+    // Get the size of the file
+    file.seekg(0, std::ios::end); // Move file pointer to the end
+    off_t fileSize = file.tellg();
+    file.seekg(0, std::ios::beg); // Reset file pointer to the beginning
+    std::cout << "filesize to send: " << fileSize << std::endl;
+    
+    // Send HTTP response headers
+    std::ostringstream responseHeader;
+    responseHeader << "HTTP/1.1 200 OK\nContent-Type: " << getMimeType(object) << "\nContent-Length: " << fileSize << "\n\n";
+    send(fd, responseHeader.str().c_str(), responseHeader.str().size(), 0);
 
-    // Send HTTP response with content
-    std::string response = "HTTP/1.1 200 OK\nContent-Type: " + getMimeType(object) + "\n\n" + content;
-    send(fd, response.c_str(), response.size(), 0);
+    // Read file in chunks and send each chunk if file size exceeds buffer size
+    char buffer[BUF_SIZE];
+    while (fileSize > 0) {
+        size_t bytesRead = file.read(buffer, (fileSize > BUF_SIZE) ? BUF_SIZE : fileSize).gcount();
+        if (bytesRead > 0) {
+            std::cout << "buffer from file to send: " << buffer << std::endl;
+            ssize_t bytesSent = send(fd, buffer, bytesRead, 0);
+            if (bytesSent != static_cast<ssize_t>(bytesRead)) {
+                std::cerr << "Failed to send file chunk" << std::endl;
+                break;
+            }
+            fileSize -= bytesRead;
+        } else {
+            std::cerr << "Failed to read from file" << std::endl;
+            break;
+        }
+    }
+
     return 0;
 }
 
@@ -161,21 +182,16 @@ std::vector<std::string> listFiles(const std::string& directoryPath) {
 }
 
 void handleListFiles(int clientSocket) {
-    // Get the list of files in the database/uploads directory
     std::vector<std::string> files = listFiles("database/uploads");
 
-    // Prepare the response
     std::ostringstream response;
     response << "HTTP/1.1 200 OK\r\n"
              << "Content-Type: text/plain\r\n"
              << "Connection: close\r\n\r\n";
 
-    // Append the list of files to the response
     for (std::vector<std::string>::const_iterator it = files.begin(); it != files.end(); ++it) {
         response << *it << std::endl;
     }
-    std::cout << "Get File List: response: " << response.str() << std::endl;
 
-    // Send the response to the client
     send(clientSocket, response.str().c_str(), response.str().size(), 0);
 }

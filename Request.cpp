@@ -65,10 +65,18 @@ Request::Request(char *buffer, int client, int bytesRead) : _client(client) {
         std::istringstream ss(it->second);
         ss >> _contentLength;
     
-        //get body
-        while (iss >> line) {
-            _body += line;
-        }
+        // Get the position where the body starts
+        std::streampos bodyStartPos = iss.tellg();
+
+        // Seek to the start of the body in the buffer
+        iss.seekg(bodyStartPos);
+
+        // Create a new std::istringstream for reading the body
+        std::istringstream bodyStream(std::string(buffer + bodyStartPos));
+
+        // Read the remaining content of the buffer and append it to the body
+        _body.append(bodyStream.str());
+        
         _bytesCounter = bytesRead - bytesProcessed - 3; //3 is for the /r/n/r
         _isFullRequest = (_bytesCounter < _contentLength) ? false : true;
     }
@@ -79,7 +87,6 @@ Request::Request(char *buffer, int client, int bytesRead) : _client(client) {
 }
 
 void    Request::pendingPostRequest(char* buffer, int bytesRead) {
-        std::istringstream iss(buffer);
         _body.append(std::string(buffer, bytesRead));
         _bytesCounter += bytesRead;
         _isFullRequest = (_bytesCounter < _contentLength) ? false : true;
@@ -100,7 +107,7 @@ const char* Request::handleUpload() {
 		std::cout << "Error: open file \"" << filepath << "\" failed" << std::endl;
 		return NULL;
 	}
-    if (!file.write(reinterpret_cast<const char*>(_body.c_str()), _body.size() - _boundary.size())) {
+    if (!file.write(reinterpret_cast<const char*>(_body.c_str()), _body.size() - _boundary.size() - 3)) {
 		file.close();
 		return NULL;
 	}
@@ -108,7 +115,7 @@ const char* Request::handleUpload() {
     file.close();
 
     // Send HTTP response indicating success
-   response = "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 18\r\n\r\nUpload successful";
+   response = "HTTP/1.1 201 Created\r\nContent-Type: text/plain\r\nContent-Length: 18\r\n\r\nUpload successful";
     return response;
 }
 
