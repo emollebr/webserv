@@ -6,7 +6,7 @@
 /*   By: jschott <jschott@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/04 16:51:38 by jschott           #+#    #+#             */
-/*   Updated: 2024/04/18 10:55:24 by jschott          ###   ########.fr       */
+/*   Updated: 2024/04/18 15:06:48 by jschott          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -75,6 +75,30 @@ public:
 	void	validateHost(tokeniterator begin, tokeniterator end);
 	void	validateServerName(tokeniterator begin, tokeniterator end);
 	void	validateErrorPath(tokeniterator begin, tokeniterator end);
+
+	class InvalidConfigException : public std::exception{
+		public:
+			virtual const char* what() const throw(){
+				return ("Error: Invalid data");
+			};
+	};
+
+	class InvalidDirectiveException : public std::exception{
+			// std::string message;
+		public:
+			// InvalidDirectiveException(const std::string &msg) : message(msg){}
+			virtual const char* what() const throw(){
+				return ("Error: Invalid directive: ");
+				// return message.c_str();
+			}
+	};
+	
+	class InvalidDataException : public std::exception{
+		public:
+			virtual const char* what() const throw(){
+				return ("Error: Invalid data");
+			};
+	};
 };
 
 const ServerConfig*	parseServer(std::deque<std::string> tokens, tokeniterator begin, tokeniterator end);
