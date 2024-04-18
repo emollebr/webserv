@@ -37,15 +37,16 @@ private:
 	bool						_autoindex;
 	
 
-	std::map<std::string, bool>	_directives_index;
-	std::map<std::string, void (LocationConfig::*)(std::deque<std::string>::iterator begin, std::deque<std::string>::iterator end)> _validation_index;
+	std::map<std::string, bool>	_directives_set;
+	std::map<std::string, void (LocationConfig::*)(tokeniterator begin, tokeniterator end)> 
+								_directives_validation_funcs;
 
 	void						init();
 
 public:
 	LocationConfig();
 	LocationConfig(std::string root);
-	LocationConfig(std::deque<std::string>::iterator begin, std::deque<std::string>::iterator end);
+	LocationConfig(tokeniterator begin, tokeniterator end);
 	LocationConfig(LocationConfig const & origin);
 	LocationConfig & operator=(LocationConfig const & origin);
 	~LocationConfig();
@@ -63,19 +64,19 @@ public:
 	bool						getAllowPOST() const;
 	bool						getAutoindex() const;
 
-	void						parseLocationDirective(std::deque<std::string>::iterator begin, std::deque<std::string>::iterator end);
-	void						validateRoot(std::deque<std::string>::iterator begin, std::deque<std::string>::iterator end);
-	void						validateIndeces(std::deque<std::string>::iterator begin, std::deque<std::string>::iterator end);
-	void						validateMethods(std::deque<std::string>::iterator begin, std::deque<std::string>::iterator end);
-	void						validateRedirect(std::deque<std::string>::iterator begin, std::deque<std::string>::iterator end);
-	void						validateCGI(std::deque<std::string>::iterator begin, std::deque<std::string>::iterator end);
-	void						validateBodySize(std::deque<std::string>::iterator begin, std::deque<std::string>::iterator end);
-	void						validateDefaultFile(std::deque<std::string>::iterator begin, std::deque<std::string>::iterator end);
-	void						validateUploadLocation(std::deque<std::string>::iterator begin, std::deque<std::string>::iterator end);
-	void						validateCGIExtension(std::deque<std::string>::iterator begin, std::deque<std::string>::iterator end);
-	void						validateAllowGET(std::deque<std::string>::iterator begin, std::deque<std::string>::iterator end);
-	void						validateAllowPOST(std::deque<std::string>::iterator begin, std::deque<std::string>::iterator end);
-	void						validateAutoindex(std::deque<std::string>::iterator begin, std::deque<std::string>::iterator end);
+	void						parseLocationDirective(tokeniterator begin, tokeniterator end);
+	void						validateRoot(tokeniterator begin, tokeniterator end);
+	void						validateIndeces(tokeniterator begin, tokeniterator end);
+	void						validateMethods(tokeniterator begin, tokeniterator end);
+	void						validateRedirect(tokeniterator begin, tokeniterator end);
+	void						validateCGI(tokeniterator begin, tokeniterator end);
+	void						validateBodySize(tokeniterator begin, tokeniterator end);
+	void						validateDefaultFile(tokeniterator begin, tokeniterator end);
+	void						validateUploadLocation(tokeniterator begin, tokeniterator end);
+	void						validateCGIExtension(tokeniterator begin, tokeniterator end);
+	void						validateAllowGET(tokeniterator begin, tokeniterator end);
+	void						validateAllowPOST(tokeniterator begin, tokeniterator end);
+	void						validateAutoindex(tokeniterator begin, tokeniterator end);
 
 	bool						hasIndex(std::string index);
 	bool						hasMethod(std::string method);

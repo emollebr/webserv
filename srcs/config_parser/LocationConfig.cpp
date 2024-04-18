@@ -18,15 +18,15 @@ void LocationConfig::init(){
 									"default_file", "upload_location", 
 									"cgi_extension", "allow_get", "allow_post", 
 									"autoindex"};
-	typedef void (LocationConfig::*LocationConfigFunction)(std::deque<std::string>::iterator begin, std::deque<std::string>::iterator end);
+	typedef void (LocationConfig::*LocationConfigFunction)(tokeniterator begin, tokeniterator end);
 	LocationConfigFunction functions[] = {&LocationConfig::validateRoot, &LocationConfig::validateIndeces, &LocationConfig::validateMethods, 
 											&LocationConfig::validateRedirect, &LocationConfig::validateCGI, &LocationConfig::validateBodySize, 
 											&LocationConfig::validateDefaultFile, &LocationConfig::validateUploadLocation, &LocationConfig::validateCGIExtension, 
 											&LocationConfig::validateAllowGET, &LocationConfig::validateAllowPOST, &LocationConfig::validateAutoindex};
 	int size = sizeof(directives) / sizeof(directives[0]);
 	for (int i = 0; i < size; i++){
-		_directives_index[directives[i]] = false;
-		_validation_index[directives[i]] = functions[i];
+		_directives_set[directives[i]] = false;
+		_directives_validation_funcs[directives[i]] = functions[i];
 	}
 }
 
@@ -129,18 +129,18 @@ bool LocationConfig::getAutoindex() const {
 	return _autoindex;
 }
 
-void LocationConfig::parseLocationDirective(std::deque<std::string>::iterator begin, std::deque<std::string>::iterator end) {
+void LocationConfig::parseLocationDirective(tokeniterator begin, tokeniterator end) {
 	init();
-	if (_directives_index.find(*begin) == _directives_index.end()) {
+	if (_directives_set.find(*begin) == _directives_set.end()) {
 		return ; //THROW EXCEPTION
 	}
-	std::map<std::string, void (LocationConfig::*)(std::deque<std::string>::iterator, std::deque<std::string>::iterator)>::iterator function = _validation_index.find(*begin);
-	if (function != _validation_index.end()) {
+	std::map<std::string, void (LocationConfig::*)(tokeniterator, tokeniterator)>::iterator function = _directives_validation_funcs.find(*begin);
+	if (function != _directives_validation_funcs.end()) {
 		(this->*(function->second))(begin + 1, end);
 	}
 }
 
-void LocationConfig::validateRoot(std::deque<std::string>::iterator begin, std::deque<std::string>::iterator end){
+void LocationConfig::validateRoot(tokeniterator begin, tokeniterator end){
 	if (begin == end)	
 		_root = (*begin);
 	// 	std::cout << "ubbi" << std::endl;
@@ -148,14 +148,14 @@ void LocationConfig::validateRoot(std::deque<std::string>::iterator begin, std::
 	// }
 }
 
-void LocationConfig::validateIndeces(std::deque<std::string>::iterator begin, std::deque<std::string>::iterator end){
+void LocationConfig::validateIndeces(tokeniterator begin, tokeniterator end){
 	// if (begin == end)
 	// 	return ;
 	while (begin <= end)
 		_indeces.push_back(*begin++);
 }
 
-void LocationConfig::validateMethods(std::deque<std::string>::iterator begin, std::deque<std::string>::iterator end){
+void LocationConfig::validateMethods(tokeniterator begin, tokeniterator end){
 	// if (begin == end)
 	// 	return ;
 	while (begin < end)
@@ -163,54 +163,54 @@ void LocationConfig::validateMethods(std::deque<std::string>::iterator begin, st
 	
 }
 
-void LocationConfig::validateRedirect(std::deque<std::string>::iterator begin, std::deque<std::string>::iterator end){
+void LocationConfig::validateRedirect(tokeniterator begin, tokeniterator end){
 	if (begin == end)
 		_redirect = *begin;
 }
 
-void LocationConfig::validateCGI(std::deque<std::string>::iterator begin, std::deque<std::string>::iterator end){
+void LocationConfig::validateCGI(tokeniterator begin, tokeniterator end){
 	if (begin == end)
 		_CGI = *begin;
 }
 
-void LocationConfig::validateBodySize(std::deque<std::string>::iterator begin, std::deque<std::string>::iterator end){
+void LocationConfig::validateBodySize(tokeniterator begin, tokeniterator end){
 	if (begin == end)
 		_max_body_size = atoi((*begin).c_str());
 }
 
-void LocationConfig::validateDefaultFile(std::deque<std::string>::iterator begin, std::deque<std::string>::iterator end){
+void LocationConfig::validateDefaultFile(tokeniterator begin, tokeniterator end){
 	if (begin == end)
 		_default_file = *begin;
 }
 
-void LocationConfig::validateUploadLocation(std::deque<std::string>::iterator begin, std::deque<std::string>::iterator end){
+void LocationConfig::validateUploadLocation(tokeniterator begin, tokeniterator end){
 	if (begin == end)
 		_upload_location = *begin;
 }
 
-void LocationConfig::validateCGIExtension(std::deque<std::string>::iterator begin, std::deque<std::string>::iterator end){
+void LocationConfig::validateCGIExtension(tokeniterator begin, tokeniterator end){
 	if (begin == end)
 		_cgi_extension = *begin;
 }
 
-void LocationConfig::validateAllowGET(std::deque<std::string>::iterator begin, std::deque<std::string>::iterator end){
+void LocationConfig::validateAllowGET(tokeniterator begin, tokeniterator end){
 	if (begin == end)
 		return ;
 }
 
-void LocationConfig::validateAllowPOST(std::deque<std::string>::iterator begin, std::deque<std::string>::iterator end){
+void LocationConfig::validateAllowPOST(tokeniterator begin, tokeniterator end){
 	if (begin == end)
 		return ;
 }
 
-void LocationConfig::validateAutoindex(std::deque<std::string>::iterator begin, std::deque<std::string>::iterator end){
+void LocationConfig::validateAutoindex(tokeniterator begin, tokeniterator end){
 	if (begin == end)
 		return ;
 }
 
-LocationConfig::LocationConfig(std::deque<std::string>::iterator begin, std::deque<std::string>::iterator end){
+LocationConfig::LocationConfig(tokeniterator begin, tokeniterator end){
 	// std::cout << TEXT_BOLD << "	Parsing Location from " << *begin << " to " << *end << std::endl;
-	std::deque<std::string>::iterator directiveend = std::find(begin, end, ";") ;
+	tokeniterator directiveend = std::find(begin, end, ";") ;
 	//IF FOUND ; CREATE TUPLE
 	while (begin < end){
 		directiveend = std::find(begin, end, ";") ;

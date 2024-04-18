@@ -6,7 +6,7 @@
 /*   By: jschott <jschott@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/12 15:33:23 by jschott           #+#    #+#             */
-/*   Updated: 2024/04/17 17:57:54 by jschott          ###   ########.fr       */
+/*   Updated: 2024/04/18 10:55:58 by jschott          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,13 +17,13 @@
 void ServerConfig::init(){
 	std::string	directives[] = {"listen", "location", "host",
 									"server_name", "error_path"};
-	typedef void (ServerConfig::*ServerConfigFunction)(std::deque<std::string>::iterator begin, std::deque<std::string>::iterator end);							
+	typedef void (ServerConfig::*ServerConfigFunction)(tokeniterator begin, tokeniterator end);							
 	ServerConfigFunction functions[] = {&ServerConfig::validatePort, &ServerConfig::validateLocation, &ServerConfig::validateHost, 
 										&ServerConfig::validateServerName, &ServerConfig::validateErrorPath};
 	int size = sizeof(directives) / sizeof(directives[0]);
 	for (int i = 0; i < size; i++){
-		_directives_index[directives[i]] = false;
-		_validation_index[directives[i]] = functions[i];
+		_directives_set[directives[i]] = false;
+		_directives_validation_funcs[directives[i]] = functions[i];
 	}
 }
 
@@ -47,9 +47,9 @@ ServerConfig::ServerConfig(std::vector<std::string> names, std::vector<size_t> l
 	_locations = location;
 }
 
-ServerConfig::ServerConfig(std::deque<std::string> tokens, std::deque<std::string>::iterator begin, std::deque<std::string>::iterator end){
+ServerConfig::ServerConfig(std::deque<std::string> tokens, tokeniterator begin, tokeniterator end){
 	init();
-	std::deque<std::string>::iterator statementend;
+	tokeniterator statementend;
 
 	while (begin < end) {
 		if (*begin == "location"){
@@ -103,16 +103,16 @@ void ServerConfig::addLocation(std::string location, LocationConfig config) {
 }
 
 void ServerConfig::setErrorPath(std::string error_path) {
-	if ((_directives_index.find("error_path") != _directives_index.end() )
-			&& (*_directives_index.find("error_path")).second)
+	if ((_directives_set.find("error_path") != _directives_set.end() )
+			&& (*_directives_set.find("error_path")).second)
 		_error_path = error_path;
 	// else
 		// throw exception
 }
 
 void ServerConfig::setServerName(std::vector<std::string> server_names) {
-	if ((_directives_index.find("server_name") != _directives_index.end() )
-			&& (*_directives_index.find("server_name")).second)
+	if ((_directives_set.find("server_name") != _directives_set.end() )
+			&& (*_directives_set.find("server_name")).second)
 	_server_names = server_names;
 	// else
 		// throw exception
@@ -131,7 +131,6 @@ std::string ServerConfig::getHost() const{
 	return _host;
 }
 
-
 std::map<std::string, LocationConfig> const ServerConfig::getLocations() const{
 	if (_ports.empty())
 		return std::map<std::string, LocationConfig>();
@@ -140,74 +139,99 @@ std::map<std::string, LocationConfig> const ServerConfig::getLocations() const{
 	return (locations);
 }
 
-LocationConfig const ServerConfig::getLocation(std::string directory) {
+LocationConfig const ServerConfig::getLocation(std::string directory) const {
 	if	(_locations.find(directory) != _locations.end())
 		return ((*_locations.find(directory)).second);
 	return ((*_locations.end()).second);
 }
 
-std::vector<std::string> const ServerConfig::getServerName() {
-	return _server_names;	
+std::vector<std::string> const ServerConfig::getServerNames() const{
+	if ((*_directives_set.find("server_name")).second)
+		return _server_names;
+	std::vector<std::string> const test;
+	return test;
+	// throw std::expection;
 }
 
 std::string	const ServerConfig::getErrorPath() const{
 	return _error_path;	
 }
 
-void	ServerConfig::parseServerDirective(std::deque<std::string>::iterator begin, std::deque<std::string>::iterator end){
-	if (_directives_index.find(*begin) == _directives_index.end())
+void	ServerConfig::parseServerDirective(tokeniterator begin, 
+											tokeniterator end){
+	if (_directives_set.find(*begin) == _directives_set.end())
 		return ; //THROW EXCEPTION
-	std::map<std::string, void (ServerConfig::*)(std::deque<std::string>::iterator, std::deque<std::string>::iterator)>::iterator function = _validation_index.find(*begin);
-	if (function != _validation_index.end()) {
+	if ((*_directives_set.find(*begin)).second)
+		return ; //THROW EXPECTION
+	std::map<std::string, void (ServerConfig::*)
+		(tokeniterator, tokeniterator)>
+		::iterator function = _directives_validation_funcs.find(*begin);
+	if (function != _directives_validation_funcs.end()) {
 		(this->*(function->second))(begin + 1, end);
+		(*_directives_set.find(*begin)).second = true;
 	}
 }
 
 
-void	ServerConfig::validatePort(std::deque<std::string>::iterator begin, std::deque<std::string>::iterator end){
+void	ServerConfig::validatePort(tokeniterator begin, tokeniterator end){
 	while (begin <= end)
 		_ports.push_back((size_t) std::atoi((*(begin++)).c_str()));
 	//DO VALIDATION
 }
 
-void	ServerConfig::validateLocation(std::deque<std::string>::iterator begin, std::deque<std::string>::iterator end){
+void	ServerConfig::validateLocation(tokeniterator begin, tokeniterator end){
 	if (begin == end)
 		_locations[*begin] = LocationConfig(begin, end);
 	//DO VALIDATION
 }
 
-void	ServerConfig::validateHost(std::deque<std::string>::iterator begin, std::deque<std::string>::iterator end){
+void	ServerConfig::validateHost(tokeniterator begin, tokeniterator end){
 	if (begin == end)
 		_host = *(begin);
 	//DO VALIDATION
 }
 
-void	ServerConfig::validateServerName(std::deque<std::string>::iterator begin, std::deque<std::string>::iterator end){
+void	ServerConfig::validateServerName(tokeniterator begin, tokeniterator end){
 	//DO VALIDATION
 	while (begin <= end)
 		_server_names.push_back(*begin++);
 }
 
-void	ServerConfig::validateErrorPath(std::deque<std::string>::iterator begin, std::deque<std::string>::iterator end){
+void	ServerConfig::validateErrorPath(tokeniterator begin, tokeniterator end){
 	if (begin == end)
 		_error_path = *(begin);
 }
 
 std::ostream& operator<<(std::ostream& os, const ServerConfig& serverconf) {
-	os << "server {" << std::endl;
+	os << "server	{" << std::endl;
 	
-	os << "	host	" << serverconf.getHost() << std::endl;
+	os << "	host		" << serverconf.getHost() << ";" << std::endl;
 	
-	os << "	ports	" ;
+	os << "	ports		" ;
 	std::vector<size_t> ports = serverconf.getListenPorts();
 	for (std::vector<size_t>::iterator it = ports.begin(); it < ports.end(); it++)
-		os << "			" << *it << std::endl;
+		os << *it << " ";
+	os << ";" << std::endl;
 
-	os << "	error_path	" << serverconf.getErrorPath() << std::endl;
-	std::map<std::string, LocationConfig> locations = serverconf.getLocations();
-	for (std::map<std::string, LocationConfig>::iterator it = locations.begin(); it != locations.end(); it++)
-		os << "	location " << (*it).first << " {" << std::endl 
-			<< ((*it).second) << std::endl;
+	try {
+		os << "	error_path	" << serverconf.getErrorPath() << std::endl;
+	
+		os << "	server_name	";
+		std::vector<std::string> server_names = serverconf.getServerNames();
+		for (std::vector<std::string>::iterator it = server_names.begin(); it < server_names.end(); it++)
+			os << *it << " ";
+		os << ";" << std::endl;
+
+		std::map<std::string, LocationConfig> locations = serverconf.getLocations();
+		for (std::map<std::string, LocationConfig>::iterator it = locations.begin(); it != locations.end(); it++)
+			os << "	location " << (*it).first << " {" << std::endl 
+				<< ((*it).second) << ";" << std::endl;
+	}
+	
+	catch(const std::exception& e)	{
+		// std::cerr << e.what() << '\n';
+	}
+	
 	os << "}" << std::endl << std::endl;
 	return os;
 	

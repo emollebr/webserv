@@ -6,7 +6,7 @@
 /*   By: jschott <jschott@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/15 14:23:34 by jschott           #+#    #+#             */
-/*   Updated: 2024/04/17 17:57:00 by jschott          ###   ########.fr       */
+/*   Updated: 2024/04/18 10:56:53 by jschott          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -35,9 +35,11 @@
 #include "LocationConfig.hpp"
 // #include <tuple>
 
-void								parseDirective(std::deque<std::string>::iterator begin, std::deque<std::string>::iterator end);
-bool 								isBalanced(std::stringstream& ss);
-std::deque<std::string>::iterator	getClosingBraket (std::deque<std::string>& queue, std::deque<std::string>::iterator start);
-void								printTokens(std::deque<std::string> tokens);
-void								populateTokens(std::stringstream &bufferstream, std::deque<std::string>	&tokens);
-void								readFile2Buffer (std::string filename);
+typedef std::deque<std::string>::iterator tokeniterator;
+
+void			parseDirective(tokeniterator begin, tokeniterator end);
+bool 			isBalanced(std::stringstream& ss);
+tokeniterator	getClosingBraket (std::deque<std::string>& queue, tokeniterator start);
+void			printTokens(std::deque<std::string> tokens);
+void			populateTokens(std::stringstream &bufferstream, std::deque<std::string>	&tokens);
+void			readFile2Buffer (std::string filename);
