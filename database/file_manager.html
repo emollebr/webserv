@@ -7,7 +7,11 @@
     <link rel="stylesheet" type="text/css" href="file_manager_style.css">
 </head>
 <body>
-    <h1>Sylvana Smut</h1>
+    <h1>File Manager</h1>
+    
+        <div class="header-container">
+            <img src="uploads/3639.png" alt="Header Image">
+        </div>
     <form id="uploadForm" action="/" method="post" enctype="multipart/form-data">
         <label for="file">File:</label>
         <input type="file" id="file" name="file" required>
@@ -18,10 +22,6 @@
     <h3>Uploaded Files</h3>
     <div id="fileList">
         <!-- Files will be listed here -->
-    </div>
-
-    <div class="header-container">
-        <img src="sylvana.png" alt="Header Image">
     </div>
 
     <script src="file_manager.js" defer></script>

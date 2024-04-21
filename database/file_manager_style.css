@@ -1,20 +1,20 @@
 body {
     background-color: #b8c0d6; /* dusty blue */
-    font-family: "Brush Script MT", sans-serif;
+    font-family: "Courier New", monospace;
 }
 
 h1 {
     color: #0e032b;
     padding: 10px;
     text-align: center;
-    font-family: "Brush Script MT", sans-serif;
+    font-family: "Courier New", monospace;
 }
 
 h3 {
     color: #0e032b;
     padding: 10px;
     text-align: center;
-    font-family: "Brush Script MT", sans-serif;
+    font-family: "Courier New", monospace;
 }
 
 form {
