@@ -26,13 +26,17 @@
 
 #define PORT 9999
 #define QUEUE 10
-#define BUF_SIZE 761
+#define BUF_SIZE 8000
 #define DATABASE_DIR "database"
 #define UPLOADS_DIR "database/uploads"
-#define HTML_HOME "/home.html"
+#define HTML_INDEX "/index.html"
+#define HTML_404 "404.html"
 #define HTML_FILE "web.html"
 #define HTML_FILE_MANAGER "file_manager.html"
 
+extern volatile sig_atomic_t g_signal_received;
+
+void 									signal_handler(int signum);
 void 								handleListFiles(int clientSocket);
 std::vector<std::string> 	listFiles(const std::string& directoryPath);
 std::string 					getMimeType(const std::string& filename);
@@ -59,13 +63,15 @@ class Server
 		int		checkConnections( void );
 		void 	readFromClient(int i);
 		void    disconnectClient(int i);
+		int 	handleRequest(int i);
+		void 			handleSigpipe( void );
+		void	handleSigint( void );
 
-		void 	handleRequest(int i);
 
 		std::string extractCGIScriptPath(const std::string& request);
 		bool isCGIRequest(int fd);
 		void executeCGIScript(const std::string& scriptPath, int clientSocket);
-		void cleanup();
+		void cleanup( void );
 };
 
 std::ostream &			operator<<( std::ostream & o, Server const & i );

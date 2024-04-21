@@ -1,0 +1,4 @@
+has to be done: 
+proper status and error code check:
+    sending 404 page when needed
+    differentiating 0 and -1 from recv()

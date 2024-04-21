@@ -7,7 +7,7 @@
     <link rel="stylesheet" type="text/css" href="file_manager_style.css">
 </head>
 <body>
-    <h1>Alliance Doxxing</h1>
+    <h1>Sylvana Smut</h1>
     <form id="uploadForm" action="/" method="post" enctype="multipart/form-data">
         <label for="file">File:</label>
         <input type="file" id="file" name="file" required>
@@ -31,8 +31,6 @@
         document.addEventListener('click', function (event) {
             if (event.target.classList.contains('deleteButton')) {
                 var filename = event.target.getAttribute('data-filename');
-                var confirmation = confirm("Are you sure you want to delete '" + filename + "'?");
-                if (confirmation) {
                     // Send DELETE request to server with filename
                     fetch(`uploads/${filename}`, {
                         method: 'DELETE'
@@ -50,7 +48,6 @@
                         console.error('Error:', error);
                         alert('An error occurred while deleting file.');
                     });
-                }
             }
         });
     </script>

@@ -1,4 +1,9 @@
 #include "Server.hpp"
+
+void signal_handler(int signum) {
+    g_signal_received = signum;
+}
+
 // Function to get MIME type based on file extension
 std::string getMimeType(const std::string& filename) {
     static std::map<std::string, std::string> mimeMap;
@@ -36,7 +41,7 @@ std::string getMimeType(const std::string& filename) {
 std::string finishPath(std::string object) {
     std::string path = object;
     if (path == "/")
-        path = HTML_HOME;
+        path = HTML_INDEX;
     if (path.find("database") == std::string::npos)
         path = "database" + path;
     return path;

@@ -3,12 +3,12 @@
 
 #include <cstdio>
 #include <sys/socket.h>
-#include <unistd.h> // For dup2, execl, close
+#include <unistd.h>
 #include <iostream>
-#include <fstream>      // For std::ifstream
+#include <fstream> 
 #include <sstream>
-#include <cstring> // for strlen
-#include <unistd.h> // for send
+#include <cstring>
+#include <unistd.h>
 #include <climits>
 #include <map>
 #include <poll.h>
@@ -20,39 +20,30 @@ private:
     std::string                         _protocol;
     std::map<std::string, std::string>   _headers;
     std::string                         _boundary;
-    int                                   _client;
-    bool                              _isFullRequest;
-    std::string                             _body;
-    long long int                   _bytesCounter;
+    std::string                             _body; 
+    bool                           _fullRequest;
+    long long int                   _bytesReceived;
     long long int                  _contentLength;
+    std::string                         _filePath; //for pending response
+    bool                          _pendingResponse;
+    off_t                              _fileSize;
+    ssize_t                             _bytesSent;
 
-        class formObject
-    {
-        public:
-                formObject() {bodyLength = 0;};
-                ~formObject() {};
-                std::string name;
-                std::string fileName;
-                std::string contentType;
-                std::string body;
-                ssize_t bodyLength;
-    };
-    
-    formObject _form;
 
-    int 	handlePost( void );
-    int 	handleGet( void );
-    int     handleUnknown( void );
-    int 	handleDelete( void );
+    int 	_handlePost( void );
+    int 	_handleGet( void );
+    int     _handleUnknown( void );
+    int 	_handleDelete( void );
 
-    bool    isFullRequest() const {
-        return _isFullRequest;
+    bool    _isFullRequest() const {
+        return _fullRequest;
     };
 
-    ssize_t&        _getFormBodyLength(ssize_t &bodyLength);
-    const char*                         _handleUpload( void );
-    const char*                             _createFilePath();
-    std::string  _parseBoundary(std::string contentType);
+    std::string                   _parseBoundary(std::string contentType);
+    const char*                                   _createFileName( void );
+    static bool                         _fileExists(std::string filename);
+    std::string _generateNewFilename(const std::string& originalFilename);
+
 
 public:
 
@@ -61,8 +52,14 @@ public:
         std::cout << "Request deleted" << std::endl;
     };
 
-    int                                 detectRequestType();
-    void     _pendingPostRequest(char* buffer, int bytesRead);
+    int                                   client; //socket fd
+
+    int                           detectRequestType( void );
+    int                                sendResponse( void );
+    void    pendingPostRequest(char* buffer, int bytesRead);
+    bool        hasPendingResponse( void ) {
+        return _pendingResponse;
+    };
 
     const std::map<std::string, std::string>& getHeaders() const {
         return _headers;
@@ -86,10 +83,6 @@ public:
 
     const std::string& getBoundary() const {
         return _boundary;
-    };
-
-    const int& getClient() const {
-        return _client;
     };
 
 };

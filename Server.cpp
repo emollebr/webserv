@@ -1,5 +1,7 @@
 #include "Server.hpp"
 
+volatile sig_atomic_t g_signal_received = 0;
+
 void  Server::initSocket( void )
 {
     pollfd serversock; //this will be the first element in our poll vector and the servers socket
@@ -9,7 +11,6 @@ void  Server::initSocket( void )
       exit(EXIT_FAILURE);
     }
     serversock.events = POLLIN; // Looking for events: IN sig
-    _sockets.push_back(serversock); //adding the server socket to the vector
     
     //populate the sockaddr struct
     _sockaddr.sin_family = AF_INET;
@@ -18,6 +19,7 @@ void  Server::initSocket( void )
     
     if (bind(serversock.fd, (struct sockaddr*)&_sockaddr, sizeof(sockaddr)) < 0) {
       std::cout << "Failed to bind to port 9999. errno: " << errno << std::endl;
+      close(serversock.fd);
       exit(EXIT_FAILURE);
     }
     
@@ -28,16 +30,21 @@ void  Server::initSocket( void )
     }
 
     fcntl(serversock.fd, F_SETFL, O_NONBLOCK); // Set server socket to non-blocking mode
+    _sockets.push_back(serversock); //adding the server socket to the vector
 }
 
 int  Server::checkConnections()
 {
+    const int POLL_TIMEOUT = 1;
+
   //poll allows to monitor multiple fd's for events
-  int newEvents = poll(&_sockets[0], _sockets.size(), -1);
+  int newEvents = poll(&_sockets[0], _sockets.size(), POLL_TIMEOUT);
   if (newEvents  < 0) {
       std::perror("poll");
       exit(EXIT_FAILURE);
   }
+  if (newEvents == 0)
+    return 0;
   // Check if there's a new connection on the server socket
   if (_sockets[0].revents & POLLIN) { 
   	unsigned int addrlen = sizeof(sockaddr);
@@ -61,6 +68,7 @@ int  Server::checkConnections()
     // Add new connection/socket to the vector
     pollfd newfd;
     newfd.fd = new_socket;
+    std::cout << "New connection: " << new_socket << std::endl;
     newfd.events = POLLIN;
     _sockets.push_back(newfd);
   }
@@ -162,55 +170,94 @@ void Server::executeCGIScript(const std::string& scriptPath, int clientSocket) {
 
 void    Server::disconnectClient(int i) {
     // Connection closed or error occurred
-    std::cout << "Client disconnected" << std::endl;
+    if (_request.find(_sockets[i].fd) != _request.end()) {
+        delete _request[_sockets[i].fd];
+        _request.erase(_sockets[i].fd);
+    }
+    std::cout << "Client " << _sockets[i].fd << " disconnected" << std::endl;
     close(_sockets[i].fd);
     _sockets.erase(_sockets.begin() + i);
 }
 
-void Server::handleRequest(int i) {
+int Server::handleRequest(int i) {
     int fd = _sockets[i].fd;
     ssize_t	bytesRead;
     char	buffer[BUF_SIZE] = {0};
     bytesRead = recv(fd, &buffer, BUF_SIZE, O_NONBLOCK);
-    if (bytesRead <= 0)
-		return disconnectClient(i); //error
+    if (bytesRead == 0)
+		return -1; //error
+    if (bytesRead == -1)
+		return -1; //error
 	fflush( stdout );
 
-    if (_request.count(fd) == 0) {
-        std::cout << "No pending request for client " << fd << std::endl;
+    if (_request.count(fd) == 0) { //make new request
         _request.insert(std::make_pair(fd, new Request(buffer, fd, bytesRead)));
-        std::cout << *_request[fd] << std::endl;
     }
-    else if (_request[fd]->getMethod() == "POST") {
-        _request[fd]->_pendingPostRequest(buffer, bytesRead);
+    else if (_request[fd]->getMethod() == "POST") { //pending chunked request
+        _request[fd]->pendingPostRequest(buffer, bytesRead);
     }
-    if (_request[fd]->detectRequestType() == 0) {
-        delete _request[fd];
-        _request.erase(fd);
-        close(fd);
-        _sockets.erase(_sockets.begin() + i);
+    /*} else if (_request[fd]->hasPendingResponse()) { //pending chunked response
+        std::cout << "sclient shouldnt send request right now" << std::endl;
+        return ;
+    }*/
+    return (_request[fd]->detectRequestType());
+}
+
+void Server::handleSigpipe() {
+for (std::map<int, Request*>::iterator it = _request.begin(); it != _request.end();  ++it) {
+        if (it->second->hasPendingResponse()) {
+            int fd = it->first;
+            close(fd);
+            delete it->second;
+            _request.erase(it);
+        }
     }
-    return;
+    g_signal_received = 0;  // Reset the flag
+}
+
+void Server::handleSigint() {
+    for (int i = _sockets.size() - 1; i > 0; --i) {
+        if (_request.find(_sockets[i].fd) != _request.end()) {
+            disconnectClient(i);
+        }
+    }
+    close(_sockets[0].fd);
+    exit(EXIT_SUCCESS);
 }
 
 Server::Server()
 {
-  initSocket();
-  while (true) {
-    if (!checkConnections())
-      continue ;
-    for (int i = _sockets.size() - 1; i >= 1; --i) {
-      if (_sockets[i].revents & POLLIN) // Check if there's data to read on client socket
-        handleRequest(i);
+    initSocket();
+    signal(SIGPIPE, signal_handler);
+    signal(SIGINT, signal_handler);
+    while (true) {
+        checkConnections();
+        for (int i = _sockets.size() - 1; i >= 1; --i) {
+            if (_sockets[i].revents & POLLIN) {// Check if there's data to read on client socket
+                if (handleRequest(i) == 0) {
+                    disconnectClient(i);
+                }
+            } 
+            else if (_request.find(_sockets[i].fd) != _request.end()) {
+                if (_request[_sockets[i].fd]->hasPendingResponse()) {
+                    if (_request[_sockets[i].fd]->sendResponse() == 0) {
+                        disconnectClient(i);
+                    }
+                }
+            }
+            if (g_signal_received == SIGPIPE) {
+                handleSigpipe();
+            }
+            if (g_signal_received == SIGINT)
+                handleSigint();
+        }
     }
-  }
 }
 
 Server::Server( const Server & src )
 {
 	(void)src;
 }
-
 
 /*
 ** -------------------------------- DESTRUCTOR --------------------------------
