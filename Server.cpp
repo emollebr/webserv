@@ -189,7 +189,7 @@ int Server::handleRequest(int i) {
     if (bytesRead == -1)
 		return -1; //error
 	fflush( stdout );
-
+    std::cout << buffer << std::endl;
     if (_request.count(fd) == 0) { //make new request
         _request.insert(std::make_pair(fd, new Request(buffer, fd, bytesRead)));
     }
