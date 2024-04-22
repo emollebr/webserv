@@ -73,8 +73,8 @@ ServerConfig::ServerConfig(std::deque<std::string> tokens, tokeniterator begin, 
 			begin = std::find(begin, end, ";") + 1;
 		}
 
-		else
-			throw InvalidDirectiveException (); // unknown directive
+/* 		else
+			throw InvalidDirectiveException (); // unknown directive */
 		
 	}
 	std::cout << *this << std::endl;
@@ -159,10 +159,10 @@ std::string	const ServerConfig::getErrorPath() const{
 
 void	ServerConfig::parseServerDirective(tokeniterator begin, 
 											tokeniterator end){
-	if (_directives_set.find(*begin) == _directives_set.end())
+/* 	if (_directives_set.find(*begin) == _directives_set.end())
 		throw InvalidDirectiveException(); // no parameters
 	if ((*_directives_set.find(*begin)).second)
-		throw InvalidDirectiveException(); // no known directive found
+		throw InvalidDirectiveException(); // no known directive found */
 	std::map<std::string, void (ServerConfig::*)
 		(tokeniterator, tokeniterator)>
 		::iterator function = _directives_validation_funcs.find(*begin);
@@ -175,8 +175,8 @@ void	ServerConfig::parseServerDirective(tokeniterator begin,
 			std::cerr << e.what() << std::endl;			
 		}
 	}
-	else
-		throw InvalidDirectiveException(); // no validation function found
+/* 	else
+		throw InvalidDirectiveException(); // no validation function found */
 }
 
 

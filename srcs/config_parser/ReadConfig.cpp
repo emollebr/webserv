@@ -200,16 +200,4 @@ void	readFile2Buffer (std::string filename){
 			
 }
 
-	
-
-int main (int argc, char** argv){
-
-	if (argc < 2)
-		return (1);
-
-	readFile2Buffer(argv[1]);
-
-	return (0);
-}
-
 // DIREctives: listen, error, location, index, methods, root, php, CGI, exec, php, 
