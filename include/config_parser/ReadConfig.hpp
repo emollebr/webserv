@@ -34,7 +34,7 @@
 #include "ServerConfig.hpp"
 #include "LocationConfig.hpp"
 // #include <tuple>
-
+class ServerConfig;
 typedef std::deque<std::string>::iterator tokeniterator;
 
 void			parseDirective(tokeniterator begin, tokeniterator end);
@@ -42,4 +42,4 @@ bool 			isBalanced(std::stringstream& ss);
 tokeniterator	getClosingBraket (std::deque<std::string>& queue, tokeniterator start);
 void			printTokens(std::deque<std::string> tokens);
 void			populateTokens(std::stringstream &bufferstream, std::deque<std::string>	&tokens);
-void			readFile2Buffer (std::string filename);
+ServerConfig			readFile2Buffer (std::string filename);

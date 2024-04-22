@@ -9,9 +9,10 @@ int    Request::detectRequestType() {
         if (requestMethod == methods[i]) {
             if ((this->*requestFun[i])() != 0)
                 return 1; //unfinished POST request fx.
-            break;
+            return 0;
         }
     }
+    _handleUnknown();
     return 0;
 }
 
@@ -57,13 +58,17 @@ int 	Request::_handleGet() {
     std::ostringstream responseHeader;
     responseHeader << "HTTP/1.1 200 OK\nContent-Type: " << getMimeType(_filePath) << "\nContent-Length: " << _fileSize << "\n\n";
     send(client, responseHeader.str().c_str(), responseHeader.str().size(), MSG_MORE);
-
-    _pendingResponse = sendResponse();
+    try {
+        _pendingResponse = sendResponse();
+     } catch (const std::exception& e) {
+        std::cerr << "Caught exception: " << e.what() << std::endl;
+        return 0;
+    }
     return _pendingResponse;
 }
 
 int    Request::sendResponse() {
-    std::string error_response = "HTTP/1.1 500 Internal Server Error\r\nContent-Type: text/plain\r\nContent-Length: 32\r\n\r\nError sending requested content";
+    std::string error_response = "HTTP/1.1 500 Internal Server Error\r\nContent-Type: text/plain\r\n\r\n500 Internal Error: failed to send requested content";
     
     // Read file in chunks and send each chunk if file size exceeds buffer size
     std::ifstream file(_filePath.c_str(), std::ios::binary);
@@ -74,22 +79,30 @@ int    Request::sendResponse() {
         send(client, response.c_str(), response.size(), 0);
         return 0;
     }
+
     char buffer[BUF_SIZE];
     file.seekg(_bytesSent); // Move file pointer to the correct position
     size_t bytesRead = file.read(buffer, (_fileSize - _bytesSent > BUF_SIZE) ? BUF_SIZE : _fileSize - _bytesSent).gcount();
+    
+    if (bytesRead == 0) {
+        send(client, error_response.c_str(), error_response.size(), 0);
+        std::cout << "sendResponse: error: Requested file is empty" << std::endl;
+        return 0;
+    }
+
     if (file) {
         file.close();
         int flag = (_fileSize - _bytesSent > 0) ? 0 : MSG_MORE;
         int ret = send(client, buffer, bytesRead, flag);
         if (ret == -1) {
-            std::cerr << "Failed to send to client" << std::endl;
             send(client, error_response.c_str(), error_response.size(), 0);
+            std::cout << "sendResponse: error: Failed to send content to client" << std::endl;
             return 0;
         }
         _bytesSent += ret;
     } else {
-        std::cerr << "Failed to read from file" << std::endl;
         send(client, error_response.c_str(), error_response.size(), 0);
+        std::cout << "sendResponse: error: Failed to read requested file" << std::endl;
         return 0;
     }
     
@@ -118,14 +131,15 @@ int 	Request::_handlePost() {
 		return send(client, response, strlen(response), 0);
 	}
     if (!file.write(reinterpret_cast<const char*>(_body.c_str()), _body.size() - _boundary.size() - 7)) {
-		file.close();
-		return send(client, response, strlen(response), 0);
+		send(client, response, strlen(response), 0);
 	}
+    else {
+        response = "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 18\r\n\r\nUpload successful";
+    }
     close(fd);
     file.close();
 
     // Send HTTP response indicating success
-    response = "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 18\r\n\r\nUpload successful";
     send(client, response, strlen(response), 0);
     return 0;
 }
