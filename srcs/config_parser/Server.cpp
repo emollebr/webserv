@@ -168,6 +168,7 @@ Server::Server(ServerConfig config) : _config(config)
     signal(SIGPIPE, signal_handler);
     signal(SIGINT, signal_handler);
 
+    sethostname(_config.getHost().c_str(), _config.getHost().size());
     //setupServerSockets();
     initSocket(IP, PORT); //will be replaced by previous line
     
