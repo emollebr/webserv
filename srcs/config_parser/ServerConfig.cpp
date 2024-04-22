@@ -6,7 +6,7 @@
 /*   By: jschott <jschott@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/12 15:33:23 by jschott           #+#    #+#             */
-/*   Updated: 2024/04/18 15:06:55 by jschott          ###   ########.fr       */
+/*   Updated: 2024/04/22 15:12:25 by jschott          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -49,33 +49,36 @@ ServerConfig::ServerConfig(std::vector<std::string> names, std::vector<size_t> l
 
 ServerConfig::ServerConfig(std::deque<std::string> tokens, tokeniterator begin, tokeniterator end){
 	init();
-	tokeniterator statementend;
-
+	tokeniterator statementend;	
+	
 	while (begin < end) {
+		while (*begin == "")
+			begin++;
 		if (*begin == "location"){
 			begin++;
 			while (*begin == "")
 				begin++;
-			std::pair<std::string, std::string> location_block;
-			location_block.first = *begin++;
+			std::string	location_name = *begin++;
 			while (*begin == "")
 				begin++;
 			//CHECK FOR OPENING BRAKET AND FIND CLOSING TO PARSE BLOCK
 			if (begin != end && *begin == "{" &&
-					((statementend = getClosingBraket(tokens, begin)) <= tokens.end())){
-				_locations[location_block.first] = LocationConfig(begin + 1, statementend - 1);;
+					((statementend = getClosingBraket(tokens, begin, end)) <= end)){
+				_locations[location_name] = LocationConfig(begin + 1, statementend - 1);;
 				begin = statementend + 1;
 			}
+			else
+				return ;
+			
 		}
 		// IF IS DIRECTIVE CHECK FOR ';', IF FOUND CREATE DIRECTIVE
 		else if ((statementend = std::find(begin, end, ";")) <= end ) {
 			parseServerDirective(begin, statementend - 1);
-			begin = std::find(begin, end, ";") + 1;
+			begin = statementend + 1;
 		}
 
-/* 		else
-			throw InvalidDirectiveException (); // unknown directive */
-		
+		else 
+			return ;		
 	}
 	std::cout << *this << std::endl;
 }
