@@ -142,7 +142,7 @@ void	populateTokens(std::stringstream &bufferstream, std::deque<std::string>	&to
 	tokens.pop_back();
 }
 
-void	readFile2Buffer (std::string filename){
+ServerConfig	readFile2Buffer (std::string filename){
 	std::stringstream	bufferstream;
 	std::ifstream		input(filename.c_str());
 	
@@ -166,13 +166,13 @@ void	readFile2Buffer (std::string filename){
 	std::deque<std::string>	tokens;
 	populateTokens(bufferstream, tokens);
 	bufferstream.clear();
-
+	ServerConfig ret;
 	// printTokens(tokens);
 
 	//CHECK FIRST TOKEN
 	while (!tokens.empty()) {
 		
-		
+
 		//SKIP EMPTY TOKENS
 		while (tokens.front() == "")
 			tokens.pop_front();
@@ -192,12 +192,13 @@ void	readFile2Buffer (std::string filename){
 					((blockend = getClosingBraket(tokens, blockstart)) != tokens.end())) {
 				tokens.erase(tokens.begin(), ++blockstart);
 				ServerConfig test(tokens, blockstart, blockend - 1);
+				ret = test;
 				tokens.erase(tokens.begin(), ++blockend);
 			}
 		}
 	}
 
-			
+	return ret;
 }
 
 // DIREctives: listen, error, location, index, methods, root, php, CGI, exec, php, 

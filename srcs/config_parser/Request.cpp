@@ -23,8 +23,9 @@ Request::Request(char *buffer, int client, int bytesRead) : _pendingResponse(0),
     }
   
     if (_method == "POST") {
-         _boundary = _headers["Content-Type"];
+        _boundary = _headers["Content-Type"];
         _boundary.erase(0, 30); // 30 characters to boundary
+
         //get content headers
         while (std::getline(iss, line)  && line == "\r") {
             continue;
@@ -38,13 +39,36 @@ Request::Request(char *buffer, int client, int bytesRead) : _pendingResponse(0),
             }
         }
 
-        //save content length from header
-        std::map<std::string, std::string>::const_iterator it = _headers.find("Content-Length");
-        //if (it == _headers.end())
-        //    return "405 Bad Request";
+        //validate content headers headers/handle errors
+        std::map<std::string, std::string>::const_iterator it = _headers.find("Content-Disposition");
+        if (it == _headers.end()) {
+            std::string msg = "400 Bad Request: Missing 'Content-Disposition' header for POST request\n";
+            std::ostringstream response;
+            response << "HTTP/1.1 400 Bad Request\nContent-Type: text/plain\nContent-Length: " << msg.size() << "\n" << msg;
+            send(client, response.str().c_str(), response.str().size(), 0);
+            throw MissingRequestHeaderException();
+        }  
+        it = _headers.find("Content-Length");
+        if (it == _headers.end()) {
+            std::string msg = "400 Bad Request: Missing 'Content-Length' header for POST request\n";
+            std::ostringstream response;
+            response << "HTTP/1.1 400 Bad Request\nContent-Type: text/plain\nContent-Length: " << msg.size() << "\n" << msg;
+            send(client, response.str().c_str(), response.str().size(), 0);
+            throw MissingRequestHeaderException();
+        }
         std::istringstream ss(it->second);
         ss >> _contentLength;
+        if (_contentLength > MAX_BODY_SIZE) {
+            std::stringstream bs;
+            bs << MAX_BODY_SIZE;
+            std::string msg = "413 Payload Too Large: Content-Length exceeds limit of " + bs.str() + " bytes\n";
+            std::ostringstream response;
+            response << "HTTP/1.1 413 Payload Too Large\nContent-Type: text/plain\nContent-Length: " << msg.size() << "\n" << msg;
+            send(client, response.str().c_str(), response.str().size(), 0);
+            throw MaxBodySizeExceededException();
+        }
 
+        //save the request body
         char *bodyStart = std::strstr(buffer, "\r\n\r\n");
         if (bodyStart != NULL) {
             // Skip an additional 3 occurrences of "\r\n"
@@ -120,6 +144,22 @@ const char* Request::_createFileName() {
 
     char* result = strdup(filename.data()); // Allocate memory and copy the data
     return result;
+}
+
+const char* Request::MaxBodySizeExceededException::what() const throw() {
+    return "Max body size exceeded";
+}
+
+const char* Request::MissingRequestHeaderException::what() const throw() {
+    return "Missing request header";
+}
+
+const char* Request::EmptyRequestedFileException::what() const throw() {
+    return "Requested file is empty";
+}
+
+const char* Request::FileReadException::what() const throw() {
+    return "Failed to read requested file";
 }
 
 std::ostream &operator<<(std::ostream &str, Request &rp)

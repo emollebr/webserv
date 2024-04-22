@@ -12,6 +12,7 @@
 #include <climits>
 #include <map>
 #include <poll.h>
+#include <exception>
 
 class Request {
 private:
@@ -83,6 +84,26 @@ public:
 
     const std::string& getBoundary() const {
         return _boundary;
+    };
+
+    class MaxBodySizeExceededException : public std::exception {
+        public:
+            virtual const char* what() const throw();
+    };
+
+    class MissingRequestHeaderException : public std::exception {
+        public:
+            virtual const char* what() const throw();
+    };
+
+    class EmptyRequestedFileException : public std::exception {
+        public:
+            virtual const char* what() const throw();
+    };
+
+    class FileReadException : public std::exception {
+        public:
+            virtual const char* what() const throw();
     };
 
 };
