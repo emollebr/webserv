@@ -6,7 +6,7 @@
 /*   By: jschott <jschott@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/12 15:33:23 by jschott           #+#    #+#             */
-/*   Updated: 2024/04/22 15:12:25 by jschott          ###   ########.fr       */
+/*   Updated: 2024/04/22 15:17:12 by jschott          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -224,7 +224,7 @@ std::ostream& operator<<(std::ostream& os, const ServerConfig& serverconf) {
 	os << ";" << std::endl;
 
 	try {
-		os << "	error_path	" << serverconf.getErrorPath() << std::endl;
+		os << "	error_path	" << serverconf.getErrorPath() << ";" << std::endl;
 	
 		os << "	server_name	";
 		std::vector<std::string> server_names = serverconf.getServerNames();
@@ -235,7 +235,7 @@ std::ostream& operator<<(std::ostream& os, const ServerConfig& serverconf) {
 		std::map<std::string, LocationConfig> locations = serverconf.getLocations();
 		for (std::map<std::string, LocationConfig>::iterator it = locations.begin(); it != locations.end(); it++)
 			os << "	location " << (*it).first << " {" << std::endl 
-				<< ((*it).second) << ";" << std::endl;
+				<< ((*it).second) << "" << std::endl;
 	}
 	
 	catch(const std::exception& e)	{
