@@ -6,7 +6,7 @@
 /*   By: jschott <jschott@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/12 15:33:23 by jschott           #+#    #+#             */
-/*   Updated: 2024/04/22 15:17:12 by jschott          ###   ########.fr       */
+/*   Updated: 2024/04/23 11:18:35 by jschott          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -51,36 +51,45 @@ ServerConfig::ServerConfig(std::deque<std::string> tokens, tokeniterator begin, 
 	init();
 	tokeniterator statementend;	
 	
-	while (begin < end) {
-		while (*begin == "")
-			begin++;
-		if (*begin == "location"){
-			begin++;
+	try
+	{
+		while (begin < end) {
 			while (*begin == "")
 				begin++;
-			std::string	location_name = *begin++;
-			while (*begin == "")
+			if (*begin == "location"){
 				begin++;
-			//CHECK FOR OPENING BRAKET AND FIND CLOSING TO PARSE BLOCK
-			if (begin != end && *begin == "{" &&
-					((statementend = getClosingBraket(tokens, begin, end)) <= end)){
-				_locations[location_name] = LocationConfig(begin + 1, statementend - 1);;
+				while (*begin == "")
+					begin++;
+				std::string	location_name = *begin++;
+				while (*begin == "")
+					begin++;
+				//CHECK FOR OPENING BRAKET AND FIND CLOSING TO PARSE BLOCK
+				if (begin != end && *begin == "{" &&
+						((statementend = getClosingBraket(tokens, begin, end)) <= end)){
+					_locations[location_name] = LocationConfig(begin + 1, statementend - 1);;
+					begin = statementend + 1;
+				}
+				else
+					return ;
+				
+			}
+			// IF IS DIRECTIVE CHECK FOR ';', IF FOUND CREATE DIRECTIVE
+			else if ((statementend = std::find(begin, end, ";")) <= end ) {
+				parseServerDirective(begin, statementend - 1);
 				begin = statementend + 1;
 			}
-			else
-				return ;
-			
-		}
-		// IF IS DIRECTIVE CHECK FOR ';', IF FOUND CREATE DIRECTIVE
-		else if ((statementend = std::find(begin, end, ";")) <= end ) {
-			parseServerDirective(begin, statementend - 1);
-			begin = statementend + 1;
-		}
 
-		else 
-			return ;		
+			else 
+				return ;		
+		}
+		std::cout << *this << std::endl;
 	}
-	std::cout << *this << std::endl;
+	catch(const std::exception& e)
+	{
+		std::cerr << e.what() << '\n';
+	}
+	
+	
 }
 
 ServerConfig & ServerConfig::operator= (ServerConfig const & origin) {
