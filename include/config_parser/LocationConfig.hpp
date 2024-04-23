@@ -80,6 +80,13 @@ public:
 
 	bool						hasIndex(std::string index);
 	bool						hasMethod(std::string method);
+
+	class InvalidConfigException : public std::exception{
+	public:
+		virtual const char* what() const throw(){
+			return ("Error: Invalid config data");
+		};
+	};
 };
 
 std::ostream& operator<<(std::ostream& os, const LocationConfig& locationconf);

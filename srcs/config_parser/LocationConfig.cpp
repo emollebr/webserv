@@ -136,16 +136,29 @@ void LocationConfig::parseLocationDirective(tokeniterator begin, tokeniterator e
 	}
 	std::map<std::string, void (LocationConfig::*)(tokeniterator, tokeniterator)>::iterator function = _directives_validation_funcs.find(*begin);
 	if (function != _directives_validation_funcs.end()) {
-		(this->*(function->second))(begin + 1, end);
+		try {
+			(this->*(function->second))(begin + 1, end);
+		}
+		catch(const std::exception& e) {
+			throw InvalidConfigException();
+			std::cerr << e.what() << std::endl;
+		}
 	}
 }
 
 void LocationConfig::validateRoot(tokeniterator begin, tokeniterator end){
-	if (begin == end)	
-		_root = (*begin);
-	// 	std::cout << "ubbi" << std::endl;
-	// 	return ;
-	// }
+	std::cout << TEXT_BOLD << "validating root" << TEXT_NOFORMAT<< std::endl;
+	if (begin == end){
+		// if (stat((*begin).c_str(), &info) == 0)
+		if (directoryExists(*begin))
+			_root = (*begin);
+		else
+			throw InvalidConfigException();
+			// std::cerr << "Error: root directory " << *begin << " does not exist";
+	}
+	else
+		throw InvalidConfigException();
+		// std::cerr << "Error: Invalid Root Directory" << std::endl;
 }
 
 void LocationConfig::validateIndeces(tokeniterator begin, tokeniterator end){
@@ -210,17 +223,23 @@ void LocationConfig::validateAutoindex(tokeniterator begin, tokeniterator end){
 
 LocationConfig::LocationConfig(tokeniterator begin, tokeniterator end){
 	// std::cout << TEXT_BOLD << "	Parsing Location from " << *begin << " to " << *end << std::endl;
-	tokeniterator directiveend = std::find(begin, end, ";") ;
+	// tokeniterator directiveend = std::find(begin, end, ";") ;
 	//IF FOUND ; CREATE TUPLE
-	while (begin < end){
-		directiveend = std::find(begin, end, ";") ;
-		if (directiveend <= end) {
-			parseLocationDirective(begin, directiveend - 1);
-			begin = directiveend + 1;
+	// try	{
+		while (begin < end){
+			tokeniterator directiveend = std::find(begin, end, ";") ;
+			if (directiveend <= end) {
+				parseLocationDirective(begin, directiveend - 1);
+				begin = directiveend + 1;
+			}
+			else 
+				std::cerr << COLOR_ERROR << "Error: Cannot parse directive" << std::endl << COLOR_STANDARD;
 		}
-		else 
-			std::cerr << COLOR_ERROR << "Error: Cannot parse directive" << std::endl << COLOR_STANDARD;
-	}
+	// }
+	// catch(const std::exception& e)	{
+		// throw InvalidConfigException();
+		// std::cerr << e.what() << '\n';
+		// }
 	std::cout << TEXT_NOFORMAT;
 }
 

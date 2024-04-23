@@ -6,7 +6,7 @@
 /*   By: jschott <jschott@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/05 10:20:40 by jschott           #+#    #+#             */
-/*   Updated: 2024/04/22 15:07:36 by jschott          ###   ########.fr       */
+/*   Updated: 2024/04/23 11:58:34 by jschott          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -201,6 +201,13 @@ ServerConfig	readFile2Buffer (std::string filename){
 	}
 
 	return (returnconfig);			
+}
+
+bool directoryExists (std::string dir_name) {
+	struct stat info;
+	if (stat(dir_name.c_str(), &info) != 0)
+		return false;
+	return (info.st_mode & S_IFDIR) != 0;
 }
 
 // DIREctives: listen, error, location, index, methods, root, php, CGI, exec, php, 
