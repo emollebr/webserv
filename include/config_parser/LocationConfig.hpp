@@ -26,10 +26,9 @@ private:
 // OPTIONAL VALUES
 	std::vector<std::string>	_indeces; // index.html index.php
 	std::vector<std::string>	_methods_allowed; // GET POST DELETE
-	// std::string					_redirect; // /new-location
-	std::pair<int, std::string>	_redirect;
+	std::pair<int, std::string>	_redirect; // [statusCode, directory/to/file.html]
 	std::string					_CGI; // /cgi_bin/script
-	size_t						_max_body_size;
+	size_t						_max_body_size; // 42 | 42M | 42G
 	std::string					_upload_location; // /uploads
 	std::string					_cgi_extension; // .php
 	bool						_allow_get;
