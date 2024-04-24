@@ -14,15 +14,18 @@
 
 void LocationConfig::init(){
 	std::string	directives[] = {"root", "index", "methods",
-									"redirect", "CGI", "client_max_body_size",
-									"default_file", "upload_location", 
-									"cgi_extension", "allow_get", "allow_post", 
-									"autoindex"};
+									"return", "CGI", "client_max_body_size",
+									"upload_location", "cgi_extension", "autoindex"};
 	typedef void (LocationConfig::*LocationConfigFunction)(tokeniterator begin, tokeniterator end);
-	LocationConfigFunction functions[] = {&LocationConfig::validateRoot, &LocationConfig::validateIndeces, &LocationConfig::validateMethods, 
-											&LocationConfig::validateRedirect, &LocationConfig::validateCGI, &LocationConfig::validateBodySize, 
-											&LocationConfig::validateDefaultFile, &LocationConfig::validateUploadLocation, &LocationConfig::validateCGIExtension, 
-											&LocationConfig::validateAllowGET, &LocationConfig::validateAllowPOST, &LocationConfig::validateAutoindex};
+	LocationConfigFunction functions[] = {&LocationConfig::validateRoot, 
+											&LocationConfig::validateIndeces, 
+											&LocationConfig::validateMethods, 
+											&LocationConfig::validateRedirect, 
+											&LocationConfig::validateCGI, 
+											&LocationConfig::validateBodySize, 
+											&LocationConfig::validateUploadLocation, 
+											&LocationConfig::validateCGIExtension,
+											&LocationConfig::validateAutoindex};
 	int size = sizeof(directives) / sizeof(directives[0]);
 	for (int i = 0; i < size; i++){
 		_directives_set[directives[i]] = false;
@@ -51,7 +54,6 @@ LocationConfig & LocationConfig::operator=(LocationConfig const & origin){
 	_redirect = origin._redirect;
 	_CGI = origin._CGI;
 	_max_body_size = origin._max_body_size;
-	_default_file = origin._default_file;
 	_upload_location = origin._upload_location;
 	_cgi_extension = origin._cgi_extension;
 	_allow_get = origin._allow_get;
@@ -93,7 +95,7 @@ std::string		LocationConfig::getRoot() const {
 }
 
 
-std::string	LocationConfig::getRedirect() const{
+std::pair<int, std::string>	LocationConfig::getRedirect() const{
 	return _redirect;
 }
 
@@ -103,10 +105,6 @@ std::string	LocationConfig::getCGI() const{
 
 size_t LocationConfig::getBodySize() const{
 	return _max_body_size;	
-}
-
-std::string LocationConfig::getDefaultFile() const{
-	return _default_file;
 }
 
 std::string LocationConfig::getUploadLocation() const{
@@ -136,55 +134,74 @@ void LocationConfig::parseLocationDirective(tokeniterator begin, tokeniterator e
 	}
 	std::map<std::string, void (LocationConfig::*)(tokeniterator, tokeniterator)>::iterator function = _directives_validation_funcs.find(*begin);
 	if (function != _directives_validation_funcs.end()) {
-		try {
+		// try {
 			(this->*(function->second))(begin + 1, end);
-		}
-		catch(const std::exception& e) {
-			throw InvalidConfigException();
-			std::cerr << e.what() << std::endl;
-		}
+		// }
+		// catch(const std::exception& e) {
+			// throw InvalidConfigException();
+			// std::cerr << e.what() << std::endl;
+		// }
 	}
 }
 
 void LocationConfig::validateRoot(tokeniterator begin, tokeniterator end){
-	std::cout << TEXT_BOLD << "validating root" << TEXT_NOFORMAT<< std::endl;
+	// std::cout << TEXT_BOLD << "validating root" << TEXT_NOFORMAT<< std::endl;
+	
 	if (begin == end){
-		// if (stat((*begin).c_str(), &info) == 0)
-		if (directoryExists(*begin))
+		if (directoryExists(*begin)) {
+			if ((*_directives_set.find("root")).second)
+				std::cerr << COLOR_WARNING << "Warning: Multiple root directives. Will use last." << COLOR_STANDARD << std::endl;
 			_root = (*begin);
+			_directives_set["root"] = true;
+		}
 		else
-			throw InvalidConfigException();
-			// std::cerr << "Error: root directory " << *begin << " does not exist";
+			throw std::invalid_argument("Invalid root Directory: " + *begin);
 	}
 	else
-		throw InvalidConfigException();
-		// std::cerr << "Error: Invalid Root Directory" << std::endl;
+		throw std::invalid_argument("Invalid root Directory: " + *begin);
 }
 
 void LocationConfig::validateIndeces(tokeniterator begin, tokeniterator end){
-	// if (begin == end)
-	// 	return ;
+	
+	if ((*_directives_set.find("index")).second)
+		std::cerr << COLOR_WARNING << "Warning: Multiple index directives. Will use last." << COLOR_STANDARD << std::endl;
+
 	while (begin <= end)
 		_indeces.push_back(*begin++);
 }
 
 void LocationConfig::validateMethods(tokeniterator begin, tokeniterator end){
-	std::cout << TEXT_BOLD << "validating methods" << TEXT_NOFORMAT<< std::endl;
 
 	while (begin <= end){
-		std::cout << "checking " << *begin << std::endl;
 		if (!hasMethod(*begin) && 
 			(*begin == "GET" || *begin == "POST" || *begin == "DELETE"))
 			_methods_allowed.push_back(*begin);
 		else if (!hasMethod(*begin))
-			throw InvalidConfigException();
+			throw std::invalid_argument("Error: invalid method parameter: " + *begin);
 		begin++;
 	}
 }
 
 void LocationConfig::validateRedirect(tokeniterator begin, tokeniterator end){
-	if (begin == end)
-		_redirect = *begin;
+	// std::cout << TEXT_BOLD << "validating redirect" << TEXT_NOFORMAT<< std::endl;
+	
+	if (begin + 1 == end){
+		int statusCode = std::atoi((*begin).c_str());
+		if (statusCode < 100 || statusCode > 599)
+			throw std::invalid_argument("Invalid status code: " + *begin);
+		if (statusCode != 301 && statusCode != 302 &&
+				statusCode != 307 && statusCode != 308)
+			std::cerr << "Warning: Unusual status code for redirect: " << statusCode << std::endl;
+		if (++begin != end)
+			throw std::invalid_argument("Invalid redirect: " + *begin);
+		if ((*_directives_set.find("return")).second)
+			std::cerr << COLOR_WARNING << "Warning: Multiple return directives. Will use last." << COLOR_STANDARD << std::endl;
+		_redirect.first = statusCode;
+		_redirect.second = *begin;
+		_directives_set["return"] = true;
+	}
+	else
+		throw std::invalid_argument("Invalid return arguments.");
 }
 
 void LocationConfig::validateCGI(tokeniterator begin, tokeniterator end){
@@ -193,21 +210,21 @@ void LocationConfig::validateCGI(tokeniterator begin, tokeniterator end){
 }
 
 void LocationConfig::validateBodySize(tokeniterator begin, tokeniterator end){
-	std::cout << TEXT_BOLD << "validating body size" << TEXT_NOFORMAT<< std::endl;
 
 	if (begin == end){
-		// _max_body_size = atoi((*begin).c_str());
 		char* endptrx = NULL;
 
 		unsigned long int body = strtoul((*begin).c_str(), &endptrx, 0);
 		std::string endptr = endptrx;
 
-	// std::cout << "\tbody size:\t" << body << std::endl << "\tfailure:\t" << endptr << std::endl;
-
 	// MISSING INTERNAL LIMIT FOR UPLOAD SIZE THAT MAY NOT BE EXCEEDED TBD
 
-		if (endptr == "" || endptr == "B")
+		if (endptr == "" || endptr == "B") {
+			if ((*_directives_set.find("client_max_body_size")).second)
+				std::cerr << COLOR_WARNING << "Warning: Multiple client_max_body_size directives. Will use last." << COLOR_STANDARD << std::endl;
 			_max_body_size = body;
+			_directives_set["client_max_body_size"] = true;
+		}
 		else if (endptr == "M" || endptr == "MB")
 			_max_body_size = body * 1024;
 		else if (endptr == "M" || endptr == "MB")
@@ -215,30 +232,22 @@ void LocationConfig::validateBodySize(tokeniterator begin, tokeniterator end){
 		else if (endptr == "G" || endptr == "GB")
 			_max_body_size = body * 1024 * 1024 * 1024;
 		else
-			throw InvalidConfigException();
+			throw std::invalid_argument("Error: invalid max_body_size: " + *begin);
 	}
 	else
-		throw InvalidConfigException();
-}
-
-void LocationConfig::validateDefaultFile(tokeniterator begin, tokeniterator end){
-	if (begin == end)
-		_default_file = *begin;
+		throw std::invalid_argument("Error: toom any parameters for max_body_size");
 }
 
 void LocationConfig::validateUploadLocation(tokeniterator begin, tokeniterator end){
-	std::cout << TEXT_BOLD << "validating upload" << TEXT_NOFORMAT<< std::endl;
 	if (begin == end){
-		// if (stat((*begin).c_str(), &info) == 0)
-		if (directoryExists(*begin))
-			_root = (*begin);
+		if (directoryExists(*begin)) {
+			_upload_location = (*begin);
+		}
 		else
-			throw InvalidConfigException();
-			// std::cerr << "Error: root directory " << *begin << " does not exist";
+			throw std::invalid_argument("Upload directory not found: " + *begin);
 	}
 	else
 		throw InvalidConfigException();
-		// std::cerr << "Error: Invalid Root Directory" << std::endl;
 }
 
 void LocationConfig::validateCGIExtension(tokeniterator begin, tokeniterator end){
@@ -298,7 +307,15 @@ std::ostream& operator<<(std::ostream& os, const LocationConfig& locationconf) {
 	// os << "++START LOCATION CONFIGURATION++" << std::endl << std::endl;
 	std::vector<std::string> printbuff;
 	os << "\t\troot\t\t\t" << locationconf.getRoot() << ";" << std::endl;
-	os << "\t\tindices\t\t\t" << "TBD" << ";" << std::endl;
+
+	os << "\t\tindex\t\t\t";
+	printbuff = locationconf.getIndeces();
+	for (std::vector<std::string>::iterator it = printbuff.begin(); it != printbuff.end(); it++){
+		os << *it;
+		if (it + 1 != printbuff.end())
+			os << " ";
+	}
+	os << ";" << std::endl;
 	
 	os << "\t\tmethods\t\t\t";
 	printbuff = locationconf.getMethods();
@@ -309,10 +326,9 @@ std::ostream& operator<<(std::ostream& os, const LocationConfig& locationconf) {
 	}
 	os << ";" << std::endl;
 
-	os << "\t\tredirect\t\t" << locationconf.getRedirect() << ";" << std::endl;
+	os << "\t\treturn\t\t\t" << locationconf.getRedirect().first << " " << locationconf.getRedirect().second << ";" << std::endl;
 	os << "\t\tCGI\t\t\t" << locationconf.getCGI() << ";" << std::endl;
 	os << "\t\tclient_max_body_size\t" << locationconf.getBodySize() << ";" << std::endl;
-	os << "\t\tdefault file\t\t" << locationconf.getDefaultFile() << ";" << std::endl;
 	os << "\t\tupload location\t\t" << locationconf.getUploadLocation() << ";" << std::endl;
 	os << "\t\tCGI extension\t\t" << locationconf.getCGIExtension() << ";" << std::endl;
 	os << "\t\tautoindex\t\t" << locationconf.getAutoindex() << ";" << std::endl;
