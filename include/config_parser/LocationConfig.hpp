@@ -26,10 +26,10 @@ private:
 // OPTIONAL VALUES
 	std::vector<std::string>	_indeces; // index.html index.php
 	std::vector<std::string>	_methods_allowed; // GET POST DELETE
-	std::string					_redirect; // /new-location
+	// std::string					_redirect; // /new-location
+	std::pair<int, std::string>	_redirect;
 	std::string					_CGI; // /cgi_bin/script
 	size_t						_max_body_size;
-	std::string					_default_file; // index.html
 	std::string					_upload_location; // /uploads
 	std::string					_cgi_extension; // .php
 	bool						_allow_get;
@@ -54,10 +54,9 @@ public:
 	std::string					getRoot() const;
 	std::vector<std::string>	getIndeces() const;
 	std::vector<std::string>	getMethods() const;
-	std::string					getRedirect() const;
+	std::pair<int, std::string>	getRedirect() const;
 	std::string					getCGI() const;
 	size_t						getBodySize() const;
-	std::string					getDefaultFile() const;
 	std::string					getUploadLocation() const;
 	std::string					getCGIExtension() const;
 	bool						getAllowGET() const;
@@ -71,7 +70,6 @@ public:
 	void						validateRedirect(tokeniterator begin, tokeniterator end);
 	void						validateCGI(tokeniterator begin, tokeniterator end);
 	void						validateBodySize(tokeniterator begin, tokeniterator end);
-	void						validateDefaultFile(tokeniterator begin, tokeniterator end);
 	void						validateUploadLocation(tokeniterator begin, tokeniterator end);
 	void						validateCGIExtension(tokeniterator begin, tokeniterator end);
 	void						validateAllowGET(tokeniterator begin, tokeniterator end);
