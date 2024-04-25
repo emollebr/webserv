@@ -116,11 +116,21 @@ std::string LocationConfig::getCGIExtension() const{
 }
 
 bool LocationConfig::getAllowGET() const{
-	return _allow_get;
+	if (find(_methods_allowed.begin(), _methods_allowed.end(), "GET") != _methods_allowed.end())
+		return true;
+	return false;
 }
 
 bool LocationConfig::getAllowPOST() const{
-	return _allow_post;
+	if (find(_methods_allowed.begin(), _methods_allowed.end(), "POST") != _methods_allowed.end())
+		return true;
+	return false;
+}
+
+bool LocationConfig::getAllowDELETE() const{
+	if (find(_methods_allowed.begin(), _methods_allowed.end(), "DELETE") != _methods_allowed.end())
+		return true;
+	return false;
 }
 
 bool LocationConfig::getAutoindex() const {
@@ -235,7 +245,7 @@ void LocationConfig::validateBodySize(tokeniterator begin, tokeniterator end){
 			throw std::invalid_argument("Error: invalid max_body_size: " + *begin);
 	}
 	else
-		throw std::invalid_argument("Error: toom any parameters for max_body_size");
+		throw std::invalid_argument("Error: too many parameters for max_body_size");
 }
 
 void LocationConfig::validateUploadLocation(tokeniterator begin, tokeniterator end){
@@ -253,16 +263,6 @@ void LocationConfig::validateUploadLocation(tokeniterator begin, tokeniterator e
 void LocationConfig::validateCGIExtension(tokeniterator begin, tokeniterator end){
 	if (begin == end)
 		_cgi_extension = *begin;
-}
-
-void LocationConfig::validateAllowGET(tokeniterator begin, tokeniterator end){
-	if (begin == end)
-		return ;
-}
-
-void LocationConfig::validateAllowPOST(tokeniterator begin, tokeniterator end){
-	if (begin == end)
-		return ;
 }
 
 void LocationConfig::validateAutoindex(tokeniterator begin, tokeniterator end){

@@ -6,7 +6,7 @@
 /*   By: jschott <jschott@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/12 15:33:23 by jschott           #+#    #+#             */
-/*   Updated: 2024/04/23 11:18:35 by jschott          ###   ########.fr       */
+/*   Updated: 2024/04/25 11:56:09 by jschott          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -165,8 +165,18 @@ std::vector<std::string> const ServerConfig::getServerNames() const{
 	// throw std::expection;
 }
 
-std::string	const ServerConfig::getErrorPath() const{
-	return _error_path;	
+std::map<uint, std::string>	const ServerConfig::getErrorPages() const {
+	if (_error_pages.empty())
+		return std::map<uint, std::string>();
+	std::map<uint, std::string>	error_pages;
+	error_pages = _error_pages;
+	return error_pages;
+}
+
+std::string	const ServerConfig::getErrorPath(int statusCode) const{
+	if (_error_pages.find(statusCode) != _error_pages.end())
+		return (*_error_pages.find(statusCode)).second;
+	return NULL;
 }
 
 void	ServerConfig::parseServerDirective(tokeniterator begin, 
@@ -205,9 +215,21 @@ void	ServerConfig::validateLocation(tokeniterator begin, tokeniterator end){
 }
 
 void	ServerConfig::validateHost(tokeniterator begin, tokeniterator end){
-	if (begin == end)
-		_host = *(begin);
-	//DO VALIDATION
+	if (begin == end){
+		char *tkns = new char [(*begin).length() + 1];
+		strcpy(tkns, (*begin).c_str());
+		tkns =  strtok(tkns, ".");
+		while (tkns != NULL){
+			char* error = NULL;
+			unsigned long int body = strtoul(tkns, &error, 0);
+			if (strlen(error) > 0 || body > 255)
+				throw std::invalid_argument("Error: invalid host IP address: " + *begin);
+			tkns = strtok(NULL, ".");
+		}
+		_host = *begin;
+	}
+	else
+		throw std::invalid_argument("Error: too many parameters for location");
 }
 
 void	ServerConfig::validateServerName(tokeniterator begin, tokeniterator end){
@@ -217,25 +239,61 @@ void	ServerConfig::validateServerName(tokeniterator begin, tokeniterator end){
 }
 
 void	ServerConfig::validateErrorPath(tokeniterator begin, tokeniterator end){
-	if (begin == end)
-		_error_path = *(begin);
+	
+	if (begin + 1 > end)
+		throw std::invalid_argument("Error: Invalid number of prameters for error_pages");
+		
+	std::string errorPage = *end;
+	if (!fileExists(errorPage))
+		throw std::invalid_argument("Error: error_page not found: " + *end);
+	--end;
+
+	while ( begin <= end){
+		
+		char * error = NULL;
+		unsigned int statusCode = strtoul((*begin).c_str(), &error, 0);
+		if (strlen(error) > 0 || statusCode < 100 || statusCode > 599)
+			throw std::invalid_argument("Error: Invalid status code error_pages: " + *begin);
+		if (statusCode < 400)
+			std::cerr << "Warning: Unusual status code for error_pages: " << statusCode << std::endl;
+		// if (++begin != end)
+			// throw std::invalid_argument("Invalid redirect: " + *begin);
+		if ((*_directives_set.find("error_page")).second)
+			std::cerr << COLOR_WARNING << "Warning: Multiple error_page directives. Will use last." << COLOR_STANDARD << std::endl;
+		_error_pages[statusCode] = errorPage;
+		_directives_set["return"] = true;
+		++begin;
+	}
 }
 
 std::ostream& operator<<(std::ostream& os, const ServerConfig& serverconf) {
-	os << "server	{" << std::endl;
+	os << "server\t{" << std::endl;
 	
-	os << "	host		" << serverconf.getHost() << ";" << std::endl;
+	os << "\thost\t\t" << serverconf.getHost() << ";" << std::endl;
 	
-	os << "	ports		" ;
+	os << "\tports\t\t" ;
 	std::vector<size_t> ports = serverconf.getListenPorts();
 	for (std::vector<size_t>::iterator it = ports.begin(); it < ports.end(); it++)
 		os << *it << " ";
 	os << ";" << std::endl;
 
 	try {
-		os << "	error_path	" << serverconf.getErrorPath() << ";" << std::endl;
+		std::map<uint, std::string> error_pages = serverconf.getErrorPages();
+		os << "\terror_page\t";
+		for (std::map<uint, std::string>::iterator it = error_pages.begin(); 
+													it != error_pages.end(); it++) {
+			std::string path = (*error_pages.begin()).second;
+			
+			while (it != error_pages.end() && path == (*it).second){
+				os << (*it).first << " ";
+				it++;
+			}
+				// os << (*(it++)).first << " ";
+			// os << (*it).first << " ";
+			os << path << std::endl;
+		}
 	
-		os << "	server_name	";
+		os << "\tserver_name\t";
 		std::vector<std::string> server_names = serverconf.getServerNames();
 		for (std::vector<std::string>::iterator it = server_names.begin(); it < server_names.end(); it++)
 			os << *it << " ";
@@ -243,7 +301,7 @@ std::ostream& operator<<(std::ostream& os, const ServerConfig& serverconf) {
 
 		std::map<std::string, LocationConfig> locations = serverconf.getLocations();
 		for (std::map<std::string, LocationConfig>::iterator it = locations.begin(); it != locations.end(); it++)
-			os << "	location " << (*it).first << " {" << std::endl 
+			os << "\tlocation\t" << (*it).first << " {" << std::endl 
 				<< ((*it).second) << "" << std::endl;
 	}
 	

@@ -33,7 +33,7 @@ private:
 	std::string					_cgi_extension; // .php
 	bool						_allow_get;
 	bool						_allow_post;
-	bool						_autoindex;
+	bool						_autoindex; // 0 | off
 	
 
 	std::map<std::string, bool>	_directives_set;
@@ -60,6 +60,7 @@ public:
 	std::string					getCGIExtension() const;
 	bool						getAllowGET() const;
 	bool						getAllowPOST() const;
+	bool						getAllowDELETE() const;
 	bool						getAutoindex() const;
 
 	void						parseLocationDirective(tokeniterator begin, tokeniterator end);
@@ -71,8 +72,6 @@ public:
 	void						validateBodySize(tokeniterator begin, tokeniterator end);
 	void						validateUploadLocation(tokeniterator begin, tokeniterator end);
 	void						validateCGIExtension(tokeniterator begin, tokeniterator end);
-	void						validateAllowGET(tokeniterator begin, tokeniterator end);
-	void						validateAllowPOST(tokeniterator begin, tokeniterator end);
 	void						validateAutoindex(tokeniterator begin, tokeniterator end);
 
 	bool						hasIndex(std::string index);
