@@ -1,5 +1,4 @@
-#include "Request.hpp"
-#include "Server.hpp"
+#include "common.hpp"
 
 Request::Request(char *buffer, int client, int bytesRead, size_t maxBodySize) : _pendingResponse(0), _bytesSent(0), client(client){
     

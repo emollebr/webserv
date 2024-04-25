@@ -1,4 +1,4 @@
-#include "ReadConfig.hpp"
+#include "common.hpp"
 #include "Server.hpp"
 
 void handleSigint(std::vector<Server> servers) {

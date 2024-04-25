@@ -1,18 +1,8 @@
 #pragma once
 # define REQUEST_HPP
 
-#include <cstdio>
-#include <sys/socket.h>
-#include <unistd.h>
-#include <iostream>
-#include <fstream> 
-#include <sstream>
-#include <cstring>
-#include <unistd.h>
-#include <climits>
-#include <map>
-#include <poll.h>
-#include <exception>
+#include "common.hpp"
+
 
 class Request {
 private:
@@ -29,6 +19,7 @@ private:
     bool                         _pendingResponse;
     off_t                               _fileSize;
     ssize_t                            _bytesSent;
+    //std::map<int, std::string>       _errorPaths;
 
 
     int 	_handlePost( void );
@@ -47,6 +38,9 @@ private:
     void _validateContentHeaders(size_t maxBodySize);
     
     std::string _getStatusResponse(std::string status, std::string message) {
+        /* if (_errorPaths.find(intToStr(status))  != _errorPaths.end()) {
+
+        } */
         std::stringstream response;
         response << "HTTP/1.1" + status + "\r\nContent-Type: text/plain\r\n" << message.size() + 1 << "\r\n\r\n" + message + "\r\n";
         return response.str();

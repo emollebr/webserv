@@ -36,7 +36,7 @@ private:
 
 //OPTIONAL INFORMATION
 	std::vector<std::string>					_server_names;
-	std::string									_error_path;
+	std::string										_error_path;
 
 //INDECES
 	std::map<std::string, bool>					_directives_set;
