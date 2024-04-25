@@ -6,7 +6,7 @@
 /*   By: jschott <jschott@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/15 14:23:34 by jschott           #+#    #+#             */
-/*   Updated: 2024/04/23 11:59:18 by jschott          ###   ########.fr       */
+/*   Updated: 2024/04/25 11:18:28 by jschott          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -46,3 +46,4 @@ void			printTokens(std::deque<std::string> tokens);
 void			populateTokens(std::stringstream &bufferstream, std::deque<std::string>	&tokens);
 ServerConfig	readFile2Buffer (std::string filename);
 bool			directoryExists (std::string dir_name);
+bool 			fileExists (std::string file_name);

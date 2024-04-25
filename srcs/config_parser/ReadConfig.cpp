@@ -6,7 +6,7 @@
 /*   By: jschott <jschott@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/05 10:20:40 by jschott           #+#    #+#             */
-/*   Updated: 2024/04/23 11:58:34 by jschott          ###   ########.fr       */
+/*   Updated: 2024/04/25 11:17:03 by jschott          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -208,6 +208,11 @@ bool directoryExists (std::string dir_name) {
 	if (stat(dir_name.c_str(), &info) != 0)
 		return false;
 	return (info.st_mode & S_IFDIR) != 0;
+}
+
+bool fileExists (std::string file_name) {
+	std::ifstream file(file_name.c_str());
+	return file.good();
 }
 
 // DIREctives: listen, error, location, index, methods, root, php, CGI, exec, php, 
