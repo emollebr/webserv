@@ -33,22 +33,18 @@ int main (int argc, char** argv){
 	try {
 		std::vector<ServerConfig> configs = readFile2Buffer(argv[1]);
 		std::vector<Server> servers;
-	for (unsigned long i = 0; i < configs.size(); ++i) {
-		try {
+		for (unsigned long i = 0; i < configs.size(); ++i) {
 			Server serv(configs[i]);
 			servers.push_back(serv);
-		} catch (const std::exception& e) {
-        	std::cout << "Failed to create server" << std::endl;
-			handleSigint(servers);
+			std::cout << "server host: " << configs[i].getHost() << std::endl;
 		}
-	}
-	while (true) {
-		for (size_t i = 0; i < servers.size(); ++i) {
-			if (g_signal_received == SIGINT)
-				handleSigint(servers);
-			servers[i].serverRun();
+		while (true) {
+			for (size_t i = 0; i < servers.size(); ++i) {
+				if (g_signal_received == SIGINT)
+					handleSigint(servers);
+				servers[i].serverRun();
+			}
 		}
-	}
 	} catch (const std::exception& e) {
 		return (1);
 	}

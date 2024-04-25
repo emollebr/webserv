@@ -195,7 +195,7 @@ void	ServerConfig::parseServerDirective(tokeniterator begin, tokeniterator end){
 
 
 void	ServerConfig::validatePort(tokeniterator begin, tokeniterator end){
-	for (NULL; begin <= end; begin++) {
+	for (; begin <= end; begin++) {
 		char* error = NULL;
 		unsigned long int port = strtoul((*begin).c_str(), &error, 0);
 		if (strlen(error) > 0 || port > 65535)
@@ -248,7 +248,7 @@ void	ServerConfig::validateErrorPath(tokeniterator begin, tokeniterator end){
 		throw std::invalid_argument("Error: error_page not found: " + *end);
 	--end;
 
-	for (NULL ;begin <= end; begin++){
+	for (; begin <= end; begin++){
 		char * error = NULL;
 		unsigned int statusCode = strtoul((*begin).c_str(), &error, 0);
 		if (strlen(error) > 0 || statusCode < 100 || statusCode > 599)

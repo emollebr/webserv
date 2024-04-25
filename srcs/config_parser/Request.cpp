@@ -38,12 +38,12 @@ Request::Request(char *buffer, int client, int bytesRead, size_t maxBodySize) : 
             }
         }
 
-        _validateContentHeaders(maxBodySize);
 
         //save the request body
         char *bodyStart = std::strstr(buffer, "\r\n\r\n");
         if (bodyStart != NULL) {
             if (_object.find("cgi-bin") == std::string::npos) {
+                 _validateContentHeaders(maxBodySize);
                 // Skip an additional 3 occurrences of "\r\n"
                 for (int i = 0; i < 5; ++i) {
                     bodyStart = std::strstr(bodyStart + 2, "\r\n");

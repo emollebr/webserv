@@ -25,6 +25,28 @@ std::string Server::extractCGIScriptPath(const std::string& request) {
     return "";
 }
 
+unsigned int Server::_ipStringToInt(const std::string ipAddress) {
+    std::vector<unsigned int>   parts;
+    std::istringstream          ipStream(ipAddress);
+    std::string                 part;
+    unsigned int                ip;
+    int                         count = 0;
+
+    // this is terrible !!!
+    if (ipAddress.empty())
+        return(0);
+    while (std::getline(ipStream, part, '.')) 
+    {
+        count++;
+        unsigned int num = static_cast<unsigned int>(atoi(part.c_str()));
+        parts.push_back(num);
+    }
+    if (count != 4)
+        throw(std::runtime_error("Error, IP address has invalid format"));
+    ip = (parts[0] << 24) | (parts[1] << 16) | (parts[2] << 8) | parts[3];
+    return (ip);
+}
+
 int  Server::_initSocket(std::string address, size_t port)
 {
     pollfd serversock; //this will be the first element in our poll vector and the servers socket
@@ -35,7 +57,9 @@ int  Server::_initSocket(std::string address, size_t port)
     
     //populate the sockaddr struct
     _sockaddr.sin_family = AF_INET;
-    _sockaddr.sin_addr.s_addr = inet_addr(address.c_str());
+    unsigned int ip = _ipStringToInt(address);
+    std::cout << ip << std::endl;
+    _sockaddr.sin_addr.s_addr = htonl(ip);
     _sockaddr.sin_port = htons(port); // htons is necessary to convert a number to network byte order
     
     if (bind(serversock.fd, (struct sockaddr*)&_sockaddr, sizeof(sockaddr)) < 0) {
@@ -51,6 +75,7 @@ int  Server::_initSocket(std::string address, size_t port)
     fcntl(serversock.fd, F_SETFL, O_NONBLOCK); // Set server socket to non-blocking mode
     _sockets.push_back(serversock); //adding the server socket to the vector
     _nServerSockets += 1;
+    std::cout << "initSocket: new server socket for host " << address << " on port " << port << std::endl;
     return (serversock.fd);
 }
 
@@ -146,7 +171,6 @@ void Server::handleSigint() {
 
 int Server::serverRun( void ) {
     const int POLL_TIMEOUT = 1;
-
     //poll allows to monitor multiple fd's for events
     int newEvents = poll(&_sockets[0], _sockets.size(), POLL_TIMEOUT);
     if (newEvents  < 0) {
@@ -192,7 +216,6 @@ Server::Server(ServerConfig& config) : _config(config), _nServerSockets(0)
         std::cout << "Caught exception: " << e.what() << std::endl;
         throw e;
     }
-    std::cout << "sockets size: " << _sockets.size() << "number of server sockets: " << _nServerSockets << std::endl;
 }
 
 Server::Server(const Server &src)
@@ -212,9 +235,9 @@ Server::Server(const Server &src)
 
 Server::~Server()
 {
-     for (int i = _sockets.size(); i >= 0; --i) {
-        close(_sockets[i].fd);
-    }
+     //for (int i = _sockets.size(); i >= 0; --i) {
+     //   close(_sockets[i].fd);
+    //}
 }
 
 
