@@ -69,8 +69,6 @@ class Server
 
 
 		std::string extractCGIScriptPath(const std::string& request);
-		bool isCGIRequest(int fd);
-		void executeCGIScript(const std::string& scriptPath, int clientSocket);
 		void cleanup( void );
 };
 

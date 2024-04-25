@@ -43,6 +43,8 @@ private:
     const char*                                   _createFileName( void );
     static bool                         _fileExists(std::string filename);
     std::string _generateNewFilename(const std::string& originalFilename);
+    bool isCGIRequest();
+	void executeCGIScript(const std::string& scriptPath, int clientSocket, char** env);
 
 
 public:
