@@ -42,7 +42,7 @@ private:
 
         } */
         std::stringstream response;
-        response << "HTTP/1.1" + status + "\r\nContent-Type: text/plain\r\n" << message.size() + 1 << "\r\n\r\n" + message + "\r\n";
+        response << "HTTP/1.1 " + status + "\r\nContent-Type: text/plain\r\n" << message.size() + 1 << "\r\n\r\n" + message + "\r\n";
         return response.str();
     }
 
