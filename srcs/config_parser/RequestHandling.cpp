@@ -1,4 +1,4 @@
-#include "Server.hpp"
+#include "Request.hpp"
 
 int    Request::detectRequestType() {
     std::string methods[3] ={"GET", "POST", "DELETE"};
