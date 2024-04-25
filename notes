@@ -2,4 +2,11 @@ has to be done:
     multiple ports in config file (?)
 
 Try to list a directory. ?
-Try a redirected URL. ?
+
+Try a redirected URL. ? http redirection
+
+default file to answer if the request is a directory
+
+Define a directory or a file from where the file should be searched (for example,
+if url /kapouet is rooted to /tmp/www, url /kapouet/pouic/toto/pouet is
+/tmp/www/pouic/toto/pouet).

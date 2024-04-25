@@ -22,13 +22,13 @@ private:
     std::map<std::string, std::string>   _headers;
     std::string                         _boundary;
     std::string                             _body; 
-    bool                           _fullRequest;
-    long long int                   _bytesReceived;
-    long long int                  _contentLength;
+    bool                             _fullRequest;
+    size_t                         _bytesReceived;
+    size_t                         _contentLength;
     std::string                         _filePath; //for pending response
-    bool                          _pendingResponse;
-    off_t                              _fileSize;
-    ssize_t                             _bytesSent;
+    bool                         _pendingResponse;
+    off_t                               _fileSize;
+    ssize_t                            _bytesSent;
 
 
     int 	_handlePost( void );
@@ -40,25 +40,33 @@ private:
         return _fullRequest;
     };
 
-    std::string                   _parseBoundary(std::string contentType);
-    const char*                                   _createFileName( void );
-    static bool                         _fileExists(std::string filename);
+    std::string _parseBoundary(std::string contentType);
+    const char* _createFileName( void );
+    bool _fileExists(std::string filename);
     std::string _generateNewFilename(const std::string& originalFilename);
-
+    void _validateContentHeaders(size_t maxBodySize);
+    
+    std::string _getStatusResponse(std::string status, std::string message) {
+        std::stringstream response;
+        response << "HTTP/1.1" + status + "\r\nContent-Type: text/plain\r\n" << message.size() + 1 << "\r\n\r\n" + message + "\r\n";
+        return response.str();
+    }
 
 public:
 
-    Request(char *buffer, int client, int bytesRead);
+    Request(char *buffer, int client, int bytesRead, size_t maxBodySize);
     ~Request() {
         std::cout << "Request deleted" << std::endl;
     };
 
     int                                   client; //socket fd
 
-    int                           detectRequestType( void );
-    int                                sendResponse( void );
-    void    pendingPostRequest(char* buffer, int bytesRead);
-    bool        hasPendingResponse( void ) {
+    int             detectRequestType( void );
+    int             createResponse( void );
+    int             sendResponse(const char* response, size_t size, int flag);
+    void            pendingPostRequest(char* buffer, int bytesRead);
+
+    bool            hasPendingResponse( void ) {
         return _pendingResponse;
     };
 

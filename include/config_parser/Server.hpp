@@ -28,6 +28,7 @@
 
 #define IP "127.0.0.1"
 #define PORT 9999
+#define SERVERSOCKETS_NUM 1
 #define QUEUE 10
 #define BUF_SIZE 8000
 #define MAX_BODY_SIZE 100000
@@ -40,8 +41,10 @@
 
 
 enum ErrorCode {
+	SEND_ERROR = -2,
+	CONNECTION_CLOSED = -1,
     SUCCESS = 0,
-    FILE_NOT_FOUND = 1,
+    KEEP_ALIVE = 1,
     INVALID_ARGUMENT = 2,
     OUT_OF_MEMORY = 3,
     NETWORK_ERROR = 4,
@@ -58,39 +61,32 @@ std::vector<std::string> 	listFiles(const std::string& directoryPath);
 std::string 					getMimeType(const std::string& filename);
 std::string 							finishPath(std::string object);
 
-struct serverSocket {
-	std::string address;
-	size_t      port;
-	int			fd;
-};
-
-
 class Server
 {
 
 	public:
 
-		Server(ServerConfig config);
+		Server(ServerConfig& config);
 		Server( Server const & src );
 		~Server();
 
 		Server &		operator=( Server const & rhs );
+		int			 	serverRun();
+		void 			handleSigpipe( void );
+		void			handleSigint( void );
 
 	private:
 		sockaddr_in 					_sockaddr;
 		std::vector<pollfd> 			_sockets;
 		std::map<int, Request*>			_request;
 		ServerConfig					_config;
-		std::vector<serverSocket>		_servSocks;
+		int							_nServerSockets;
 
-		int 	setupServerSockets( void );
-		int		initSocket(std::string address, size_t port);
-		int		checkConnections( void );
-		void    disconnectClient(int i);
-		int 	handleRequest(int i);
-		void 	handleSigpipe( void );
-		void	handleSigint( void );
-
+		int		_initSocket(std::string address, size_t port);
+		int 	_setupServerSockets( void );
+		int		_checkConnections( void );
+		void    _disconnectClient(int i);
+		int 	_handleRequest(int i);
 
 		std::string extractCGIScriptPath(const std::string& request);
 		bool isCGIRequest(int fd);
@@ -121,7 +117,23 @@ class Server
 				int m_errorCode;
 		};
 
+		class SocketInitException : public std::runtime_error {
+			public:
+				SocketInitException(const std::string& host, const std::string& message, int port, int errNum)
+					: std::runtime_error("Host " + host + message + intToString(port) + ". errno: " + intToString(errNum)), m_errNum(errNum) {}
+
+				int errorNumber() const { return m_errNum; }
+
+			private:
+				int m_errNum;
+
+				std::string intToString(int num) const {
+					std::ostringstream oss;
+					oss << num;
+					return oss.str();
+				}
+		};
+
 };
 
 std::ostream &			operator<<( std::ostream & o, Server const & i );
-std::ostream& 			operator<<(std::ostream& os, const serverSocket& ss);
