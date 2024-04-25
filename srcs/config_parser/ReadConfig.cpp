@@ -167,13 +167,13 @@ std::vector<ServerConfig>	readFile2Buffer (std::string filename){
 	std::deque<std::string>	tokens;
 	populateTokens(bufferstream, tokens);
 	bufferstream.clear();
-
+	ServerConfig ret;
 	// printTokens(tokens);
 
 	//CHECK FIRST TOKEN
 	while (!tokens.empty()) {
 		
-		
+
 		//SKIP EMPTY TOKENS
 		while (tokens.front() == "")
 			tokens.pop_front();

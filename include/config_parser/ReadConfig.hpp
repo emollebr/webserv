@@ -35,7 +35,7 @@
 #include "ServerConfig.hpp"
 #include "LocationConfig.hpp"
 // #include <tuple>
-
+class ServerConfig;
 typedef std::deque<std::string>::iterator tokeniterator;
 class	ServerConfig;
 
