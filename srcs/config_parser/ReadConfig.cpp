@@ -6,7 +6,7 @@
 /*   By: jschott <jschott@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/05 10:20:40 by jschott           #+#    #+#             */
-/*   Updated: 2024/04/25 11:17:03 by jschott          ###   ########.fr       */
+/*   Updated: 2024/04/25 18:03:06 by jschott          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -143,10 +143,10 @@ void	populateTokens(std::stringstream &bufferstream, std::deque<std::string>	&to
 	tokens.pop_back();
 }
 
-ServerConfig	readFile2Buffer (std::string filename){
+std::vector<ServerConfig>	readFile2Buffer (std::string filename){
 	std::stringstream	bufferstream;
 	std::ifstream		input(filename.c_str());
-	ServerConfig		returnconfig;
+	std::vector<ServerConfig>		returnconfig;
 
 	//check that file existst && try to acccess file
 	if (!input.is_open()){
@@ -194,7 +194,7 @@ ServerConfig	readFile2Buffer (std::string filename){
 				tokens.erase(tokens.begin(), ++blockstart);
 				ServerConfig test(tokens, blockstart, blockend - 1);
 				// return test(tokens, blockstart, blockend - 1);
-				returnconfig = test;
+				returnconfig.push_back(test);
 				tokens.erase(tokens.begin(), ++blockend);
 			}
 		}
