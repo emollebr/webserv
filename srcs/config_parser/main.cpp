@@ -9,8 +9,11 @@ int main (int argc, char** argv){
 		return (1);
 
 	//RESTRUCTURE: 1. Read2Buff; 2. Parse Server; 3. Profit
-	ServerConfig myserver = readFile2Buffer(argv[1]);
+	std::vector<ServerConfig> myserver = readFile2Buffer(argv[1]);
 	
+	for (std::vector<ServerConfig>::iterator it = myserver.begin(); it < myserver.end(); it++)
+		std::cout << *it << std::endl;
+
 	// START SERVER
 	// Server serv;
 	return (0);
