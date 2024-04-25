@@ -1,31 +1,25 @@
 #!/usr/bin/env python3
+from gradio_client import Client
 import os
+import cgi
+import sys
+from gradio_client import Client
 
-# Get the query string from environment variables
-query_string = os.environ.get('QUERY_STRING', '')
+form = cgi.FieldStorage()
 
-# Parse the query string to get the form data
-form_data = {}
-for item in query_string.split('&'):
-    key_value = item.split('=')
-    if len(key_value) == 2:
-        key, value = key_value
-        form_data[key] = value
-    elif len(key_value) == 1:
-        key = key_value[0]
-        form_data[key] = ''  # Assign an empty string if no value is provided
+input_text = form.getvalue('input')
 
-# Retrieve form data
-prompt = form_data.get('prompt')
-prompt_style = form_data.get('prompt_style')
-style = form_data.get('style')
-seed = form_data.get('seed')
-sketch_guidance = form_data.get('sketch_guidance')
 
-# Print the form data
-print("<h2>Form Data:</h2>")
-print("<p><strong>Prompt:</strong> </p>", prompt)
-print("<p><strong>Prompt Style:</strong> </p>", prompt_style)
-print("<p><strong>Style:</strong> </p>", style)
-print("<p><strong>Seed:</strong> </p>", seed)
-print("<p><strong>Sketch Guidance:</strong> </p>", sketch_guidance)
+sys.stdout = open(os.devnull, 'w')
+
+client = Client("ysharma/Chat_with_Meta_llama3_8b")
+
+sys.stdout = sys.__stdout__
+
+result = client.predict(
+	message=str(input_text),	# str  in 'Input' Textbox component
+	request=0.95,
+	param_3=512,
+	api_name="/chat"
+)
+print(result)

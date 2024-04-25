@@ -23,6 +23,7 @@ Request::Request(char *buffer, int client, int bytesRead) : _pendingResponse(0),
     }
   
     if (_method == "POST") {
+
          _boundary = _headers["Content-Type"];
         _boundary.erase(0, 30); // 30 characters to boundary
         //get content headers
@@ -47,16 +48,18 @@ Request::Request(char *buffer, int client, int bytesRead) : _pendingResponse(0),
 
         char *bodyStart = std::strstr(buffer, "\r\n\r\n");
         if (bodyStart != NULL) {
-            // Skip an additional 3 occurrences of "\r\n"
-            for (int i = 0; i < 5; ++i) {
-                bodyStart = std::strstr(bodyStart + 2, "\r\n");
-                if (bodyStart == NULL) {
-                    break; // Stop if we reach the end of the buffer
+            if (_object.find("cgi-bin") == std::string::npos) {
+                // Skip an additional 3 occurrences of "\r\n"
+                for (int i = 0; i < 5; ++i) {
+                    bodyStart = std::strstr(bodyStart + 2, "\r\n");
+                    if (bodyStart == NULL) {
+                        break; // Stop if we reach the end of the buffer
+                    }
                 }
             }
 
             if (bodyStart != NULL) {
-                bodyStart += 2; // Move past the last "\r\n"
+                bodyStart += 4; // Move past the last "\r\n"
                 size_t bodySize = bytesRead - (bodyStart - buffer); // Calculate the size of the binary data
                 _body.append(bodyStart, bodySize); // Append the binary data
             }

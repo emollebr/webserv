@@ -96,9 +96,27 @@ int    Request::sendResponse() {
     return ((_bytesSent < _fileSize) ? 1 : 0);
 }
 
+char** fillEnvironmentVariables(const std::string& formData) {
+    std::string queryString = "QUERY_STRING=" + formData;
+    std::cout << queryString << std::endl;
+    char **env = new char*[3]; // Three elements: QUERY_STRING, CONTENT_TYPE, and null terminator
+    // Copy the environment variable strings to the allocated memory
+    env[0] = strdup(queryString.c_str());
+    env[1] = 0;
+    env[2] = 0;
+    return env;
+}
+
+
 int 	Request::_handlePost() {
-   // if (isCGIRequest(fd))
-   //     executeCGIScript(_request[fd]->getObject(), fd);
+    std::cout << "OBJECT: " << _object << std::endl;
+    char **env = fillEnvironmentVariables(_body);
+    std::cout << "OBJECT: " << _object << std::endl;
+    if (isCGIRequest())
+    {
+       executeCGIScript(_object, client, env);
+       return 0;
+    }
     if (!_isFullRequest()) {
         return 1; // Return 1 if the request is not a full request
     }
