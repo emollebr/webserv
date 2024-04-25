@@ -2,6 +2,29 @@
 
 volatile sig_atomic_t g_signal_received = 0;
 
+
+std::string Server::extractCGIScriptPath(const std::string& request) {
+    // Parse the request URL to extract the script path
+    size_t urlPos = request.find(" /");
+    if (urlPos != std::string::npos) {
+        std::string url = request.substr(urlPos + 2); // Skip space and slash
+        size_t cgiPos = url.find("cgi-bin/");
+        if (cgiPos == 0) {
+            // Extract the script path from the URL
+            size_t scriptStart = cgiPos + 9; // Skip "/cgi-bin/"
+            size_t scriptEnd = url.find_first_of(" ?", scriptStart);
+            if (scriptEnd != std::string::npos) {
+                std::string scriptPath = url.substr(scriptStart, scriptEnd - scriptStart);
+                // Append the script path to the CGI directory
+                return "cgi-bin/" + scriptPath;
+            }
+        }
+    }
+
+    // If the request URL does not contain "/cgi-bin/", return an empty string
+    return "";
+}
+
 int  Server::_initSocket(std::string address, size_t port)
 {
     pollfd serversock; //this will be the first element in our poll vector and the servers socket

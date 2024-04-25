@@ -31,19 +31,24 @@ int main (int argc, char** argv){
 	} */
 	//temporary
 	try {
-		ServerConfig config = readFile2Buffer(argv[1]);
+		std::vector<ServerConfig> configs = readFile2Buffer(argv[1]);
 		std::vector<Server> servers;
-		Server serv(config);
-
-		servers.push_back(serv);
-
-		while (true) {
-			for (size_t i = 0; i < servers.size(); ++i) {
-				if (g_signal_received == SIGINT)
-					handleSigint(servers);
-				servers[i].serverRun();
-			}
+	for (unsigned long i = 0; i < configs.size(); ++i) {
+		try {
+			Server serv(configs[i]);
+			servers.push_back(serv);
+		} catch (const std::exception& e) {
+        	std::cout << "Failed to create server" << std::endl;
+			handleSigint(servers);
 		}
+	}
+	while (true) {
+		for (size_t i = 0; i < servers.size(); ++i) {
+			if (g_signal_received == SIGINT)
+				handleSigint(servers);
+			servers[i].serverRun();
+		}
+	}
 	} catch (const std::exception& e) {
 		return (1);
 	}
