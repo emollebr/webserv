@@ -6,7 +6,7 @@
 /*   By: jschott <jschott@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/05 10:20:40 by jschott           #+#    #+#             */
-/*   Updated: 2024/04/18 10:52:36 by jschott          ###   ########.fr       */
+/*   Updated: 2024/04/25 18:03:06 by jschott          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,12 +20,13 @@ void	printTokens(std::deque<std::string> tokens){
 
 // finds the closing limiter in a dequeue of tokens to a given opening limiter char
 // returns iterator to the position, NULL if limiter is not closed within the dequeue
-tokeniterator getClosingBraket (std::deque<std::string>& queue, tokeniterator start) {
+tokeniterator getClosingBraket (std::deque<std::string> &queue, tokeniterator start, tokeniterator end) {
 	std::string	open =	"{[(\'\"`";
 	std::string	close =	"}])\'\"`";
 	std::string	limiter_open = *start;
 	std::string	limiter_close;
 	tokeniterator notfound = queue.end();
+	notfound = end;
 
 	//return NULL if limiter_open is unknows
 	if (open.find(limiter_open) == open.length())
@@ -35,7 +36,7 @@ tokeniterator getClosingBraket (std::deque<std::string>& queue, tokeniterator st
 	
 	//iterate through dequeue and return closing limiter if found
 	std::stack<std::string> stack;
-	for (tokeniterator pos = start + 1; pos < queue.end(); pos++) {
+	for (tokeniterator pos = start + 1; pos < end; pos++) {
 		if (*pos == limiter_close) {
 			if (limiter_open == limiter_close || stack.empty())
 				return pos;
@@ -142,10 +143,10 @@ void	populateTokens(std::stringstream &bufferstream, std::deque<std::string>	&to
 	tokens.pop_back();
 }
 
-void	readFile2Buffer (std::string filename){
+std::vector<ServerConfig>	readFile2Buffer (std::string filename){
 	std::stringstream	bufferstream;
 	std::ifstream		input(filename.c_str());
-	
+	std::vector<ServerConfig>		returnconfig;
 
 	//check that file existst && try to acccess file
 	if (!input.is_open()){
@@ -189,15 +190,29 @@ void	readFile2Buffer (std::string filename){
 			tokeniterator blockend;
 			//CHECK FOR OPENING BRAKET AND FIND CLOSING TO PARSE BLOCK
 			if (*blockstart == "{" &&
-					((blockend = getClosingBraket(tokens, blockstart)) != tokens.end())) {
+					((blockend = getClosingBraket(tokens, blockstart, tokens.end())) != tokens.end())) {
 				tokens.erase(tokens.begin(), ++blockstart);
 				ServerConfig test(tokens, blockstart, blockend - 1);
+				// return test(tokens, blockstart, blockend - 1);
+				returnconfig.push_back(test);
 				tokens.erase(tokens.begin(), ++blockend);
 			}
 		}
 	}
 
-			
+	return (returnconfig);			
+}
+
+bool directoryExists (std::string dir_name) {
+	struct stat info;
+	if (stat(dir_name.c_str(), &info) != 0)
+		return false;
+	return (info.st_mode & S_IFDIR) != 0;
+}
+
+bool fileExists (std::string file_name) {
+	std::ifstream file(file_name.c_str());
+	return file.good();
 }
 
 // DIREctives: listen, error, location, index, methods, root, php, CGI, exec, php, 

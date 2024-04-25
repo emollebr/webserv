@@ -6,7 +6,7 @@
 /*   By: jschott <jschott@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/15 14:23:34 by jschott           #+#    #+#             */
-/*   Updated: 2024/04/18 10:56:53 by jschott          ###   ########.fr       */
+/*   Updated: 2024/04/25 18:04:08 by jschott          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -31,15 +31,19 @@
 #include <stack>
 #include <vector>
 #include <set>
+#include <sys/stat.h>
 #include "ServerConfig.hpp"
 #include "LocationConfig.hpp"
 // #include <tuple>
 
 typedef std::deque<std::string>::iterator tokeniterator;
+class	ServerConfig;
 
-void			parseDirective(tokeniterator begin, tokeniterator end);
-bool 			isBalanced(std::stringstream& ss);
-tokeniterator	getClosingBraket (std::deque<std::string>& queue, tokeniterator start);
-void			printTokens(std::deque<std::string> tokens);
-void			populateTokens(std::stringstream &bufferstream, std::deque<std::string>	&tokens);
-void			readFile2Buffer (std::string filename);
+void						parseDirective(tokeniterator begin, tokeniterator end);
+bool 						isBalanced(std::stringstream& ss);
+tokeniterator				getClosingBraket (std::deque<std::string>& queue, tokeniterator start, tokeniterator end);
+void						printTokens(std::deque<std::string> tokens);
+void						populateTokens(std::stringstream &bufferstream, std::deque<std::string>	&tokens);
+std::vector<ServerConfig>	readFile2Buffer (std::string filename);
+bool						directoryExists (std::string dir_name);
+bool 						fileExists (std::string file_name);
