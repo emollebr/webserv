@@ -36,7 +36,7 @@ int 	Request::_handleGet() {
     if (!file) { 
         // Error opening index.html file
         std::cerr << "Failed to open " << _filePath << " file" << std::endl;
-        return _sendStatusPage(400, "404 Not Found");
+        return _sendStatusPage(404, "404 Not Found");
     }
     // Get the size of the file
     file.seekg(0, std::ios::end); // Move file pointer to the end
