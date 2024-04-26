@@ -29,16 +29,14 @@ class Server
 		ServerConfig					_config;
 		int							_nServerSockets;
 
-		int		_initSocket(std::string address, size_t port);
-		unsigned int _ipStringToInt(const std::string ipAddress);
-		int 	_setupServerSockets( void );
-		int		_checkConnections( void );
-		void    _disconnectClient(int i);
-		int 	_handleRequest(int i);
-
-		std::string extractCGIScriptPath(const std::string& request);
-		void cleanup( void );
-
+		int				_initSocket(std::string address, size_t port);
+		unsigned int	_ipStringToInt(const std::string& ipAddress);
+		int 			_setupServerSockets( void );
+		int				_checkConnections( void );
+		void   			 _disconnectClient(int i);
+		int 			_handleRequest(int i);
+		std::string 	extractCGIScriptPath(const std::string& request);
+		
 		class ConnectionClosedException : public std::exception {
 			public:
 				ConnectionClosedException(const char* message) : m_message(message) {}
