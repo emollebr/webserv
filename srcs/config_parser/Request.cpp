@@ -178,8 +178,8 @@ bool Request::_fileExists(std::string filename) {
 int		Request::_sendStatusPage(int statusCode, std::string msg) {
     std::map<unsigned int, std::string>::iterator it = _errorPages.find(statusCode);
     if (it != _errorPages.end()) { //check for default error pages
-        _object = it->second;
-        return (createResponse());
+        _filePath = finishPath(it->second);
+        return (_handleGet());
     }
     else { //no default || success
          std::stringstream response;
