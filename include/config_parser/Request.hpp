@@ -1,59 +1,67 @@
 #pragma once
 # define REQUEST_HPP
 
-#include "common.hpp"
-
+#include <cstdio>
+#include <sys/socket.h>
+#include <unistd.h>
+#include <iostream>
+#include <fstream> 
+#include <sstream>
+#include <cstring>
+#include <unistd.h>
+#include <climits>
+#include <map>
+#include <poll.h>
 
 class Request {
 private:
-    std::string                               _method;
-    std::string                               _object;
-    std::string                               _protocol;
-    std::map<std::string, std::string>        _headers;
-    std::string                               _boundary;
-    std::string                               _body; 
-    bool                                      _fullRequest;
-    size_t                                    _bytesReceived;
-    size_t                                    _contentLength;
-    std::string                               _filePath; //for pending response
-    bool                                      _pendingResponse;
-    off_t                                     _fileSize;
-    ssize_t                                   _bytesSent;
-    std::map<unsigned int, std::string>       _errorPages;
+    std::string                           _method;
+    std::string                           _object;
+    std::string                         _protocol;
+    std::map<std::string, std::string>   _headers;
+    std::string                         _boundary;
+    std::string                             _body; 
+    bool                           _fullRequest;
+    long long int                   _bytesReceived;
+    long long int                  _contentLength;
+    std::string                         _filePath; //for pending response
+    bool                          _pendingResponse;
+    off_t                              _fileSize;
+    ssize_t                             _bytesSent;
+    static bool                           timeout;
 
 
     int 	_handlePost( void );
     int 	_handleGet( void );
+    int     _handleUnknown( void );
     int 	_handleDelete( void );
 
     bool    _isFullRequest() const {
         return _fullRequest;
     };
 
-    std::string     _parseBoundary(std::string contentType);
-    const char*     _createFileName( void );
-    bool            _fileExists(std::string filename);
-    int		        _sendStatusPage(int statusCode, std::string msg);
-    std::string     _generateNewFilename(const std::string& originalFilename);
-    void            _validateContentHeaders(size_t maxBodySize);
+    std::string                   _parseBoundary(std::string contentType);
+    const char*                                   _createFileName( void );
+    static bool                         _fileExists(std::string filename);
+    std::string _generateNewFilename(const std::string& originalFilename);
+    bool isCGIRequest();
+	void executeCGIScript(const std::string& scriptPath, int clientSocket, char** env);
+    static void timeoutHandler(int clientSocket);
+
 
 public:
 
-    Request(char *buffer, int client, int bytesRead, size_t maxBodySize, std::map<unsigned int, std::string>	error_pages);
+    Request(char *buffer, int client, int bytesRead);
     ~Request() {
+        std::cout << "Request deleted" << std::endl;
     };
 
     int                                   client; //socket fd
 
-    int             detectRequestType( void );
-    int             createResponse( void );
-    int             sendResponse(const char* response, size_t size, int flag);
-    void            pendingPostRequest(char* buffer, int bytesRead);
-    bool            isCGIRequest();
-    void            executeCGIScript(const std::string& scriptPath, char** env);
-
-
-    bool            hasPendingResponse( void ) {
+    int                           detectRequestType( void );
+    int                                sendResponse( void );
+    void    pendingPostRequest(char* buffer, int bytesRead);
+    bool        hasPendingResponse( void ) {
         return _pendingResponse;
     };
 
@@ -79,26 +87,6 @@ public:
 
     const std::string& getBoundary() const {
         return _boundary;
-    };
-
-    class MaxBodySizeExceededException : public std::exception {
-        public:
-            virtual const char* what() const throw();
-    };
-
-    class MissingRequestHeaderException : public std::exception {
-        public:
-            virtual const char* what() const throw();
-    };
-
-    class EmptyRequestedFileException : public std::exception {
-        public:
-            virtual const char* what() const throw();
-    };
-
-    class FileReadException : public std::exception {
-        public:
-            virtual const char* what() const throw();
     };
 
 };

@@ -1,13 +1,7 @@
-#include "common.hpp"
+#include "Server.hpp"
 
 void signal_handler(int signum) {
     g_signal_received = signum;
-}
-
-std::string intToStr(int num) {
-    std::ostringstream oss;
-    oss << num;
-    return oss.str();
 }
 
 // Function to get MIME type based on file extension
