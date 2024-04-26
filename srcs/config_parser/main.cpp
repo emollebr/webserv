@@ -32,6 +32,7 @@ int main (int argc, char** argv){
 	//temporary
 	try {
 		std::vector<ServerConfig> configs = readFile2Buffer(argv[1]);
+		std::cout << configs[0].getErrorPath(404) << std::endl;
 		std::vector<Server> servers;
 		for (unsigned long i = 0; i < configs.size(); ++i) {
 			Server serv(configs[i]);
