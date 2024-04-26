@@ -140,17 +140,16 @@ bool LocationConfig::getAutoindex() const {
 void LocationConfig::parseLocationDirective(tokeniterator begin, tokeniterator end) {
 	init();
 	if (_directives_set.find(*begin) == _directives_set.end()) {
-		return ; //THROW EXCEPTION
+		throw std::invalid_argument("invalid directive: " + *begin);
 	}
 	std::map<std::string, void (LocationConfig::*)(tokeniterator, tokeniterator)>::iterator function = _directives_validation_funcs.find(*begin);
 	if (function != _directives_validation_funcs.end()) {
-		// try {
+		try {
 			(this->*(function->second))(begin + 1, end);
-		// }
-		// catch(const std::exception& e) {
-			// throw InvalidConfigException();
-			// std::cerr << e.what() << std::endl;
-		// }
+		}
+		catch(const std::exception& e) {
+			throw std::invalid_argument("directive " + *begin + ": " + e.what());
+		}
 	}
 }
 
@@ -160,21 +159,21 @@ void LocationConfig::validateRoot(tokeniterator begin, tokeniterator end){
 	if (begin == end){
 		if (directoryExists(*begin)) {
 			if ((*_directives_set.find("root")).second)
-				std::cerr << COLOR_WARNING << "Warning: Multiple root directives. Will use last." << COLOR_STANDARD << std::endl;
+				std::cerr << COLOR_WARNING << "Warning: multiple root directives. using last." << COLOR_STANDARD << std::endl;
 			_root = (*begin);
 			_directives_set["root"] = true;
 		}
 		else
-			throw std::invalid_argument("Invalid root Directory: " + *begin);
+			throw std::invalid_argument("invalid parameter: " + *begin);
 	}
 	else
-		throw std::invalid_argument("Invalid root Directory: " + *begin);
+		throw std::invalid_argument("invalid parameter: " + *begin);
 }
 
 void LocationConfig::validateIndeces(tokeniterator begin, tokeniterator end){
 	
 	if ((*_directives_set.find("index")).second)
-		std::cerr << COLOR_WARNING << "Warning: Multiple index directives. Will use last." << COLOR_STANDARD << std::endl;
+		std::cerr << COLOR_WARNING << "Warning: multiple index directives. using last." << COLOR_STANDARD << std::endl;
 
 	while (begin <= end)
 		_indeces.push_back(*begin++);
@@ -187,23 +186,22 @@ void LocationConfig::validateMethods(tokeniterator begin, tokeniterator end){
 			(*begin == "GET" || *begin == "POST" || *begin == "DELETE"))
 			_methods_allowed.push_back(*begin);
 		else if (!hasMethod(*begin))
-			throw std::invalid_argument("Error: invalid method parameter: " + *begin);
+			throw std::invalid_argument("invalid parameter: " + *begin);
 		begin++;
 	}
 }
 
 void LocationConfig::validateRedirect(tokeniterator begin, tokeniterator end){
-	// std::cout << TEXT_BOLD << "validating redirect" << TEXT_NOFORMAT<< std::endl;
 	
 	if (begin + 1 == end){
 		int statusCode = std::atoi((*begin).c_str());
 		if (statusCode < 100 || statusCode > 599)
-			throw std::invalid_argument("Invalid status code: " + *begin);
+			throw std::invalid_argument("invalid parameter: " + *begin);
 		if (statusCode != 301 && statusCode != 302 &&
 				statusCode != 307 && statusCode != 308)
-			std::cerr << "Warning: Unusual status code for redirect: " << statusCode << std::endl;
+			std::cerr << "Warning: unusual status code for redirect: " << statusCode << std::endl;
 		if (++begin != end)
-			throw std::invalid_argument("Invalid redirect: " + *begin);
+			throw std::invalid_argument("invalid parameter: " + *begin);
 		if ((*_directives_set.find("return")).second)
 			std::cerr << COLOR_WARNING << "Warning: Multiple return directives. Will use last." << COLOR_STANDARD << std::endl;
 		_redirect.first = statusCode;
@@ -242,10 +240,10 @@ void LocationConfig::validateBodySize(tokeniterator begin, tokeniterator end){
 		else if (endptr == "G" || endptr == "GB")
 			_max_body_size = body * 1024 * 1024 * 1024;
 		else
-			throw std::invalid_argument("Error: invalid max_body_size: " + *begin);
+			throw std::invalid_argument("invalid parameter: " + *begin);
 	}
 	else
-		throw std::invalid_argument("Error: too many parameters for max_body_size");
+		throw std::invalid_argument("invalid number of parameters");
 }
 
 void LocationConfig::validateUploadLocation(tokeniterator begin, tokeniterator end){
@@ -254,10 +252,10 @@ void LocationConfig::validateUploadLocation(tokeniterator begin, tokeniterator e
 			_upload_location = (*begin);
 		}
 		else
-			throw std::invalid_argument("Upload directory not found: " + *begin);
+			throw std::invalid_argument("invalid parameter: " + *begin);
 	}
 	else
-		throw InvalidConfigException();
+		throw std::invalid_argument("invalid number of parameters.");
 }
 
 void LocationConfig::validateCGIExtension(tokeniterator begin, tokeniterator end){
@@ -265,42 +263,34 @@ void LocationConfig::validateCGIExtension(tokeniterator begin, tokeniterator end
 		_cgi_extension = *begin;
 }
 
-void LocationConfig::validateAutoindex(tokeniterator begin, tokeniterator end){
-	std::cout << "validation autoindex: " << *begin << std::endl;
-	
+void LocationConfig::validateAutoindex(tokeniterator begin, tokeniterator end){	
 	if (begin == end){
 		if (*begin == "1" || *begin == "on")
-			std::cout << "THIS" << std::endl;
-			// _autoindex = true;
+			_autoindex = true;
 		else if (*begin == "0" || *begin == "off")
 			_autoindex = false;
 		else
-			throw InvalidConfigException();
+			throw std::invalid_argument("invalid parameter: " + *begin);
 	}
 	else
-		throw InvalidConfigException();
+		throw std::invalid_argument("invalid number of parameters.");
 }
 
 LocationConfig::LocationConfig(tokeniterator begin, tokeniterator end){
-	// std::cout << TEXT_BOLD << "	Parsing Location from " << *begin << " to " << *end << std::endl;
-	// tokeniterator directiveend = std::find(begin, end, ";") ;
-	//IF FOUND ; CREATE TUPLE
-	// try	{
+	try	{
 		while (begin < end){
 			tokeniterator directiveend = std::find(begin, end, ";") ;
 			if (directiveend <= end) {
 				parseLocationDirective(begin, directiveend - 1);
 				begin = directiveend + 1;
 			}
-			else 
-				std::cerr << COLOR_ERROR << "Error: Cannot parse directive" << std::endl << COLOR_STANDARD;
+			else
+				throw std::invalid_argument("directive not closed by ;");
 		}
-	// }
-	// catch(const std::exception& e)	{
-		// throw InvalidConfigException();
-		// std::cerr << e.what() << '\n';
-		// }
-	std::cout << TEXT_NOFORMAT;
+	}
+	catch(const std::exception& e)	{
+			throw std::invalid_argument(e.what());
+		}
 }
 
 std::ostream& operator<<(std::ostream& os, const LocationConfig& locationconf) {

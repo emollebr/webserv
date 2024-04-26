@@ -6,7 +6,7 @@
 /*   By: jschott <jschott@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/15 14:23:34 by jschott           #+#    #+#             */
-/*   Updated: 2024/04/25 18:04:08 by jschott          ###   ########.fr       */
+/*   Updated: 2024/04/26 14:21:48 by jschott          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -39,11 +39,11 @@ class ServerConfig;
 typedef std::deque<std::string>::iterator tokeniterator;
 class	ServerConfig;
 
-void						parseDirective(tokeniterator begin, tokeniterator end);
 bool 						isBalanced(std::stringstream& ss);
 tokeniterator				getClosingBraket (std::deque<std::string>& queue, tokeniterator start, tokeniterator end);
 void						printTokens(std::deque<std::string> tokens);
 void						populateTokens(std::stringstream &bufferstream, std::deque<std::string>	&tokens);
-std::vector<ServerConfig>	readFile2Buffer (std::string filename);
+std::deque<std::string>		readFile2Buffer (std::string filename);
+std::vector<ServerConfig>	parseConfig (std::deque<std::string> tokens);
 bool						directoryExists (std::string dir_name);
 bool 						fileExists (std::string file_name);

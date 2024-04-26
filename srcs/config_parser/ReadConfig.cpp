@@ -6,7 +6,7 @@
 /*   By: jschott <jschott@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/05 10:20:40 by jschott           #+#    #+#             */
-/*   Updated: 2024/04/25 18:03:06 by jschott          ###   ########.fr       */
+/*   Updated: 2024/04/26 18:26:44 by jschott          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -74,11 +74,6 @@ bool isBalanced(std::stringstream& ss) {
     return stack.empty();
 }
 
-void	 parseDirective(tokeniterator begin, tokeniterator end){
-	std::cout << "		Parsing Directive from " << *begin << " to " << *end << std::endl;
-	
-}
-
 //Clean input from comments and put input in tokens
 void	populateTokens(std::stringstream &bufferstream, std::deque<std::string>	&tokens) {
 	std::string			line;
@@ -143,16 +138,19 @@ void	populateTokens(std::stringstream &bufferstream, std::deque<std::string>	&to
 	tokens.pop_back();
 }
 
-std::vector<ServerConfig>	readFile2Buffer (std::string filename){
-	std::stringstream	bufferstream;
-	std::ifstream		input(filename.c_str());
-	std::vector<ServerConfig>		returnconfig;
+std::deque<std::string>	readFile2Buffer (std::string filename){
+	std::stringstream		bufferstream;
+	std::deque<std::string>	tokens;
+
+	size_t	fileend = filename.rfind(".conf");
+	if ( fileend == std::string::npos || filename[fileend + 5]){
+		throw std::invalid_argument ("Error: Invalid config file");
+	}
 
 	//check that file existst && try to acccess file
-	if (!input.is_open()){
-		std::cerr << COLOR_ERROR  << "Error: Couldn't open file" << std::endl << COLOR_STANDARD;
-		exit (1);	
-	}
+	std::ifstream	input(filename.c_str());
+	if (!input.is_open())
+		throw std::invalid_argument ("Error: Cannot open config file");
 	//read file to buffer stringstream & close it
 	bufferstream << input.rdbuf();
 	input.close();
@@ -164,43 +162,45 @@ std::vector<ServerConfig>	readFile2Buffer (std::string filename){
 	// }
 
 	//Create Tokens from Input
-	std::deque<std::string>	tokens;
 	populateTokens(bufferstream, tokens);
 	bufferstream.clear();
-	ServerConfig ret;
-	// printTokens(tokens);
 
-	//CHECK FIRST TOKEN
-	while (!tokens.empty()) {
+	return (tokens);		
+}
+
+
+// Gets a dequeue of tokens, looks for server keyword and {} to identify serverblock and hand it to ServerConfig Class
+std::vector<ServerConfig>	parseConfig (std::deque<std::string> tokens){
+	std::vector<ServerConfig>		returnconfig;
+	tokeniterator blockstart = tokens.begin();
+	tokeniterator blockend;
+
+	while (blockstart < tokens.end()) {
 		
-
 		//SKIP EMPTY TOKENS
-		while (tokens.front() == "")
-			tokens.pop_front();
+		while (*blockstart == "")
+			blockstart++;
 		// HANDLE SERVER TOKENS
-		if (!tokens.empty() && tokens.front() != "server") {
-			std::cerr << COLOR_ERROR  << "Error: Cannot parse line:" << tokens.front() << std::endl << COLOR_STANDARD;
-			break ;
-		}
-		else if (!tokens.empty()) {	
-			tokens.pop_front();
-			while (tokens.front() == "")
-				tokens.pop_front();
-			tokeniterator blockstart = tokens.begin();
-			tokeniterator blockend;
+		if (*blockstart == "server")
+		{	
+			++blockstart;
+			while (*blockstart == "")
+				tokens.erase(blockstart);
 			//CHECK FOR OPENING BRAKET AND FIND CLOSING TO PARSE BLOCK
-			if (*blockstart == "{" &&
-					((blockend = getClosingBraket(tokens, blockstart, tokens.end())) != tokens.end())) {
+			blockend = getClosingBraket(tokens, blockstart, tokens.end());
+			if (*blockstart == "{" && (blockend != tokens.end())) {
 				tokens.erase(tokens.begin(), ++blockstart);
-				ServerConfig test(tokens, blockstart, blockend - 1);
-				// return test(tokens, blockstart, blockend - 1);
-				returnconfig.push_back(test);
-				tokens.erase(tokens.begin(), ++blockend);
+				ServerConfig new_server(tokens, blockstart, blockend - 1);
+				returnconfig.push_back(new_server);
+				blockstart = blockend + 1;
 			}
+			else
+				throw std::invalid_argument("missing closing } to:\n" + *(--blockstart) + " " + *(++blockstart) + " " + *(++blockstart) + " " + *(++blockstart));
 		}
+		else
+			throw std::invalid_argument("not a server block: " + *blockstart);
 	}
-
-	return (returnconfig);			
+	return (returnconfig);
 }
 
 bool directoryExists (std::string dir_name) {
@@ -214,5 +214,3 @@ bool fileExists (std::string file_name) {
 	std::ifstream file(file_name.c_str());
 	return file.good();
 }
-
-// DIREctives: listen, error, location, index, methods, root, php, CGI, exec, php, 
