@@ -6,7 +6,7 @@
 /*   By: jschott <jschott@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/04 16:51:38 by jschott           #+#    #+#             */
-/*   Updated: 2024/04/25 18:01:51 by jschott          ###   ########.fr       */
+/*   Updated: 2024/04/18 15:06:48 by jschott          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,6 +17,7 @@
 #include <map>
 #include <vector>
 #include <iostream>
+// #include "LocationConfig.hpp"
 #include "ReadConfig.hpp"
 
 
@@ -26,16 +27,16 @@ class LocationConfig;
 class ServerConfig
 {
 private:
-	std::string									_host; // 0.0.0.0 - 255.255.255.255 validation DONE
+	std::string									_host;
 	std::vector<size_t>							_ports; // ports 0-1023 well-known | 1024-49151 registered | 49152-65535 dynamic & private port
-	std::map<std::string, LocationConfig>		_locations; // uri -> locationvalidation  validation DONE
+	std::map<std::string, LocationConfig>		_locations;
 	
 
-	// std::map<std::string, std::vector<size_t> >	_listen; 
+	std::map<std::string, std::vector<size_t> >	_listen;
 
 //OPTIONAL INFORMATION
-	std::vector<std::string>					_server_names; // www.uri.com
-	std::map<unsigned int, std::string>			_error_pages;// /directory/to/errorfiles.html validation DONE
+	std::vector<std::string>					_server_names;
+	std::string									_error_path;
 
 //INDECES
 	std::map<std::string, bool>					_directives_set;
@@ -56,8 +57,9 @@ public:
 	
 	~ServerConfig();
 
+	// void 				addLocation(std::pair<std::string, LocationConfig> location);
 	void 				addLocation(std::string location, LocationConfig config);
-	// void				setErrorPath(std::string error_path);
+	void				setErrorPath(std::string error_path);
 	void				setServerName(std::vector<std::string> server_name);
 
 	std::vector<size_t>							getListenPorts() const;
@@ -65,8 +67,7 @@ public:
 	std::map<std::string, LocationConfig> const	getLocations() const;
 	LocationConfig const						getLocation(std::string directory) const;
 	std::vector<std::string> const				getServerNames() const;
-	std::map<uint, std::string>	const 			getErrorPages() const;
-	std::string	const							getErrorPath(int StatusCode) const;
+	std::string	const							getErrorPath() const;
 
 	void	parseServerDirective(tokeniterator begin, tokeniterator end);
 	void	validatePort(tokeniterator begin, tokeniterator end);
