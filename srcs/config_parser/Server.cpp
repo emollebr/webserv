@@ -25,14 +25,13 @@ std::string Server::extractCGIScriptPath(const std::string& request) {
     return "";
 }
 
-unsigned int Server::_ipStringToInt(const std::string ipAddress) {
+unsigned int Server::_ipStringToInt(const std::string& ipAddress) {
     std::vector<unsigned int>   parts;
     std::istringstream          ipStream(ipAddress);
     std::string                 part;
     unsigned int                ip;
     int                         count = 0;
 
-    // this is terrible !!!
     if (ipAddress.empty())
         return(0);
     while (std::getline(ipStream, part, '.')) 
@@ -58,7 +57,6 @@ int  Server::_initSocket(std::string address, size_t port)
     //populate the sockaddr struct
     _sockaddr.sin_family = AF_INET;
     unsigned int ip = _ipStringToInt(address);
-    std::cout << ip << std::endl;
     _sockaddr.sin_addr.s_addr = htonl(ip);
     _sockaddr.sin_port = htons(port); // htons is necessary to convert a number to network byte order
     
@@ -75,7 +73,6 @@ int  Server::_initSocket(std::string address, size_t port)
     fcntl(serversock.fd, F_SETFL, O_NONBLOCK); // Set server socket to non-blocking mode
     _sockets.push_back(serversock); //adding the server socket to the vector
     _nServerSockets += 1;
-    std::cout << "initSocket: new server socket for host " << address << " on port " << port << std::endl;
     return (serversock.fd);
 }
 
@@ -106,7 +103,6 @@ int  Server::_checkConnections()
             // Add new connection/socket to the vector
             pollfd newfd;
             newfd.fd = new_socket;
-            std::cout << "New connection: " << new_socket << std::endl;
             newfd.events = POLLIN;
             _sockets.push_back(newfd);
         }
@@ -122,7 +118,6 @@ void    Server::_disconnectClient(int i) {
         delete _request[_sockets[i].fd];
         _request.erase(_sockets[i].fd);
     }
-    std::cout << "Client " << _sockets[i].fd << " disconnected" << std::endl;
     close(_sockets[i].fd);
     _sockets.erase(_sockets.begin() + i);
 }
@@ -134,7 +129,6 @@ int Server::_handleRequest(int i) {
     ssize_t	bytesRead;
     try { //reading from client socket
         bytesRead = recv(fd, &buffer, BUF_SIZE, O_NONBLOCK);
-        std::cout << "REQUEST: " << buffer << std::endl;   
         if (bytesRead == 0)
             throw ConnectionClosedException("Client closed the connection\n");
         else if (bytesRead == -1)
@@ -147,7 +141,7 @@ int Server::_handleRequest(int i) {
 
     if (_request.count(fd) == 0) { //make new request
         try {
-            _request.insert(std::make_pair(fd, new Request(buffer, fd, bytesRead, MAX_BODY_SIZE)));
+            _request.insert(std::make_pair(fd, new Request(buffer, fd, bytesRead, MAX_BODY_SIZE, _config.getErrorPages())));
         } catch (const std::exception& e) {
             std::cout << "Caught exception: " << e.what() << std::endl;
             return -1;

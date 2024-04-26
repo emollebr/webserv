@@ -1,6 +1,6 @@
 #include "common.hpp"
 
-Request::Request(char *buffer, int client, int bytesRead, size_t maxBodySize) : _pendingResponse(0), _bytesSent(0), client(client){
+Request::Request(char *buffer, int client, int bytesRead, size_t maxBodySize, std::map<unsigned int, std::string>	error_pages) : _pendingResponse(0), _bytesSent(0), _errorPages(error_pages), client(client) {
     
     std::istringstream iss(buffer);
     std::string line;
@@ -70,24 +70,19 @@ void Request::_validateContentHeaders(size_t maxBodySize) {
     //validate content headers headers/handle errors
     std::map<std::string, std::string>::const_iterator it = _headers.find("Content-Disposition");
     if (it == _headers.end()) {
-        std::string response = _getStatusResponse("400 Bad Request", "400 Bad Request: Missing 'Content-Disposition' header for POST request");
-        sendResponse(response.c_str(), response.size(), 0);
+        _sendStatusPage(400, "400 Bad Request: Missing 'Content-Disposition' header for POST request");
         throw MissingRequestHeaderException();
     }  
     it = _headers.find("Content-Length");
     if (it == _headers.end()) {
-        std::string response = _getStatusResponse("400 Bad Request", "400 Bad Request: Missing 'Content-Length' header for POST request");
-        sendResponse(response.c_str(), response.size(), 0);
+        _sendStatusPage(400, "400 Bad Request: Missing 'Content-Length' header for POST request");
         throw MissingRequestHeaderException();
     }
     std::istringstream ss(it->second);
     ss >> _contentLength;
     if (_contentLength > maxBodySize) {
-        std::stringstream bs;
-        bs << maxBodySize;
-        std::string msg = "413 Payload Too Large: Content-Length exceeds limit of " + bs.str() + " bytes";
-        std::string response = _getStatusResponse("413 Payload Too Large", msg);
-        sendResponse(response.c_str(), response.size(), 0);
+        std::string msg = "413 Payload Too Large: Content-Length exceeds limit of " + intToStr(maxBodySize) + " bytes";
+        _sendStatusPage(413, msg);
         throw MaxBodySizeExceededException();
     }
 }
@@ -108,7 +103,8 @@ bool Request::isCGIRequest() {
     return false;
 }
 
-void Request::executeCGIScript(const std::string& scriptPath, int clientSocket, char** env) {
+
+void Request::executeCGIScript(const std::string& scriptPath, char** env) {
     // Create pipes for inter-process communication
     
 
@@ -163,9 +159,10 @@ void Request::executeCGIScript(const std::string& scriptPath, int clientSocket, 
 
         // Send HTTP response with CGI script output
         std::string response = "HTTP/1.1 200 OK\nContent-Type: text/html\n\n" + responseData;
-        send(clientSocket, response.c_str(), response.size(), 0);
+        sendResponse(response.c_str(), response.size(), 0);
     }
 }
+
 
 void    Request::pendingPostRequest(char* buffer, int bytesRead) {
     _body.append(std::string(buffer, bytesRead));
@@ -176,6 +173,19 @@ void    Request::pendingPostRequest(char* buffer, int bytesRead) {
 bool Request::_fileExists(std::string filename) {
     std::ifstream file(filename.c_str());
     return file.good();
+}
+
+int		Request::_sendStatusPage(int errorCode, std::string msg) {
+    std::map<unsigned int, std::string>::iterator it = _errorPages.find(errorCode);
+    if (it != _errorPages.end()) { //check for default error pages
+        _object = it->second;
+        return (createResponse());
+    }
+    else { //no default || success
+         std::stringstream response;
+        response << "HTTP/1.1 " + intToStr(errorCode) + "\r\nContent-Type: text/plain\r\n" << msg.size() + 1 << "\r\n\r\n" + msg + "\r\n";
+        return (sendResponse(response.str().c_str(), response.str().size(), 0));
+    }
 }
 
 // Function to generate a new filename if the original filename already exists
@@ -189,16 +199,14 @@ std::string Request::_generateNewFilename(const std::string& originalFilename) {
     }
 
     int counter = 1;
-    std::ostringstream oss;
-    oss << "(" << counter << ")";
+    std::string num = "(" + intToStr(counter) + ")";
     // Keep incrementing counter and appending it to the filename until a unique filename is found
-    while (_fileExists(newFilename.c_str() + oss.str() + extension)) {
+    while (_fileExists(newFilename.c_str() + num + extension)) {
         counter++;
-        oss.str("");
-        oss << "(" << counter << ")";
+        num = "(" + intToStr(counter) + ")";
     }
 
-    newFilename = newFilename + oss.str() + extension;
+    newFilename = newFilename  + num + extension;
     return newFilename;
 }
 

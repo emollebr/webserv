@@ -36,7 +36,7 @@ int main (int argc, char** argv){
 		for (unsigned long i = 0; i < configs.size(); ++i) {
 			Server serv(configs[i]);
 			servers.push_back(serv);
-			std::cout << "server host: " << configs[i].getHost() << std::endl;
+			std::cout << "Server host: " << configs[i].getHost() << std::endl;
 		}
 		while (true) {
 			for (size_t i = 0; i < servers.size(); ++i) {
