@@ -6,7 +6,7 @@
 /*   By: jschott <jschott@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/12 15:33:23 by jschott           #+#    #+#             */
-/*   Updated: 2024/04/26 18:27:02 by jschott          ###   ########.fr       */
+/*   Updated: 2024/04/29 11:17:05 by jschott          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -67,11 +67,11 @@ ServerConfig::ServerConfig(std::deque<std::string> tokens, tokeniterator begin, 
 				}
 			}
 			else
-				throw std::invalid_argument("location block not closed: " + *begin);
+				throw std::invalid_argument("location block " + *begin + " missing closing '}'");
 			
 		}
 	// IF IS DIRECTIVE CHECK FOR ';', IF FOUND CREATE DIRECTIVE
-	else if ((statementend = std::find(begin, end, ";")) <= end ) {
+	else if ((statementend = std::find(begin, end + 1, ";")) <= end ) {
 		try {
 			parseServerDirective(begin, statementend - 1);
 		}
@@ -80,8 +80,9 @@ ServerConfig::ServerConfig(std::deque<std::string> tokens, tokeniterator begin, 
 		}
 		
 	}
-	else 
-		throw std::invalid_argument("directive not closed: " + *begin) ;
+	else {
+		throw std::invalid_argument("server directive: " + *begin + " missing closing ';'");
+	}
 	begin = statementend + 1;		
 	}	
 }
@@ -179,7 +180,7 @@ void	ServerConfig::parseServerDirective(tokeniterator begin, tokeniterator end){
 			(*_directives_set.find(*begin)).second = true;
 		}
 		catch (const std::exception& e){
-			throw std::invalid_argument("server directive " + *begin + " " + e.what());
+			throw std::invalid_argument("server directive " + *begin + ": " + e.what());
 		}
 	}
 	else
@@ -188,7 +189,7 @@ void	ServerConfig::parseServerDirective(tokeniterator begin, tokeniterator end){
 
 
 void	ServerConfig::validatePort(tokeniterator begin, tokeniterator end){
-	for (; begin <= end; begin++) {
+	for (NULL; begin <= end; begin++) {
 		char* error = NULL;
 		unsigned long int port = strtoul((*begin).c_str(), &error, 0);
 		if (strlen(error) > 0 || port > 65535)
@@ -198,7 +199,6 @@ void	ServerConfig::validatePort(tokeniterator begin, tokeniterator end){
 		if (find(_ports.begin(), _ports.end(), port) == _ports.end())
 			_ports.push_back(port);
 	}
-	//DO VALIDATION
 }
 
 void	ServerConfig::validateLocation(tokeniterator begin, tokeniterator end){
@@ -214,13 +214,10 @@ void	ServerConfig::validateLocation(tokeniterator begin, tokeniterator end){
 		std::cout << *begin << std::endl << std::endl;
 		throw std::invalid_argument(e.what());
 	}
-		
-	// }
-	
-		
 }
 
 void	ServerConfig::validateHost(tokeniterator begin, tokeniterator end){
+	std::cout << "validating: " << *begin << " " << *end << std::endl;
 	if (begin == end){
 		char *tkns = new char [(*begin).length() + 1];
 		strcpy(tkns, (*begin).c_str());
@@ -246,12 +243,12 @@ void	ServerConfig::validateServerName(tokeniterator begin, tokeniterator end){
 
 void	ServerConfig::validateErrorPath(tokeniterator begin, tokeniterator end){
 	
-	if (begin + 1 > end)
+	if (begin >= end || *end == "")
 		throw std::invalid_argument("invalid number of prameters.");
 		
 	std::string errorPage = *end;
 	if (!fileExists(errorPage))
-		throw std::invalid_argument("not found: " + *end);
+		throw std::invalid_argument("invalid parameter: " + *end);
 	--end;
 
 	for (; begin <= end; begin++){
