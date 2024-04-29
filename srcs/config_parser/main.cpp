@@ -35,6 +35,7 @@ int main (int argc, char** argv){
 		std::vector<ServerConfig> configs = parseConfig(tokens);
 		std::vector<Server> servers;
 		for (unsigned long i = 0; i < configs.size(); ++i) {
+			std::cout << configs[i] << std::endl << std::endl;
 			Server serv(configs[i]);
 			servers.push_back(serv);
 			std::cout << "Server host: " << configs[i].getHost() << std::endl;

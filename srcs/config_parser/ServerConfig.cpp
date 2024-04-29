@@ -6,7 +6,7 @@
 /*   By: jschott <jschott@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/12 15:33:23 by jschott           #+#    #+#             */
-/*   Updated: 2024/04/29 11:17:05 by jschott          ###   ########.fr       */
+/*   Updated: 2024/04/29 17:45:53 by jschott          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,11 +15,11 @@
 
 
 void ServerConfig::init(){
-	std::string	directives[] = {"listen", "location", "host",
-									"server_name", "error_page"};
+	std::string	directives[] = {"port", "location", "host",
+									"server_name", "error_page", "listen"};
 	typedef void (ServerConfig::*ServerConfigFunction)(tokeniterator begin, tokeniterator end);							
 	ServerConfigFunction functions[] = {&ServerConfig::validatePort, &ServerConfig::validateLocation, &ServerConfig::validateHost, 
-										&ServerConfig::validateServerName, &ServerConfig::validateErrorPath};
+										&ServerConfig::validateServerName, &ServerConfig::validateErrorPath, &ServerConfig::validateHostPort};
 	int size = sizeof(directives) / sizeof(directives[0]);
 	for (int i = 0; i < size; i++){
 		_directives_set[directives[i]] = false;
@@ -33,7 +33,7 @@ ServerConfig::ServerConfig(){
 
 ServerConfig::ServerConfig(std::vector<size_t> ports){
 	for (std::vector<size_t>::iterator it = ports.begin(); it < ports.end(); it++)
-		this->_ports.push_back(*it);		
+		this->_ports.insert(*it);		
 }
 
 ServerConfig::ServerConfig(ServerConfig const & origin) {
@@ -118,10 +118,20 @@ void ServerConfig::setServerName(std::vector<std::string> server_names) {
 }
 
 /* GETTER */
-std::vector<size_t> ServerConfig::getListenPorts() const{
+std::set<std::pair <std::string, size_t> > ServerConfig::getListen() const{
+	if (_host_ports_registry.empty()){
+		std::cout << "nothing to see here" << std::endl;
+		return std::set<std::pair <std::string, size_t> >();
+	}
+	std::set<std::pair <std::string, size_t> > listen;
+	listen = _host_ports_registry;
+	return listen;
+}
+
+std::set<size_t> ServerConfig::getListenPorts() const{
 	if (_ports.empty())
-		return std::vector<size_t>();
-	std::vector<std::size_t> ports;
+		return std::set<size_t>();
+	std::set<std::size_t> ports;
 	ports = _ports;
 	return (ports);
 }
@@ -197,7 +207,7 @@ void	ServerConfig::validatePort(tokeniterator begin, tokeniterator end){
 		if (port > 49151)
 			std::cerr << COLOR_WARNING << "Warning: Unusual status port: " << port << COLOR_STANDARD << std::endl;
 		if (find(_ports.begin(), _ports.end(), port) == _ports.end())
-			_ports.push_back(port);
+			_ports.insert(port);
 	}
 }
 
@@ -216,8 +226,53 @@ void	ServerConfig::validateLocation(tokeniterator begin, tokeniterator end){
 	}
 }
 
+bool	ServerConfig::isValidatePort(char* port_str){
+	char* error = NULL;
+	unsigned long int port = strtoul(port_str, &error, 0);
+	if (strlen(error) > 0 || port > 65535)
+		throw std::invalid_argument("invalid parameter: ");
+	if (port > 49151)
+		std::cerr << COLOR_WARNING << "Warning: Unusual status port: " << port << COLOR_STANDARD << std::endl;
+	return true;
+}
+
+bool	ServerConfig::isValidateHost(char* host){
+	if (!host)
+		return true;
+	char * IP = new char [strlen(host)];
+	strcpy(IP, host);
+	IP =  strtok(IP, ".");
+	for ( int i = 0; IP != NULL && i < 4; i++){
+		char* error = NULL;
+		unsigned long int body = strtoul(IP, &error, 0);
+		if (strlen(error) > 0 || body > 255)
+			throw std::invalid_argument("invalid parameter: ");
+		IP = strtok(NULL, ".");
+	}
+	return true;
+}
+
+void	ServerConfig::validateHostPort(tokeniterator begin, tokeniterator end){
+	if (begin == end){
+		char *tkns = new char [(*begin).length() + 1];
+		char* host = new char [strlen(tkns)];
+		strcpy(tkns, (*begin).c_str());
+		host = strtok(tkns, ":");
+			tkns = strtok(NULL, ":");
+		if (isValidateHost(host) && isValidatePort(tkns)){
+				size_t port = strtoul(tkns, NULL, 0);
+				std::pair<std::string, size_t> test(host, port);
+				_host_ports_registry.insert(test);
+				_host_ports_registry.insert(std::make_pair(host, port));
+				_host_ports_registry.insert(std::make_pair("test", 13));
+				std::cout << host << ":" << port << std::endl;
+		}		
+			
+	}
+}
+
+
 void	ServerConfig::validateHost(tokeniterator begin, tokeniterator end){
-	std::cout << "validating: " << *begin << " " << *end << std::endl;
 	if (begin == end){
 		char *tkns = new char [(*begin).length() + 1];
 		strcpy(tkns, (*begin).c_str());
@@ -271,13 +326,20 @@ std::ostream& operator<<(std::ostream& os, const ServerConfig& serverconf) {
 	os << "\thost\t\t" << serverconf.getHost() << ";" << std::endl;
 	
 	os << "\tports\t\t" ;
-	std::vector<size_t> ports = serverconf.getListenPorts();
-	for (std::vector<size_t>::iterator it = ports.begin(); it < ports.end(); it++) {
+	std::set<size_t> ports = serverconf.getListenPorts();
+	for (std::set<size_t>::iterator it = ports.begin(); it != ports.end(); it++) {
 		if (it != ports.begin())
 			os << " ";
 		os << *it;
 	}
 	os << ";" << std::endl;
+
+
+	std::set<std::pair <std::string, size_t> > host_ports = serverconf.getListen();
+	for (std::set<std::pair <std::string, size_t> >::iterator it = host_ports.begin(); it != host_ports.end(); it++) {
+		std::cout << "HELLO" << std::endl;
+		os << "\tlisten\t\t" << (*it).first << ":" << (*it).second << std::endl;
+	}
 
 	try {
 		std::map<uint, std::string> error_pages = serverconf.getErrorPages();

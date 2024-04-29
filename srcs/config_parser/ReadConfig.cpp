@@ -6,7 +6,7 @@
 /*   By: jschott <jschott@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/05 10:20:40 by jschott           #+#    #+#             */
-/*   Updated: 2024/04/26 18:26:44 by jschott          ###   ########.fr       */
+/*   Updated: 2024/04/29 12:49:19 by jschott          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -213,4 +213,11 @@ bool directoryExists (std::string dir_name) {
 bool fileExists (std::string file_name) {
 	std::ifstream file(file_name.c_str());
 	return file.good();
+}
+
+
+void identifyServerDuplicates(std::vector<ServerConfig> servers){
+	for (std::vector<ServerConfig>::iterator it = servers.begin(); it < servers.end(); it++){
+		
+	}
 }
