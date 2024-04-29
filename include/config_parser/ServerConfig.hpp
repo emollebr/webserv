@@ -6,7 +6,7 @@
 /*   By: jschott <jschott@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/04 16:51:38 by jschott           #+#    #+#             */
-/*   Updated: 2024/04/29 16:15:37 by jschott          ###   ########.fr       */
+/*   Updated: 2024/04/29 18:14:07 by jschott          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,6 +17,7 @@
 #include <map>
 #include <vector>
 #include <iostream>
+#include <set>
 #include "ReadConfig.hpp"
 
 

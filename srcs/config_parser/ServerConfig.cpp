@@ -6,7 +6,7 @@
 /*   By: jschott <jschott@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/12 15:33:23 by jschott           #+#    #+#             */
-/*   Updated: 2024/04/29 17:45:53 by jschott          ###   ########.fr       */
+/*   Updated: 2024/04/29 18:18:08 by jschott          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -119,6 +119,7 @@ void ServerConfig::setServerName(std::vector<std::string> server_names) {
 
 /* GETTER */
 std::set<std::pair <std::string, size_t> > ServerConfig::getListen() const{
+	
 	if (_host_ports_registry.empty()){
 		std::cout << "nothing to see here" << std::endl;
 		return std::set<std::pair <std::string, size_t> >();
@@ -265,6 +266,13 @@ void	ServerConfig::validateHostPort(tokeniterator begin, tokeniterator end){
 				_host_ports_registry.insert(test);
 				_host_ports_registry.insert(std::make_pair(host, port));
 				_host_ports_registry.insert(std::make_pair("test", 13));
+				if (_host_ports_registry.empty())
+					std::cout << "EMPTY" << std::endl;
+				std::set<std::pair <std::string, size_t> > host_ports = _host_ports_registry;
+				for (std::set<std::pair <std::string, size_t> >::iterator it = host_ports.begin(); it != host_ports.end(); it++) {
+					std::cout << "HELLO" << std::endl;
+					std::cout << "\tlisten\t\t" << (*it).first << ":" << (*it).second << std::endl;
+				}
 				std::cout << host << ":" << port << std::endl;
 		}		
 			
