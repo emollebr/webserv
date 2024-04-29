@@ -34,7 +34,6 @@ private:
 	bool						_allow_get;
 	bool						_allow_post;
 	bool						_autoindex; // 0 | off
-	
 
 	std::map<std::string, bool>	_directives_set;
 	std::map<std::string, void (LocationConfig::*)(tokeniterator begin, tokeniterator end)> 

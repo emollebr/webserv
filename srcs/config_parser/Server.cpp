@@ -200,9 +200,9 @@ Server::Server(ServerConfig& config) : _config(config), _nServerSockets(0)
 {
     sethostname(_config.getHost().c_str(), _config.getHost().size());
     try {
-        const std::vector<size_t>& ports = _config.getListenPorts();
+        const std::set<size_t>& ports = _config.getListenPorts();
 
-        for (std::vector<size_t>::const_iterator it = ports.begin(); it != ports.end(); ++it) {
+        for (std::set<size_t>::const_iterator it = ports.begin(); it != ports.end(); ++it) {
             _initSocket(_config.getHost(), *it);
         }
     } catch (const std::exception& e) {

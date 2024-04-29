@@ -277,15 +277,15 @@ void LocationConfig::validateAutoindex(tokeniterator begin, tokeniterator end){
 }
 
 LocationConfig::LocationConfig(tokeniterator begin, tokeniterator end){
+	tokeniterator directiveend;
 	try	{
 		while (begin < end){
-			tokeniterator directiveend = std::find(begin, end, ";") ;
-			if (directiveend <= end) {
+			if ((directiveend = std::find(begin, end + 1, ";")) <= end) {
 				parseLocationDirective(begin, directiveend - 1);
 				begin = directiveend + 1;
 			}
 			else
-				throw std::invalid_argument("directive not closed by ;");
+				throw std::invalid_argument("directive: " + *begin + " missing closing ';'.");
 		}
 	}
 	catch(const std::exception& e)	{
