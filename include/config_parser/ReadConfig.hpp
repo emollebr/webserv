@@ -6,7 +6,7 @@
 /*   By: jschott <jschott@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/15 14:23:34 by jschott           #+#    #+#             */
-/*   Updated: 2024/04/26 14:21:48 by jschott          ###   ########.fr       */
+/*   Updated: 2024/04/30 11:09:21 by jschott          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,6 +32,7 @@
 #include <vector>
 #include <set>
 #include <sys/stat.h>
+#include <iterator>
 #include "ServerConfig.hpp"
 #include "LocationConfig.hpp"
 // #include <tuple>

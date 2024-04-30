@@ -16,6 +16,7 @@
 #include <string>
 #include <vector>
 #include <deque>
+#include <iterator>
 #include "ReadConfig.hpp"
 
 class LocationConfig
@@ -25,7 +26,7 @@ private:
 	
 // OPTIONAL VALUES
 	std::vector<std::string>	_indeces; // index.html index.php
-	std::vector<std::string>	_methods_allowed; // GET POST DELETE
+	std::set<std::string>		_methods_allowed; // GET POST DELETE
 	std::pair<int, std::string>	_redirect; // [statusCode, directory/to/file.html]
 	std::string					_CGI; // /cgi_bin/script
 	size_t						_max_body_size; // 42 | 42M | 42G
@@ -51,7 +52,7 @@ public:
 
 	std::string					getRoot() const;
 	std::vector<std::string>	getIndeces() const;
-	std::vector<std::string>	getMethods() const;
+	std::set<std::string>		getMethods() const;
 	std::pair<int, std::string>	getRedirect() const;
 	std::string					getCGI() const;
 	size_t						getBodySize() const;
