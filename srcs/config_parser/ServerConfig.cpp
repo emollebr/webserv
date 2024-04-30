@@ -6,7 +6,7 @@
 /*   By: jschott <jschott@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/12 15:33:23 by jschott           #+#    #+#             */
-/*   Updated: 2024/04/30 11:56:29 by jschott          ###   ########.fr       */
+/*   Updated: 2024/04/30 17:37:42 by jschott          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -279,7 +279,6 @@ void	ServerConfig::validateHostPort(tokeniterator begin, tokeniterator end){
 	}
 }
 
-
 void	ServerConfig::validateHost(tokeniterator begin, tokeniterator end){
 	if (begin == end){
 		char *tkns = new char [(*begin).length() + 1];
@@ -326,6 +325,10 @@ void	ServerConfig::validateErrorPath(tokeniterator begin, tokeniterator end){
 		_error_pages[statusCode] = errorPage;
 		_directives_set["return"] = true;
 	}
+}
+
+void	ServerConfig::deletePort(size_t port){
+	_ports.erase(port);		
 }
 
 std::ostream& operator<<(std::ostream& os, const ServerConfig& serverconf) {
