@@ -76,16 +76,16 @@ std::vector<std::string>	LocationConfig::getIndeces() const{
 	return (_);
 } */
 
-std::vector<std::string> LocationConfig::getMethods() const{
+std::set<std::string> LocationConfig::getMethods() const{
 	if (_methods_allowed.empty())
-		return std::vector<std::string>();
-	std::vector<std::string>	methods;
+		return std::set<std::string>();
+	std::set<std::string>	methods;
 	methods = _methods_allowed;
 	return (methods);
 }
 
 bool LocationConfig::hasMethod(std::string method){
-	if (std::find(_methods_allowed.begin(), _methods_allowed.end(), method) != _methods_allowed.end())
+	if (_methods_allowed.find(method) != _methods_allowed.end())
 		return true;
 	return false;
 }
@@ -116,19 +116,19 @@ std::string LocationConfig::getCGIExtension() const{
 }
 
 bool LocationConfig::getAllowGET() const{
-	if (find(_methods_allowed.begin(), _methods_allowed.end(), "GET") != _methods_allowed.end())
+	if (_methods_allowed.find("GET") != _methods_allowed.end())
 		return true;
 	return false;
 }
 
 bool LocationConfig::getAllowPOST() const{
-	if (find(_methods_allowed.begin(), _methods_allowed.end(), "POST") != _methods_allowed.end())
+	if (_methods_allowed.find("POST") != _methods_allowed.end())
 		return true;
 	return false;
 }
 
 bool LocationConfig::getAllowDELETE() const{
-	if (find(_methods_allowed.begin(), _methods_allowed.end(), "DELETE") != _methods_allowed.end())
+	if (_methods_allowed.find("DELETE") != _methods_allowed.end())
 		return true;
 	return false;
 }
@@ -184,7 +184,7 @@ void LocationConfig::validateMethods(tokeniterator begin, tokeniterator end){
 	while (begin <= end){
 		if (!hasMethod(*begin) && 
 			(*begin == "GET" || *begin == "POST" || *begin == "DELETE"))
-			_methods_allowed.push_back(*begin);
+			_methods_allowed.insert(*begin);
 		else if (!hasMethod(*begin))
 			throw std::invalid_argument("invalid parameter: " + *begin);
 		begin++;
@@ -308,10 +308,12 @@ std::ostream& operator<<(std::ostream& os, const LocationConfig& locationconf) {
 	os << ";" << std::endl;
 	
 	os << "\t\tmethods\t\t\t";
-	printbuff = locationconf.getMethods();
-	for (std::vector<std::string>::iterator it = printbuff.begin(); it != printbuff.end(); it++){
+	std::set<std::string> printset = locationconf.getMethods();
+	for (std::set<std::string>::iterator it = printset.begin(); it != printset.end(); it++){
 		os << *it;
-		if (it + 1 != printbuff.end())
+  		std::set<std::string>::iterator next_it = it;
+		++next_it;
+		if (next_it != printset.end())
 			os << " ";
 	}
 	os << ";" << std::endl;

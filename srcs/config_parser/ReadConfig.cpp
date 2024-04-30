@@ -6,7 +6,7 @@
 /*   By: jschott <jschott@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/05 10:20:40 by jschott           #+#    #+#             */
-/*   Updated: 2024/04/29 12:49:19 by jschott          ###   ########.fr       */
+/*   Updated: 2024/04/30 15:32:38 by jschott          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -167,7 +167,22 @@ std::deque<std::string>	readFile2Buffer (std::string filename){
 
 	return (tokens);		
 }
-
+/* 
+void removeConfDuplicates(std::vector<ServerConfig> &config){
+	if (config.size() == 1)
+		return ;
+	for (std::vector<ServerConfig>::iterator it = config.begin(); it < config.end(); it++){
+		std::string hostaddr = (*it).getHost();
+		std::vector<ServerConfig> duplicates;
+		for (std::vector<ServerConfig>::iterator it2 = it; it2 < config.end(); it2){
+			if ((*it2).getHost() == hostaddr)
+				duplicates.push_back(*it2);
+		}
+		for (std::vector<ServerConfig>::iterator it2 = duplicates.begin(); it2 < duplicates.end(); it2){
+			if ((*it2).getListenPorts())
+		}
+	}
+} */
 
 // Gets a dequeue of tokens, looks for server keyword and {} to identify serverblock and hand it to ServerConfig Class
 std::vector<ServerConfig>	parseConfig (std::deque<std::string> tokens){
@@ -200,6 +215,7 @@ std::vector<ServerConfig>	parseConfig (std::deque<std::string> tokens){
 		else
 			throw std::invalid_argument("not a server block: " + *blockstart);
 	}
+	// removeConfDuplicates(returnconfig);
 	return (returnconfig);
 }
 
