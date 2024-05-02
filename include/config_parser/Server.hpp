@@ -58,18 +58,50 @@ class Server
 		sockaddr_in 					_sockaddr;
 		std::vector<pollfd> 			_sockets;
 		std::map<int, Request*>			_request;
+		ServerConfig					_config;
+		int							_nServerSockets;
 
-		void	initSocket( void );
-		int		checkConnections( void );
-		void 	readFromClient(int i);
-		void    disconnectClient(int i);
-		int 	handleRequest(int i);
-		void 			handleSigpipe( void );
-		void	handleSigint( void );
+		int				_initSocket(std::string address, size_t port);
+		unsigned int	_ipStringToInt(const std::string& ipAddress);
+		int 			_setupServerSockets( void );
+		int				_checkConnections( void );
+		void   			 _disconnectClient(int i);
+		int 			_handleRequest(int i);
+		std::string 	extractCGIScriptPath(const std::string& request);
+		
+		class ConnectionClosedException : public std::exception {
+			public:
+				ConnectionClosedException(const char* message) : m_message(message) {}
+				virtual const char* what() const throw() {
+					return m_message;
+				}
+			private:
+				const char* m_message;
+		};
 
+		// Exception for socket receive error
+		class SocketReceiveErrorException : public std::exception {
+			public:
+				SocketReceiveErrorException(const char* message) : m_message(message) {}
+				virtual const char* what() const throw() {
+					return m_message;
+				}
+			private:
+				const char* m_message;
+		};
 
-		std::string extractCGIScriptPath(const std::string& request);
-		void cleanup( void );
+		class SocketInitException : public std::runtime_error {
+			public:
+				SocketInitException(const std::string& host, const std::string& message, int port, int errNum)
+					: std::runtime_error("Host " + host + message + intToStr(port) + ". errno: " + intToStr(errNum)), m_errNum(errNum) {}
+
+				int errorNumber() const { return m_errNum; }
+
+			private:
+				int m_errNum;
+
+		};
+
 };
 
 std::ostream &			operator<<( std::ostream & o, Server const & i );

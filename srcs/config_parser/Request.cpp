@@ -82,6 +82,19 @@ bool Request::_fileExists(std::string filename) {
     return file.good();
 }
 
+int		Request::_sendStatusPage(int statusCode, std::string msg) {
+    std::map<unsigned int, std::string>::iterator it = _errorPages.find(statusCode);
+    if (it != _errorPages.end()) { //check for default error pages
+        _filePath = finishPath(it->second);
+        return (_handleGet());
+    }
+    else { //no default || success
+         std::stringstream response;
+        response << "HTTP/1.1 " + intToStr(statusCode) + "\r\nContent-Type: text/plain\r\n" << msg.size() + 1 << "\r\n\r\n" + msg + "\r\n";
+        return (sendResponse(response.str().c_str(), response.str().size(), 0));
+    }
+}
+
 // Function to generate a new filename if the original filename already exists
 std::string Request::_generateNewFilename(const std::string& originalFilename) {
     std::string newFilename = originalFilename;

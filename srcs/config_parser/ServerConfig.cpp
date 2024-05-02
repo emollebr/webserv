@@ -16,7 +16,7 @@
 
 void ServerConfig::init(){
 	std::string	directives[] = {"listen", "location", "host",
-									"server_name", "error_path"};
+									"server_name", "error_page"};
 	typedef void (ServerConfig::*ServerConfigFunction)(tokeniterator begin, tokeniterator end);							
 	ServerConfigFunction functions[] = {&ServerConfig::validatePort, &ServerConfig::validateLocation, &ServerConfig::validateHost, 
 										&ServerConfig::validateServerName, &ServerConfig::validateErrorPath};

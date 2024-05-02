@@ -97,6 +97,10 @@ int    Request::sendResponse() {
     char buffer[BUF_SIZE];
     file.seekg(_bytesSent); // Move file pointer to the correct position
     size_t bytesRead = file.read(buffer, (_fileSize - _bytesSent > BUF_SIZE) ? BUF_SIZE : _fileSize - _bytesSent).gcount();
+    if (bytesRead == 0) {
+        return _sendStatusPage(500, "500 Internal Error: failed to send requested content");        std::cout << "sendResponse: error: Requested file is empty" << std::endl;
+    }
+
     if (file) {
         file.close();
         int flag = (_fileSize - _bytesSent > 0) ? 0 : MSG_MORE;
