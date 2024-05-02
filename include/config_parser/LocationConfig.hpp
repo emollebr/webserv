@@ -16,6 +16,7 @@
 #include <string>
 #include <vector>
 #include <deque>
+#include <iterator>
 #include "ReadConfig.hpp"
 
 class LocationConfig
@@ -25,8 +26,8 @@ private:
 	
 // OPTIONAL VALUES
 	std::vector<std::string>	_indeces; // index.html index.php
-	std::vector<std::string>	_methods_allowed; // GET POST DELETE
-	std::string					_redirect; // /new-location
+	std::set<std::string>		_methods_allowed; // GET POST DELETE
+	std::pair<int, std::string>	_redirect; // [statusCode, directory/to/file.html]
 	std::string					_CGI; // /cgi_bin/script
 	size_t						_max_body_size;
 	std::string					_default_file; // index.html
@@ -34,8 +35,7 @@ private:
 	std::string					_cgi_extension; // .php
 	bool						_allow_get;
 	bool						_allow_post;
-	bool						_autoindex;
-	
+	bool						_autoindex; // 0 | off
 
 	std::map<std::string, bool>	_directives_set;
 	std::map<std::string, void (LocationConfig::*)(tokeniterator begin, tokeniterator end)> 
@@ -53,8 +53,8 @@ public:
 
 	std::string					getRoot() const;
 	std::vector<std::string>	getIndeces() const;
-	std::vector<std::string>	getMethods() const;
-	std::string					getRedirect() const;
+	std::set<std::string>		getMethods() const;
+	std::pair<int, std::string>	getRedirect() const;
 	std::string					getCGI() const;
 	size_t						getBodySize() const;
 	std::string					getDefaultFile() const;

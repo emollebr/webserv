@@ -6,7 +6,7 @@
 /*   By: jschott <jschott@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/04 16:51:38 by jschott           #+#    #+#             */
-/*   Updated: 2024/04/18 15:06:48 by jschott          ###   ########.fr       */
+/*   Updated: 2024/04/30 17:36:33 by jschott          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,7 +17,7 @@
 #include <map>
 #include <vector>
 #include <iostream>
-// #include "LocationConfig.hpp"
+#include <set>
 #include "ReadConfig.hpp"
 
 
@@ -27,10 +27,11 @@ class LocationConfig;
 class ServerConfig
 {
 private:
-	std::string									_host;
-	std::vector<size_t>							_ports; // ports 0-1023 well-known | 1024-49151 registered | 49152-65535 dynamic & private port
-	std::map<std::string, LocationConfig>		_locations;
-	
+	std::string									_host; // 0.0.0.0 - 255.255.255.255 validation DONE
+	std::set<size_t>							_ports; // ports 0-1023 well-known | 1024-49151 registered | 49152-65535 dynamic & private port
+	std::map<std::string, LocationConfig>		_locations; // uri -> locationvalidation  validation DONE
+
+	std::set<std::pair <std::string, size_t> > 	_host_ports_registry;
 
 	std::map<std::string, std::vector<size_t> >	_listen;
 
@@ -57,24 +58,32 @@ public:
 	
 	~ServerConfig();
 
-	// void 				addLocation(std::pair<std::string, LocationConfig> location);
-	void 				addLocation(std::string location, LocationConfig config);
-	void				setErrorPath(std::string error_path);
-	void				setServerName(std::vector<std::string> server_name);
-
-	std::vector<size_t>							getListenPorts() const;
+	void 										addLocation(std::string location, LocationConfig config);
+	// void										setErrorPath(std::string error_path);
+	void										setServerName(std::vector<std::string> server_name);
+	
+	std::set<std::pair <std::string, size_t> > 	getListen() const;
+	std::set<size_t>							getListenPorts() const;
 	std::string									getHost() const;
 	std::map<std::string, LocationConfig> const	getLocations() const;
 	LocationConfig const						getLocation(std::string directory) const;
 	std::vector<std::string> const				getServerNames() const;
-	std::string	const							getErrorPath() const;
+	std::map<uint, std::string>	const 			getErrorPages() const;
+	std::string	const							getErrorPath(int StatusCode) const;
 
+	void	validateHostPort(tokeniterator begin, tokeniterator end);
+	bool	isValidateHost(char* IP);
+	bool	isValidatePort(char* port);
+
+	
 	void	parseServerDirective(tokeniterator begin, tokeniterator end);
 	void	validatePort(tokeniterator begin, tokeniterator end);
 	void	validateLocation(tokeniterator begin, tokeniterator end);
 	void	validateHost(tokeniterator begin, tokeniterator end);
 	void	validateServerName(tokeniterator begin, tokeniterator end);
 	void	validateErrorPath(tokeniterator begin, tokeniterator end);
+
+	void	deletePort(size_t port);
 
 	class InvalidConfigException : public std::exception{
 		public:

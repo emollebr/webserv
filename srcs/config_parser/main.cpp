@@ -22,22 +22,25 @@ int main (int argc, char** argv){
 	} */
 	//temporary
 	try {
-		std::vector<ServerConfig> configs = readFile2Buffer(argv[1]);
+		std::deque<std::string> tokens = readFile2Buffer(argv[1]);
+		std::vector<ServerConfig> configs = parseConfig(tokens);
 		std::cout << configs[0].getErrorPath(404) << std::endl;
 		std::vector<Server> servers;
 		for (unsigned long i = 0; i < configs.size(); ++i) {
-			Server serv(configs[i]);
-			servers.push_back(serv);
-			std::cout << "Server host: " << configs[i].getHost() << std::endl;
+			std::cout << configs[i] << std::endl << std::endl;
+			// Server serv(configs[i]);
+			// servers.push_back(serv);
+			// std::cout << "Server host: " << configs[i].getHost() << std::endl;
 		}
-		while (true) {
-			for (size_t i = 0; i < servers.size(); ++i) {
-				if (g_signal_received == SIGINT)
-					handleSigint(servers);
-				servers[i].serverRun();
-			}
-		}
+		// while (true) {
+		// 	for (size_t i = 0; i < servers.size(); ++i) {
+		// 		if (g_signal_received == SIGINT)
+		// 			handleSigint(servers);
+		// 		servers[i].serverRun();
+		// 	}
+		// }
 	} catch (const std::exception& e) {
+		std::cerr << COLOR_ERROR << "Error: " << e.what() << COLOR_STANDARD << std::endl;
 		return (1);
 	}
 

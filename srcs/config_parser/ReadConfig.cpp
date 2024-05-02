@@ -6,7 +6,7 @@
 /*   By: jschott <jschott@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/05 10:20:40 by jschott           #+#    #+#             */
-/*   Updated: 2024/04/18 10:52:36 by jschott          ###   ########.fr       */
+/*   Updated: 2024/05/02 11:59:02 by jschott          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -73,11 +73,6 @@ bool isBalanced(std::stringstream& ss) {
     return stack.empty();
 }
 
-void	 parseDirective(tokeniterator begin, tokeniterator end){
-	std::cout << "		Parsing Directive from " << *begin << " to " << *end << std::endl;
-	
-}
-
 //Clean input from comments and put input in tokens
 void	populateTokens(std::stringstream &bufferstream, std::deque<std::string>	&tokens) {
 	std::string			line;
@@ -142,16 +137,19 @@ void	populateTokens(std::stringstream &bufferstream, std::deque<std::string>	&to
 	tokens.pop_back();
 }
 
-void	readFile2Buffer (std::string filename){
-	std::stringstream	bufferstream;
-	std::ifstream		input(filename.c_str());
-	
+std::deque<std::string>	readFile2Buffer (std::string filename){
+	std::stringstream		bufferstream;
+	std::deque<std::string>	tokens;
+
+	size_t	fileend = filename.rfind(".conf");
+	if ( fileend == std::string::npos || filename[fileend + 5]){
+		throw std::invalid_argument ("Error: Invalid config file");
+	}
 
 	//check that file existst && try to acccess file
-	if (!input.is_open()){
-		std::cerr << COLOR_ERROR  << "Error: Couldn't open file" << std::endl << COLOR_STANDARD;
-		exit (1);	
-	}
+	std::ifstream	input(filename.c_str());
+	if (!input.is_open())
+		throw std::invalid_argument ("Error: Cannot open config file");
 	//read file to buffer stringstream & close it
 	bufferstream << input.rdbuf();
 	input.close();
@@ -163,41 +161,98 @@ void	readFile2Buffer (std::string filename){
 	// }
 
 	//Create Tokens from Input
-	std::deque<std::string>	tokens;
 	populateTokens(bufferstream, tokens);
 	bufferstream.clear();
 
-	// printTokens(tokens);
+	return (tokens);		
+}
 
-	//CHECK FIRST TOKEN
-	while (!tokens.empty()) {
-		
-		
-		//SKIP EMPTY TOKENS
-		while (tokens.front() == "")
-			tokens.pop_front();
-		// HANDLE SERVER TOKENS
-		if (!tokens.empty() && tokens.front() != "server") {
-			std::cerr << COLOR_ERROR  << "Error: Cannot parse line:" << tokens.front() << std::endl << COLOR_STANDARD;
-			break ;
+void removeConfDuplicates(std::vector<ServerConfig> &config){
+	if (config.size() == 1)
+		return ;
+	std::vector<ServerConfig> duplicates;
+	for (std::vector<ServerConfig>::iterator it = config.begin(); it < config.end(); it++){
+		std::string hostaddr = (*it).getHost();
+		for (std::vector<ServerConfig>::iterator it2 = it; it2 < config.end(); ++it2){
+			if ((*it2).getHost() == hostaddr)
+				duplicates.push_back(*it2);
 		}
-		else if (!tokens.empty()) {	
-			tokens.pop_front();
-			while (tokens.front() == "")
-				tokens.pop_front();
-			tokeniterator blockstart = tokens.begin();
-			tokeniterator blockend;
-			//CHECK FOR OPENING BRAKET AND FIND CLOSING TO PARSE BLOCK
-			if (*blockstart == "{" &&
-					((blockend = getClosingBraket(tokens, blockstart)) != tokens.end())) {
-				tokens.erase(tokens.begin(), ++blockstart);
-				ServerConfig test(tokens, blockstart, blockend - 1);
-				tokens.erase(tokens.begin(), ++blockend);
+	}
+	if (duplicates.empty())
+		return ;	
+	
+	for (std::vector<ServerConfig>::iterator it2 = duplicates.begin(); it2 < duplicates.end(); it2++){
+		std::set< size_t > ports_keep = (*it2).getListenPorts();
+		std::cout << "Checking for host: " << (*it2).getHost() << std::endl;
+		for (std::vector<ServerConfig>::iterator it3 = it2 + 1; it3 != duplicates.end(); ++it3){
+			std::set< size_t > ports2check = (*it3).getListenPorts();
+			for (std::set<size_t>::iterator it_portkeep= ports_keep.begin(); it_portkeep != ports_keep.end(); it_portkeep++){
+				size_t port2keep = *it_portkeep;
+				std::cout << "\t for port: " << port2keep << std::endl;
+				
+				if (ports2check.find(port2keep) != ports2check.end()){
+					(*it3).deletePort(port2keep);
+					std::cerr << COLOR_WARNING << "Warning: Duplicate of " << (*it3).getHost() << ":" << port2keep << " found. Using first." << COLOR_STANDARD << std::endl;
+					if (((*it3).getListenPorts()).empty()){
+						config.erase(it3);
+						std::cerr << COLOR_WARNING << "Warning: No valid Port left. Deleting server." << COLOR_STANDARD << std::endl;
+					}
+				}
 			}
 		}
 	}
-
-			
 }
 
-// DIREctives: listen, error, location, index, methods, root, php, CGI, exec, php, 
+// Gets a dequeue of tokens, looks for server keyword and {} to identify serverblock and hand it to ServerConfig Class
+std::vector<ServerConfig>	parseConfig (std::deque<std::string> tokens){
+	std::vector<ServerConfig>		returnconfig;
+	tokeniterator blockstart = tokens.begin();
+	tokeniterator blockend;
+
+	while (blockstart < tokens.end()) {
+		
+		//SKIP EMPTY TOKENS
+		while (*blockstart == "")
+			blockstart++;
+		// HANDLE SERVER TOKENS
+		if (*blockstart == "server")
+		{	
+			++blockstart;
+			while (*blockstart == "")
+				tokens.erase(blockstart);
+			//CHECK FOR OPENING BRAKET AND FIND CLOSING TO PARSE BLOCK
+			blockend = getClosingBraket(tokens, blockstart, tokens.end());
+			if (*blockstart == "{" && (blockend != tokens.end())) {
+				tokens.erase(tokens.begin(), ++blockstart);
+				ServerConfig new_server(tokens, blockstart, blockend - 1);
+				returnconfig.push_back(new_server);
+				blockstart = blockend + 1;
+			}
+			else
+				throw std::invalid_argument("missing closing } to:\n" + *(--blockstart) + " " + *(++blockstart) + " " + *(++blockstart) + " " + *(++blockstart));
+		}
+		else
+			throw std::invalid_argument("not a server block: " + *blockstart);
+	}
+	removeConfDuplicates(returnconfig);
+	return (returnconfig);
+}
+
+bool directoryExists (std::string dir_name) {
+	struct stat info;
+	if (stat(dir_name.c_str(), &info) != 0)
+		return false;
+	return (info.st_mode & S_IFDIR) != 0;
+}
+
+bool fileExists (std::string file_name) {
+	std::ifstream file(file_name.c_str());
+	return file.good();
+}
+
+
+void identifyServerDuplicates(std::vector<ServerConfig> servers){
+	for (std::vector<ServerConfig>::iterator it = servers.begin(); it < servers.end(); it++){
+		
+	}
+}
