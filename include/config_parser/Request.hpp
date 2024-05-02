@@ -3,7 +3,6 @@
 
 #include "common.hpp"
 
-
 class Request {
 private:
     std::string                               _method;
@@ -33,7 +32,7 @@ private:
     std::string     _parseBoundary(std::string contentType);
     const char*     _createFileName( void );
     bool            _fileExists(std::string filename);
-    int		        _sendStatusPage(int statusCode, std::string msg);
+    int		        _sendStatusPage(int errorCode, std::string msg);
     std::string     _generateNewFilename(const std::string& originalFilename);
     void            _validateContentHeaders(size_t maxBodySize);
 

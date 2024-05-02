@@ -6,7 +6,7 @@
 /*   By: jschott <jschott@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/05 10:20:40 by jschott           #+#    #+#             */
-/*   Updated: 2024/05/02 11:59:02 by jschott          ###   ########.fr       */
+/*   Updated: 2024/05/02 18:24:14 by jschott          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,12 +20,13 @@ void	printTokens(std::deque<std::string> tokens){
 
 // finds the closing limiter in a dequeue of tokens to a given opening limiter char
 // returns iterator to the position, NULL if limiter is not closed within the dequeue
-tokeniterator getClosingBraket (std::deque<std::string>& queue, tokeniterator start) {
+tokeniterator getClosingBraket (std::deque<std::string> &queue, tokeniterator start, tokeniterator end) {
 	std::string	open =	"{[(\'\"`";
 	std::string	close =	"}])\'\"`";
 	std::string	limiter_open = *start;
 	std::string	limiter_close;
 	tokeniterator notfound = queue.end();
+	notfound = end;
 
 	//return NULL if limiter_open is unknows
 	if (open.find(limiter_open) == open.length())
@@ -35,7 +36,7 @@ tokeniterator getClosingBraket (std::deque<std::string>& queue, tokeniterator st
 	
 	//iterate through dequeue and return closing limiter if found
 	std::stack<std::string> stack;
-	for (tokeniterator pos = start + 1; pos < queue.end(); pos++) {
+	for (tokeniterator pos = start + 1; pos < end; pos++) {
 		if (*pos == limiter_close) {
 			if (limiter_open == limiter_close || stack.empty())
 				return pos;
@@ -171,17 +172,37 @@ void removeConfDuplicates(std::vector<ServerConfig> &config){
 	if (config.size() == 1)
 		return ;
 	std::vector<ServerConfig> duplicates;
+	std::map < std::string, std::vector<ServerConfig> > more_duplicates;
 	for (std::vector<ServerConfig>::iterator it = config.begin(); it < config.end(); it++){
 		std::string hostaddr = (*it).getHost();
-		for (std::vector<ServerConfig>::iterator it2 = it; it2 < config.end(); ++it2){
+		if (more_duplicates.find(hostaddr) != more_duplicates.end())
+			continue;
+		more_duplicates[hostaddr].push_back(*it);
+		for (std::vector<ServerConfig>::iterator it2 = it + 1; it2 < config.end(); it2++){
 			if ((*it2).getHost() == hostaddr)
-				duplicates.push_back(*it2);
+				more_duplicates[hostaddr].push_back(*it2);
 		}
 	}
-	if (duplicates.empty())
-		return ;	
+	std::cout << "DUPLICATE HOST CHECKED" << std::endl;
+	if (more_duplicates.empty())
+		return ;
+	std::cout << "DUPLICATES FOUND" << std::endl;
+
+	for (std::map < std::string, std::vector<ServerConfig> >::iterator it = more_duplicates.begin();
+																		it != more_duplicates.end(); it++){
+		std::set< size_t > ports2keep = (*it).second.front().getListenPorts();
+		for (std::vector<ServerConfig>::iterator it2 = (*it).second.begin() + 1; it2 != (*it).second.end(); it2++){
+			std::cout << "checking for host ip: " << (*it2).getHost() << std::endl << "ports: ";
+			for (std::set< size_t >::iterator it_ports = ports2keep.begin(); it_ports != ports2keep.end(); it_ports++){
+				std::cout << (*it_ports);
+				(*it2).deletePort(*it_ports);
+			}
+			std::cout << std::endl;
+		}
+	}
+																	
 	
-	for (std::vector<ServerConfig>::iterator it2 = duplicates.begin(); it2 < duplicates.end(); it2++){
+/* 	for (std::vector<ServerConfig>::iterator it2 = duplicates.begin(); it2 < duplicates.end(); it2++){
 		std::set< size_t > ports_keep = (*it2).getListenPorts();
 		std::cout << "Checking for host: " << (*it2).getHost() << std::endl;
 		for (std::vector<ServerConfig>::iterator it3 = it2 + 1; it3 != duplicates.end(); ++it3){
@@ -200,7 +221,7 @@ void removeConfDuplicates(std::vector<ServerConfig> &config){
 				}
 			}
 		}
-	}
+	} */
 }
 
 // Gets a dequeue of tokens, looks for server keyword and {} to identify serverblock and hand it to ServerConfig Class

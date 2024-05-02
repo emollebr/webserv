@@ -14,15 +14,18 @@
 
 void LocationConfig::init(){
 	std::string	directives[] = {"root", "index", "methods",
-									"redirect", "CGI", "max_body",
-									"default_file", "upload_location", 
-									"cgi_extension", "allow_get", "allow_post", 
-									"autoindex"};
+									"return", "CGI", "client_max_body_size",
+									"upload_location", "cgi_extension", "autoindex"};
 	typedef void (LocationConfig::*LocationConfigFunction)(tokeniterator begin, tokeniterator end);
-	LocationConfigFunction functions[] = {&LocationConfig::validateRoot, &LocationConfig::validateIndeces, &LocationConfig::validateMethods, 
-											&LocationConfig::validateRedirect, &LocationConfig::validateCGI, &LocationConfig::validateBodySize, 
-											&LocationConfig::validateDefaultFile, &LocationConfig::validateUploadLocation, &LocationConfig::validateCGIExtension, 
-											&LocationConfig::validateAllowGET, &LocationConfig::validateAllowPOST, &LocationConfig::validateAutoindex};
+	LocationConfigFunction functions[] = {&LocationConfig::validateRoot, 
+											&LocationConfig::validateIndeces, 
+											&LocationConfig::validateMethods, 
+											&LocationConfig::validateRedirect, 
+											&LocationConfig::validateCGI, 
+											&LocationConfig::validateBodySize, 
+											&LocationConfig::validateUploadLocation, 
+											&LocationConfig::validateCGIExtension,
+											&LocationConfig::validateAutoindex};
 	int size = sizeof(directives) / sizeof(directives[0]);
 	for (int i = 0; i < size; i++){
 		_directives_set[directives[i]] = false;
@@ -51,7 +54,6 @@ LocationConfig & LocationConfig::operator=(LocationConfig const & origin){
 	_redirect = origin._redirect;
 	_CGI = origin._CGI;
 	_max_body_size = origin._max_body_size;
-	_default_file = origin._default_file;
 	_upload_location = origin._upload_location;
 	_cgi_extension = origin._cgi_extension;
 	_allow_get = origin._allow_get;
@@ -93,7 +95,7 @@ std::string		LocationConfig::getRoot() const {
 }
 
 
-std::string	LocationConfig::getRedirect() const{
+std::pair<int, std::string>	LocationConfig::getRedirect() const{
 	return _redirect;
 }
 
@@ -103,10 +105,6 @@ std::string	LocationConfig::getCGI() const{
 
 size_t LocationConfig::getBodySize() const{
 	return _max_body_size;	
-}
-
-std::string LocationConfig::getDefaultFile() const{
-	return _default_file;
 }
 
 std::string LocationConfig::getUploadLocation() const{
@@ -263,16 +261,6 @@ void LocationConfig::validateUploadLocation(tokeniterator begin, tokeniterator e
 void LocationConfig::validateCGIExtension(tokeniterator begin, tokeniterator end){
 	if (begin == end)
 		_cgi_extension = *begin;
-}
-
-void LocationConfig::validateAllowGET(tokeniterator begin, tokeniterator end){
-	if (begin == end)
-		return ;
-}
-
-void LocationConfig::validateAllowPOST(tokeniterator begin, tokeniterator end){
-	if (begin == end)
-		return ;
 }
 
 void LocationConfig::validateAutoindex(tokeniterator begin, tokeniterator end){	

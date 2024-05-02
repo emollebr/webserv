@@ -33,11 +33,11 @@ private:
 
 	std::set<std::pair <std::string, size_t> > 	_host_ports_registry;
 
-	std::map<std::string, std::vector<size_t> >	_listen;
+	// std::map<std::string, std::vector<size_t> >	_listen; 
 
 //OPTIONAL INFORMATION
-	std::vector<std::string>					_server_names;
-	std::string									_error_path;
+	std::vector<std::string>					_server_names; // www.uri.com
+	std::map<unsigned int, std::string>			_error_pages;// /directory/to/errorfiles.html validation DONE
 
 //INDECES
 	std::map<std::string, bool>					_directives_set;
