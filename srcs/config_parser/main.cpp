@@ -36,17 +36,17 @@ int main (int argc, char** argv){
 		std::vector<Server> servers;
 		for (unsigned long i = 0; i < configs.size(); ++i) {
 			std::cout << configs[i] << std::endl << std::endl;
-			Server serv(configs[i]);
-			servers.push_back(serv);
-			std::cout << "Server host: " << configs[i].getHost() << std::endl;
+			// Server serv(configs[i]);
+			// servers.push_back(serv);
+			// std::cout << "Server host: " << configs[i].getHost() << std::endl;
 		}
-		while (true) {
-			for (size_t i = 0; i < servers.size(); ++i) {
-				if (g_signal_received == SIGINT)
-					handleSigint(servers);
-				servers[i].serverRun();
-			}
-		}
+		// while (true) {
+		// 	for (size_t i = 0; i < servers.size(); ++i) {
+		// 		if (g_signal_received == SIGINT)
+		// 			handleSigint(servers);
+		// 		servers[i].serverRun();
+		// 	}
+		// }
 	} catch (const std::exception& e) {
 		std::cerr << COLOR_ERROR << "Error: " << e.what() << COLOR_STANDARD << std::endl;
 		return (1);

@@ -6,7 +6,7 @@
 /*   By: jschott <jschott@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/05 10:20:40 by jschott           #+#    #+#             */
-/*   Updated: 2024/04/30 17:44:40 by jschott          ###   ########.fr       */
+/*   Updated: 2024/05/02 11:59:02 by jschott          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -180,13 +180,17 @@ void removeConfDuplicates(std::vector<ServerConfig> &config){
 		}
 	}
 	if (duplicates.empty())
-		return ;
+		return ;	
+	
 	for (std::vector<ServerConfig>::iterator it2 = duplicates.begin(); it2 < duplicates.end(); it2++){
 		std::set< size_t > ports_keep = (*it2).getListenPorts();
-		for (std::vector<ServerConfig>::iterator it3 = it2; it3 != duplicates.end(); ++it3){
+		std::cout << "Checking for host: " << (*it2).getHost() << std::endl;
+		for (std::vector<ServerConfig>::iterator it3 = it2 + 1; it3 != duplicates.end(); ++it3){
 			std::set< size_t > ports2check = (*it3).getListenPorts();
 			for (std::set<size_t>::iterator it_portkeep= ports_keep.begin(); it_portkeep != ports_keep.end(); it_portkeep++){
 				size_t port2keep = *it_portkeep;
+				std::cout << "\t for port: " << port2keep << std::endl;
+				
 				if (ports2check.find(port2keep) != ports2check.end()){
 					(*it3).deletePort(port2keep);
 					std::cerr << COLOR_WARNING << "Warning: Duplicate of " << (*it3).getHost() << ":" << port2keep << " found. Using first." << COLOR_STANDARD << std::endl;
