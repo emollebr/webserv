@@ -1,6 +1,6 @@
 #include "common.hpp"
 
-Request::Request(char *buffer, int client, int bytesRead, size_t maxBodySize, std::map<unsigned int, std::string>	error_pages) : _pendingResponse(0), _bytesSent(0), _errorPages(error_pages), client(client) {
+Request::Request(char *buffer, int client, int bytesRead, ServerConfig config) : _location(NULL), _pendingResponse(0), _bytesSent(0), _errorPages(config.getErrorPages()), client(client) {
     
     std::istringstream iss(buffer);
     std::string line;
@@ -63,7 +63,32 @@ Request::Request(char *buffer, int client, int bytesRead, size_t maxBodySize, st
         _bytesReceived = bytesRead - bytesProcessed;
         _fullRequest = (_bytesReceived < _contentLength) ? false : true;
     }
+    _checkLocations(config.getLocations());
     return ;
+}
+
+//check if requested target is a server configured location
+int Request::_checkLocations( std::map<std::string, LocationConfig> locations) {
+
+    for (std::map<std::string, LocationConfig>::const_iterator it = locations.begin(); it != locations.end(); ++it) {
+        if (it->first.find(_object) != std::string::npos)
+            _location = it->second;
+    }
+    int allowed = 0;
+    //check if request method is allowed in location
+    for (std::vector<std::string>::const_iterator it = _location.getMethods().begin(); it != _location.getMethods().end(); ++it) {
+        if (*it == _method)
+            allowed = 1;
+    }
+    return allowed;
+
+    //check for edirection, change target in request an set status code
+
+    //check for root, then replace specfic part of target
+
+    //autoindex on or off - call listfiles function
+
+    //default file (??) if directory
 }
 
 void Request::_validateContentHeaders(size_t maxBodySize) {
