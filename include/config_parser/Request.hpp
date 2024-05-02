@@ -6,6 +6,7 @@
 
 class Request {
 private:
+    LocationConfig                            _location;
     std::string                               _method;
     std::string                               _object;
     std::string                               _protocol;
@@ -31,6 +32,7 @@ private:
     };
 
     std::string     _parseBoundary(std::string contentType);
+    int             _checkLocations( std::map<std::string, LocationConfig> locations);
     const char*     _createFileName( void );
     bool            _fileExists(std::string filename);
     int		        _sendStatusPage(int statusCode, std::string msg);
@@ -39,7 +41,7 @@ private:
 
 public:
 
-    Request(char *buffer, int client, int bytesRead, size_t maxBodySize, std::map<unsigned int, std::string>	error_pages);
+    Request(char *buffer, int client, int bytesRead, ServerConfig config);
     ~Request() {
     };
 
@@ -55,6 +57,14 @@ public:
 
     bool            hasPendingResponse( void ) {
         return _pendingResponse;
+    };
+
+    void        setLocation(LocationConfig location) {
+        this->_location = location;
+    };
+
+    LocationConfig        getLocation() {
+        return _location;
     };
 
     const std::map<std::string, std::string>& getHeaders() const {
