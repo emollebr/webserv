@@ -6,7 +6,7 @@
 /*   By: jschott <jschott@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/12 15:33:23 by jschott           #+#    #+#             */
-/*   Updated: 2024/04/30 17:37:42 by jschott          ###   ########.fr       */
+/*   Updated: 2024/05/02 18:20:53 by jschott          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -38,13 +38,6 @@ ServerConfig::ServerConfig(std::vector<size_t> ports){
 
 ServerConfig::ServerConfig(ServerConfig const & origin) {
 	*this = origin;
-}
-
-ServerConfig::ServerConfig(std::vector<std::string> names, std::vector<size_t> listen, std::string err, std::map<std::string, LocationConfig> location){
-	_server_names = names;
-	_ports = listen;
-	_error_path = err;
-	_locations = location;
 }
 
 ServerConfig::ServerConfig(std::deque<std::string> tokens, tokeniterator begin, tokeniterator end){
@@ -101,7 +94,7 @@ ServerConfig & ServerConfig::operator= (ServerConfig const & origin) {
 	_locations = origin._locations;
 	_host = origin._host;
 	_server_names = origin._server_names;
-	_error_path = origin._error_path;
+	_error_pages = origin._error_pages;
 	return *this;
 }
 
@@ -171,12 +164,21 @@ std::vector<std::string> const ServerConfig::getServerNames() const{
 	// throw std::expection;
 }
 
-std::string	const ServerConfig::getErrorPath() const{
-	return _error_path;	
+std::map<uint, std::string>	const ServerConfig::getErrorPages() const {
+	if (_error_pages.empty())
+		return std::map<uint, std::string>();
+	std::map<uint, std::string>	error_pages;
+	error_pages = _error_pages;
+	return error_pages;
 }
 
-void	ServerConfig::parseServerDirective(tokeniterator begin, 
-											tokeniterator end){
+std::string	const ServerConfig::getErrorPath(int statusCode) const{
+	if (_error_pages.find(statusCode) != _error_pages.end())
+		return (*_error_pages.find(statusCode)).second;
+	return NULL;
+}
+
+void	ServerConfig::parseServerDirective(tokeniterator begin, tokeniterator end){
 /* 	if (_directives_set.find(*begin) == _directives_set.end())
 		throw InvalidDirectiveException(); // no parameters
 	if ((*_directives_set.find(*begin)).second)
@@ -326,13 +328,16 @@ void	ServerConfig::validateErrorPath(tokeniterator begin, tokeniterator end){
 }
 
 void	ServerConfig::deletePort(size_t port){
+	if (_ports.find(port) == _ports.end())
+		return ;
+	std::cout << "erasing: " << port << std::endl;
 	_ports.erase(port);		
 }
 
 std::ostream& operator<<(std::ostream& os, const ServerConfig& serverconf) {
-	os << "server	{" << std::endl;
+	os << "server\t{" << std::endl;
 	
-	os << "	host		" << serverconf.getHost() << ";" << std::endl;
+	os << "\thost\t\t" << serverconf.getHost() << ";" << std::endl;
 	
 	os << "\tports\t\t" ;
 	std::set<size_t> ports = serverconf.getListenPorts();
@@ -342,6 +347,13 @@ std::ostream& operator<<(std::ostream& os, const ServerConfig& serverconf) {
 		os << *it;
 	}
 	os << ";" << std::endl;
+
+
+	std::set<std::pair <std::string, size_t> > host_ports = serverconf.getListen();
+	for (std::set<std::pair <std::string, size_t> >::iterator it = host_ports.begin(); it != host_ports.end(); it++) {
+		std::cout << "HELLO" << std::endl;
+		os << "\tlisten\t\t" << (*it).first << ":" << (*it).second << std::endl;
+	}
 
 	try {
 		std::map<uint, std::string> error_pages = serverconf.getErrorPages();
@@ -365,8 +377,8 @@ std::ostream& operator<<(std::ostream& os, const ServerConfig& serverconf) {
 
 		std::map<std::string, LocationConfig> locations = serverconf.getLocations();
 		for (std::map<std::string, LocationConfig>::iterator it = locations.begin(); it != locations.end(); it++)
-			os << "	location " << (*it).first << " {" << std::endl 
-				<< ((*it).second) << ";" << std::endl;
+			os << "\tlocation\t" << (*it).first << " {" << std::endl 
+				<< ((*it).second) << "" << std::endl;
 	}
 	
 	catch(const std::exception& e)	{
