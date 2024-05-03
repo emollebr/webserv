@@ -21,4 +21,4 @@ max body size per location
 
     Try a redirected URL. ? http redirection
 
-    default file to answer if the request is a directory
+    default file to answer if the request is a directory (index)

@@ -1,6 +1,6 @@
 #include "common.hpp"
 
-Request::Request(char *buffer, int client, int bytesRead, ServerConfig config) : _root("database/"), _pendingResponse(0), _bytesSent(0),  _errorPages(config.getErrorPages()), _redirStatus(0), client(client) {
+Request::Request(char *buffer, int client, int bytesRead, ServerConfig config) : _pendingResponse(0), _bytesSent(0),  _errorPages(config.getErrorPages()), _redirStatus(0), client(client) {
     
     std::istringstream iss(buffer);
     std::string line;
@@ -19,6 +19,7 @@ Request::Request(char *buffer, int client, int bytesRead, ServerConfig config) :
             _headers[key] = value;
         }
     }
+    _checkLocations(config.getLocations());
   
     if (_method == "POST") {
         _boundary = _headers["Content-Type"];
@@ -37,13 +38,11 @@ Request::Request(char *buffer, int client, int bytesRead, ServerConfig config) :
             }
         }
 
-
         //save the request body
         char *bodyStart = std::strstr(buffer, "\r\n\r\n");
         if (bodyStart != NULL) {
             if (_object.find("cgi-bin") == std::string::npos) {
-                int maxBodySize = MAX_BODY_SIZE; //get it from config here!!
-                 _validateContentHeaders(maxBodySize);
+                 _validateContentHeaders(_location.getBodySize());
                 // Skip an additional 3 occurrences of "\r\n"
                 for (int i = 0; i < 5; ++i) {
                     bodyStart = std::strstr(bodyStart + 2, "\r\n");
@@ -63,8 +62,6 @@ Request::Request(char *buffer, int client, int bytesRead, ServerConfig config) :
         _bytesReceived = bytesRead - bytesProcessed;
         _fullRequest = (_bytesReceived < _contentLength) ? false : true;
     }
-    _checkLocations(config.getLocations());
-    _finishPath();
     return ;
 }
 
@@ -192,15 +189,14 @@ int		Request::_sendStatusPage(int statusCode, std::string msg) {
     }
 }
 void Request::_finishPath() {
-    std::cout << "OBJECT: " << _object << std::endl;
-    if (_object == "") {
-        _object = HTML_INDEX; //should be default from config
-        //if not location and server has default index -> object is that
-        //if _location and _location has index -> object is that
-        //else 
-        //    _handleListFiles(_root); but where to call it
+    if (is_directory(_filePath.c_str())) {
+        if (_location.getIndex())
+            _filePath += _location.getIndex();
+        else if (_location.getAutoindex())
+            _handleListFiles(_filePath);
+        else
+            _sendStatusPage(403, "403 Forbidden: i dont know if its the right status code??");
     }
-    _filePath = _root + _object;
      std::cout << "PATH: " << _filePath << std::endl;
 }
 

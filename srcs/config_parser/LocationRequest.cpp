@@ -17,14 +17,12 @@ int Request::_validateMethod() {
 //if no root specified for location, default server root stays root
 int Request::_replaceRoot(std::string oldRoot) {
     std::cout << "Old object: " << _object << std::endl;
-    std::string newRoot = _location.getRoot();
-    if (!newRoot.empty())
-        _root = newRoot;
+    _root = _location.getRoot();
     size_t start_pos = _object.find(oldRoot);
     std::cout << "root: " << _root << std::endl;
     if(start_pos == std::string::npos)
         return false;
-    _object.replace(start_pos, oldRoot.length(), "");
+    _object.replace(start_pos, oldRoot.length(), _root);
     std::cout << "New object: " << _object << std::endl;
     return true;
 }
@@ -46,11 +44,11 @@ int Request::_checkLocations(std::map<std::string, LocationConfig> locations) {
             std::cout << "FOUND location: " << it->first << std::endl;
             _location = it->second;
             _replaceRoot(it->first); 
-/* 
+
             if (_validateMethod() == false) {
                 _sendStatusPage(405, "405 Method Not Allowed in this location");
                 throw MethodNotAllowedException();
-            } */
+            }
 
             //check if redirection, change target and save status code
             std::pair<int, std::string> redirect = _location.getRedirect();
