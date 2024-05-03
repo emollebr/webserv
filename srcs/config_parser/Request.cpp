@@ -106,10 +106,8 @@ bool Request::isCGIRequest() {
 }
 
 
-void Request::executeCGIScript(const std::string& scriptPath, char** env) {
+void Request::executeCGIScript(const std::string& scriptPath, int clientSocket, char** env) {
     // Create pipes for inter-process communication
-    
-
     std::string path = scriptPath;
     if (!path.empty() && path[0] == '/')
         path = path.substr(1);
@@ -134,6 +132,7 @@ void Request::executeCGIScript(const std::string& scriptPath, char** env) {
 
         char* argv[] = {(char*)path.c_str(), 0};
 
+        // Execute the CGI script
         execve(path.c_str(), argv, env);
 
         // If execve fails, it will continue here
@@ -150,8 +149,27 @@ void Request::executeCGIScript(const std::string& scriptPath, char** env) {
         char buffer[1024];
         ssize_t bytesRead;
         std::string responseData;
-        bytesRead = read(pipefd[0], buffer, sizeof(buffer));
-        responseData.append(buffer, bytesRead);
+        bool timeout = false;
+
+        // Set a timeout duration (e.g., 30 seconds)
+        time_t startTime = time(NULL);
+        const time_t timeoutDuration = 30; // 30 seconds
+
+        while ((time(NULL) - startTime) < timeoutDuration) {
+            bytesRead = read(pipefd[0], buffer, sizeof(buffer));
+            if (bytesRead > 0) {
+                responseData.append(buffer, bytesRead);
+                // Continue reading until no more data or timeout
+            } else {
+                break; // No more data to read
+            }
+        }
+
+        // If the loop exited due to timeout, set the timeout flag
+        if ((time(NULL) - startTime) >= timeoutDuration) {
+            timeout = true;
+        }
+
         // Close read end of the pipe
         close(pipefd[0]);
 
@@ -159,9 +177,15 @@ void Request::executeCGIScript(const std::string& scriptPath, char** env) {
         int status;
         waitpid(pid, &status, 0);
 
-        // Send HTTP response with CGI script output
-        std::string response = "HTTP/1.1 200 OK\nContent-Type: text/html\n\n" + responseData;
-        sendResponse(response.c_str(), response.size(), 0);
+        // Check if a timeout occurred
+        if (timeout) {
+            const std::string timeoutResponse = "HTTP/1.1 200 OK\nContent-Type: text/html\n\nThe server took too long to process the request.";
+            send(clientSocket, timeoutResponse.c_str(), timeoutResponse.size(), 0);
+        } else {
+            // Send HTTP response with CGI script output
+            std::string response = "HTTP/1.1 200 OK\nContent-Type: text/html\n\n" + responseData;
+            send(clientSocket, response.c_str(), response.size(), 0);
+        }
     }
 }
 
