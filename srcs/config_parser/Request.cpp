@@ -105,7 +105,6 @@ bool Request::isCGIRequest() {
     return false;
 }
 
-
 void Request::executeCGIScript(const std::string& scriptPath, int clientSocket, char** env) {
     // Create pipes for inter-process communication
     std::string path = scriptPath;
@@ -152,8 +151,8 @@ void Request::executeCGIScript(const std::string& scriptPath, int clientSocket, 
         bool timeout = false;
 
         // Set a timeout duration (e.g., 30 seconds)
+        const time_t timeoutDuration = 10; // 30 seconds
         time_t startTime = time(NULL);
-        const time_t timeoutDuration = 20; // 30 seconds
 
         while ((time(NULL) - startTime) < timeoutDuration) {
             bytesRead = read(pipefd[0], buffer, sizeof(buffer));
@@ -165,27 +164,35 @@ void Request::executeCGIScript(const std::string& scriptPath, int clientSocket, 
             }
         }
 
-        std::cout << time(NULL) - startTime << std::endl;
         // If the loop exited due to timeout, set the timeout flag
         if ((time(NULL) - startTime) >= timeoutDuration) {
             timeout = true;
         }
 
+        // Send a SIGTERM signal to the child process
+        kill(pid, SIGTERM);
+
+        // Wait for the child process to exit
+        int status;
+        if (waitpid(pid, &status, WNOHANG) == 0) { // Child process still running
+            // Child process didn't exit, send SIGKILL to force termination
+            kill(pid, SIGKILL);
+            waitpid(pid, &status, 0); // Wait for the child process to exit
+        }
+
         // Close read end of the pipe
         close(pipefd[0]);
 
-        // Wait for the child process to finish
-        int status;
-        waitpid(pid, &status, 0);
-
         // Check if a timeout occurred
-        if (timeout) {
+        if (timeout == true) {
             const std::string timeoutResponse = "HTTP/1.1 200 OK\nContent-Type: text/html\n\nThe server took too long to process the request.";
             send(clientSocket, timeoutResponse.c_str(), timeoutResponse.size(), 0);
+            close(clientSocket);
         } else {
             // Send HTTP response with CGI script output
             std::string response = "HTTP/1.1 200 OK\nContent-Type: text/html\n\n" + responseData;
             send(clientSocket, response.c_str(), response.size(), 0);
+            close(clientSocket);
         }
     }
 }
