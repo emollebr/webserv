@@ -34,14 +34,29 @@ int Request::_handleUnknown() {
     return 0;
 }
 
+void freeEnvironmentVariables(char** env) {
+    // Iterate through the environment array and free each string
+    for (int i = 0; env[i] != NULL; ++i) {
+        delete[] env[i];
+    }
+
+    // Free the array itself
+    delete[] env;
+}
+
 char** fillEnvironmentVariables(const std::string& formData) {
     std::string queryString = "QUERY_STRING=" + formData;
     std::cout << queryString << std::endl;
-    char **env = new char*[3]; // Three elements: QUERY_STRING, CONTENT_TYPE, and null terminator
-    // Copy the environment variable strings to the allocated memory
-    env[0] = strdup(queryString.c_str());
-    env[1] = 0;
-    env[2] = 0;
+
+    char **env = new char*[2];
+
+    // Allocate memory for the QUERY_STRING string and copy the content
+    env[0] = new char[queryString.length() + 1]; // +1 for null terminator
+    strcpy(env[0], queryString.c_str());
+
+    // Set the null terminator
+    env[1] = NULL;
+
     return env;
 }
 
@@ -53,6 +68,7 @@ int 	Request::_handleGet() {
     if (isCGIRequest())
     {
        executeCGIScript(_object, client, env);
+       freeEnvironmentVariables(env);
        return 0;
     }
     if (_object == "/list_files") {
@@ -125,6 +141,7 @@ int 	Request::_handlePost() {
     if (isCGIRequest())
     {
        executeCGIScript(_object, client, env);
+       freeEnvironmentVariables(env);
        return 0;
     }
     if (!_isFullRequest()) {
