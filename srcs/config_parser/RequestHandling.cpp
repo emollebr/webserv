@@ -61,7 +61,7 @@ int 	Request::_handleGet() {
     std::cout << "OBJECT: " << _object << std::endl;
     if (isCGIRequest())
     {
-       executeCGIScript(_object,env);
+       executeCGIScript(_object, client, env);
        freeEnvironmentVariables(env);
        return 0;
     }
@@ -158,7 +158,7 @@ int 	Request::_handlePost() {
     char **env = fillEnvironmentVariables(_body);
     if (isCGIRequest())
     {
-       executeCGIScript(_object,env);
+       executeCGIScript(_object, client, env);
        freeEnvironmentVariables(env);
        return 0;
     }
