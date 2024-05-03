@@ -2,3 +2,4 @@ a.out
 webserv
 .vscode/settings.json
 *.o
+.nfs*
