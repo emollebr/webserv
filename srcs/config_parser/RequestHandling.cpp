@@ -3,16 +3,15 @@
 int    Request::detectRequestType() {
     std::string methods[3] ={"GET", "POST", "DELETE"};
     int (Request::*requestFun[3])() = {&Request::_handleGet, &Request::_handlePost, &Request::_handleDelete};
-    std::string requestMethod = _method;
 
     for (int i = 0; i < 3; i++) {
-        if (requestMethod == methods[i]) {
+        if (_method == methods[i]) {
             if ((this->*requestFun[i])() != 0)
                 return 1; //unfinished POST request fx.
             return 0;
         }
     }
-   _sendStatusPage(405, "405 Method Not Allowed"); //UNKNON
+   _sendStatusPage(405, "405 Method Not Allowed"); //UNKNOWN METHOD
     return 0;
 }
 

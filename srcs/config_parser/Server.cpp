@@ -141,7 +141,7 @@ int Server::_handleRequest(int i) {
 
     if (_request.count(fd) == 0) { //make new request
         try {
-            _request.insert(std::make_pair(fd, new Request(buffer, fd, bytesRead, _config));
+            _request.insert(std::make_pair(fd, new Request(buffer, fd, bytesRead, _config)));
         } catch (const std::exception& e) {
             std::cout << "Caught exception: " << e.what() << std::endl;
             return -1;

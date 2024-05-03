@@ -168,7 +168,7 @@ void LocationConfig::validateRoot(tokeniterator begin, tokeniterator end){
 			throw std::invalid_argument("Invalid root Directory: " + *begin);
 	}
 	else
-		throw std::invalid_argument("Invalid root Directory: " + *begin);
+		 std::invalid_argument("Invalid root Directory: " + *begin);
 }
 
 void LocationConfig::validateIndeces(tokeniterator begin, tokeniterator end){

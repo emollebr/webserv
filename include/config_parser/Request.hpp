@@ -7,6 +7,7 @@
 class Request {
 private:
     LocationConfig                            _location;
+    std::string                               _root;
     std::string                               _method;
     std::string                               _object;
     std::string                               _protocol;
@@ -16,11 +17,12 @@ private:
     bool                                      _fullRequest;
     size_t                                    _bytesReceived;
     size_t                                    _contentLength;
-    std::string                               _filePath; //for pending response
+    std::string                               _filePath;
     bool                                      _pendingResponse;
     off_t                                     _fileSize;
     ssize_t                                   _bytesSent;
     std::map<unsigned int, std::string>       _errorPages;
+    int                                       _redirStatus;
 
 
     int 	_handlePost( void );
@@ -32,12 +34,17 @@ private:
     };
 
     std::string     _parseBoundary(std::string contentType);
-    int             _checkLocations( std::map<std::string, LocationConfig> locations);
-    const char*     _createFileName( void );
-    bool            _fileExists(std::string filename);
-    int		        _sendStatusPage(int statusCode, std::string msg);
-    std::string     _generateNewFilename(const std::string& originalFilename);
     void            _validateContentHeaders(size_t maxBodySize);
+    const char*     _createFileName( void );
+    int		        _sendStatusPage(int statusCode, std::string msg);
+    void            _finishPath( void );
+    bool            _fileExists(std::string filename);
+    std::string     _generateNewFilename(const std::string& originalFilename);
+
+    //LocationRequest.cpp
+    int             _checkLocations( std::map<std::string, LocationConfig> locations);
+    int             _replaceRoot(std::string oldRoot);
+    int             _validateMethod( void );
 
 public:
 
@@ -97,6 +104,11 @@ public:
     };
 
     class MissingRequestHeaderException : public std::exception {
+        public:
+            virtual const char* what() const throw();
+    };
+
+    class MethodNotAllowedException : public std::exception {
         public:
             virtual const char* what() const throw();
     };

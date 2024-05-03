@@ -1,13 +1,12 @@
 #include "common.hpp"
 
-Request::Request(char *buffer, int client, int bytesRead, ServerConfig config) : _location(NULL), _pendingResponse(0), _bytesSent(0), _errorPages(config.getErrorPages()), client(client) {
+Request::Request(char *buffer, int client, int bytesRead, ServerConfig config) : _root("database"), _pendingResponse(0), _bytesSent(0),  _errorPages(config.getErrorPages()), _redirStatus(0), client(client) {
     
     std::istringstream iss(buffer);
     std::string line;
     int bytesProcessed = 0;
 
     iss >> _method >> _object >> _protocol;
-    _filePath = finishPath(_object);
     bytesProcessed += _method.size() + _object.size() + _protocol.size() + 3;
     std::getline(iss, line);
 
@@ -43,6 +42,7 @@ Request::Request(char *buffer, int client, int bytesRead, ServerConfig config) :
         char *bodyStart = std::strstr(buffer, "\r\n\r\n");
         if (bodyStart != NULL) {
             if (_object.find("cgi-bin") == std::string::npos) {
+                int maxBodySize = MAX_BODY_SIZE; //get it from config here!!
                  _validateContentHeaders(maxBodySize);
                 // Skip an additional 3 occurrences of "\r\n"
                 for (int i = 0; i < 5; ++i) {
@@ -64,31 +64,23 @@ Request::Request(char *buffer, int client, int bytesRead, ServerConfig config) :
         _fullRequest = (_bytesReceived < _contentLength) ? false : true;
     }
     _checkLocations(config.getLocations());
+    _finishPath();
     return ;
 }
 
-//check if requested target is a server configured location
-int Request::_checkLocations( std::map<std::string, LocationConfig> locations) {
-
-    for (std::map<std::string, LocationConfig>::const_iterator it = locations.begin(); it != locations.end(); ++it) {
-        if (it->first.find(_object) != std::string::npos)
-            _location = it->second;
+//check for root, then replace specfic part of target
+int Request::_replaceRoot(std::string oldRoot) {
+    std::string newRoot = _location.getRoot();
+    if (!newRoot.empty()) {
+        size_t start_pos = _object.find(oldRoot);
+        if(start_pos == std::string::npos)
+            return false;
+        _object.replace(start_pos, oldRoot.length(), "");
+        _root = newRoot;
+        std::cout << "New object: " << _object << std::endl;
+        return true;
     }
-    int allowed = 0;
-    //check if request method is allowed in location
-    for (std::vector<std::string>::const_iterator it = _location.getMethods().begin(); it != _location.getMethods().end(); ++it) {
-        if (*it == _method)
-            allowed = 1;
-    }
-    return allowed;
-
-    //check for edirection, change target in request an set status code
-
-    //check for root, then replace specfic part of target
-
-    //autoindex on or off - call listfiles function
-
-    //default file (??) if directory
+    return false;
 }
 
 void Request::_validateContentHeaders(size_t maxBodySize) {
@@ -203,14 +195,23 @@ bool Request::_fileExists(std::string filename) {
 int		Request::_sendStatusPage(int statusCode, std::string msg) {
     std::map<unsigned int, std::string>::iterator it = _errorPages.find(statusCode);
     if (it != _errorPages.end()) { //check for default error pages
-        _filePath = finishPath(it->second);
+        _filePath = it->second;
         return (_handleGet());
     }
     else { //no default || success
-         std::stringstream response;
+        if (_redirStatus != 0)
+            statusCode = _redirStatus;
+        std::stringstream response;
         response << "HTTP/1.1 " + intToStr(statusCode) + "\r\nContent-Type: text/plain\r\n" << msg.size() + 1 << "\r\n\r\n" + msg + "\r\n";
         return (sendResponse(response.str().c_str(), response.str().size(), 0));
     }
+}
+void Request::_finishPath() {
+    std::cout << "OBJECT: " << _object << std::endl;
+    if (_object == "/")
+        _object = HTML_INDEX;
+    _filePath = _root + _object;
+     std::cout << "PATH: " << _filePath << std::endl;
 }
 
 // Function to generate a new filename if the original filename already exists
@@ -260,6 +261,10 @@ const char* Request::MaxBodySizeExceededException::what() const throw() {
 
 const char* Request::MissingRequestHeaderException::what() const throw() {
     return "Missing request header";
+}
+
+const char* Request::MethodNotAllowedException::what() const throw() {
+    return "Method not allowed in this location";
 }
 
 const char* Request::EmptyRequestedFileException::what() const throw() {

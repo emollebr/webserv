@@ -63,7 +63,7 @@ function refreshFileList() {
         if (event.target.classList.contains('deleteButton')) {
             var filename = event.target.getAttribute('data-filename');
             // Send DELETE request to server with filename
-            fetch(`uploads/${filename}`, {
+            fetch(`database/uploads/${filename}`, {
                 method: 'DELETE'
             })
             .then(response => {
@@ -86,7 +86,7 @@ function refreshFileList() {
         if (event.target.classList.contains('downloadButton')) {
             var filename = event.target.getAttribute('data-filename');
             // Send GET request to server to download the file
-            fetch(`uploads/${filename}`, {
+            fetch(`database/uploads/${filename}`, {
                 method: 'GET'
             })
             .then(response => {
