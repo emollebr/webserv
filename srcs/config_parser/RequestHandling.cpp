@@ -26,8 +26,14 @@ int 	Request::_handleDelete() {
 }
 
 int 	Request::_handleGet() {
-    if (is_directory(_filePath.c_str()))
-        return _handleListFiles(_filePath);
+    if (is_directory(_filePath.c_str())) {
+        if (_location.getIndex())
+            _filePath += _location.getIndex();
+        else if (_location.getAutoindex())
+            _handleListFiles(_filePath);
+        else
+            _sendStatusPage(403, "403 Forbidden: i dont know if its the right status code??");
+    }
 
     std::ifstream file(_filePath.c_str(), std::ios::binary); // Open the file
     if (!file) { 
