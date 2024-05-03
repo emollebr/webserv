@@ -16,6 +16,7 @@ int    Request::detectRequestType() {
     return 0;
 }
 
+
 int 	Request::_handleDelete() {
     std::string response;
     if (std::remove(_filePath.c_str()) != 0) {
@@ -23,16 +24,9 @@ int 	Request::_handleDelete() {
        return _sendStatusPage(400, "404 Not Found");
     }
     else
-        response = "HTTP/1.1 200 OK\nContent-Type: text/plain\n\nFile successfully deleted\n";
-    send(client, response.c_str(), response.size(), 0);
-    return 0;
+        return _sendStatusPage(200, "File successfully deleted");
 }
 
-int Request::_handleUnknown() {
-    std::string response = "HTTP/1.1 405 Method Not Allowed\nContent-Type: text/plain\n\n405 Method Not Allowed\n";
-    send(client, response.c_str(), response.size(), 0);
-    return 0;
-}
 
 void freeEnvironmentVariables(char** env) {
     // Iterate through the environment array and free each string
