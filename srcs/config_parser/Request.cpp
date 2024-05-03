@@ -67,6 +67,8 @@ Request::Request(char *buffer, int client, int bytesRead) : _pendingResponse(0),
         
         _bytesReceived = bytesRead - bytesProcessed;
         _fullRequest = (_bytesReceived < _contentLength) ? false : true;
+    } else if (_method == "GET") {
+        
     }
     return ;
 }
