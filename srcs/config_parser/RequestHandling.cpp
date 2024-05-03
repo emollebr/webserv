@@ -61,7 +61,7 @@ int 	Request::_handleGet() {
     std::cout << "OBJECT: " << _object << std::endl;
     if (isCGIRequest())
     {
-       executeCGIScript(_object, client, env);
+       executeCGIScript(_object,env);
        freeEnvironmentVariables(env);
        return 0;
     }
@@ -154,23 +154,11 @@ int Request::sendResponse(const char* response, size_t size, int flag) {
     return SUCCESS;
 }
 
-char** fillEnvironmentVariables(const std::string& formData) {
-    std::string queryString = "QUERY_STRING=" + formData;
-    std::cout << queryString << std::endl;
-    char **env = new char*[3]; // Three elements: QUERY_STRING, CONTENT_TYPE, and null terminator
-    // Copy the environment variable strings to the allocated memory
-    env[0] = strdup(queryString.c_str());
-    env[1] = 0;
-    env[2] = 0;
-    return env;
-}
-
-
 int 	Request::_handlePost() {
     char **env = fillEnvironmentVariables(_body);
     if (isCGIRequest())
     {
-       executeCGIScript(_object, client, env);
+       executeCGIScript(_object,env);
        freeEnvironmentVariables(env);
        return 0;
     }
