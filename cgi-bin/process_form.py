@@ -19,8 +19,8 @@ sys.stdout = sys.__stdout__
 i = 0
 
 while True:
-    i += 1
-
+    i = 0
+ 
 result = client.predict(
 	message=str(input_text),	# str  in 'Input' Textbox component
 	request=0.95,
