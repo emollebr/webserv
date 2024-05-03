@@ -6,7 +6,7 @@
 /*   By: jschott <jschott@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/04 16:51:38 by jschott           #+#    #+#             */
-/*   Updated: 2024/04/30 17:36:33 by jschott          ###   ########.fr       */
+/*   Updated: 2024/05/03 17:32:40 by jschott          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -53,7 +53,7 @@ public:
 	ServerConfig(std::vector<size_t> ports);
 	ServerConfig(ServerConfig const & origin);
 	ServerConfig(std::vector<std::string> name, std::vector<size_t> listen, std::string err, std::map<std::string, LocationConfig> location);
-	ServerConfig(std::deque<std::string> tokens, tokeniterator begin, tokeniterator end);
+	ServerConfig(tokeniterator begin, tokeniterator end);
 	ServerConfig & operator= (ServerConfig const & origin);
 	
 	~ServerConfig();
