@@ -44,15 +44,6 @@ std::string getMimeType(const std::string& filename) {
     return "application/octet-stream"; // Default MIME type if extension not found
 }
 
-std::string finishPath(std::string object) {
-    std::string path = object;
-    if (path == "/")
-        path = HTML_INDEX;
-    if (path.find("database") == std::string::npos)
-        path = "database" + path;
-    return path;
-}
-
 std::vector<std::string> listFiles(const std::string& directoryPath) {
     std::vector<std::string> fileList;
     DIR* dir;

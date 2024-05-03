@@ -64,4 +64,3 @@ std::string 				intToStr(int num);
 void 						handleListFiles(int clientSocket);
 std::vector<std::string> 	listFiles(const std::string& directoryPath);
 std::string 				getMimeType(const std::string& filename);
-std::string 				finishPath(std::string object);
