@@ -153,7 +153,7 @@ void Request::executeCGIScript(const std::string& scriptPath, int clientSocket, 
 
         // Set a timeout duration (e.g., 30 seconds)
         time_t startTime = time(NULL);
-        const time_t timeoutDuration = 30; // 30 seconds
+        const time_t timeoutDuration = 20; // 30 seconds
 
         while ((time(NULL) - startTime) < timeoutDuration) {
             bytesRead = read(pipefd[0], buffer, sizeof(buffer));
@@ -165,6 +165,7 @@ void Request::executeCGIScript(const std::string& scriptPath, int clientSocket, 
             }
         }
 
+        std::cout << time(NULL) - startTime << std::endl;
         // If the loop exited due to timeout, set the timeout flag
         if ((time(NULL) - startTime) >= timeoutDuration) {
             timeout = true;
