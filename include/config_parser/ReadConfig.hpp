@@ -6,7 +6,7 @@
 /*   By: jschott <jschott@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/15 14:23:34 by jschott           #+#    #+#             */
-/*   Updated: 2024/04/30 11:09:21 by jschott          ###   ########.fr       */
+/*   Updated: 2024/05/03 17:31:16 by jschott          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -41,7 +41,7 @@ typedef std::deque<std::string>::iterator tokeniterator;
 class	ServerConfig;
 
 bool 						isBalanced(std::stringstream& ss);
-tokeniterator				getClosingBraket (std::deque<std::string>& queue, tokeniterator start, tokeniterator end);
+tokeniterator				getClosingBraket (tokeniterator start, tokeniterator end);
 void						printTokens(std::deque<std::string> tokens);
 void						populateTokens(std::stringstream &bufferstream, std::deque<std::string>	&tokens);
 std::deque<std::string>		readFile2Buffer (std::string filename);
