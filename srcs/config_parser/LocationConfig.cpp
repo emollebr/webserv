@@ -76,16 +76,16 @@ std::vector<std::string>	LocationConfig::getIndeces() const{
 	return (_);
 } */
 
-std::vector<std::string> LocationConfig::getMethods() const{
+std::set<std::string> LocationConfig::getMethods() const{
 	if (_methods_allowed.empty())
-		return std::vector<std::string>();
-	std::vector<std::string>	methods;
+		return std::set<std::string>();
+	std::set<std::string>	methods;
 	methods = _methods_allowed;
 	return (methods);
 }
 
 bool LocationConfig::hasMethod(std::string method){
-	if (std::find(_methods_allowed.begin(), _methods_allowed.end(), method) != _methods_allowed.end())
+	if (_methods_allowed.find(method) != _methods_allowed.end())
 		return true;
 	return false;
 }
@@ -116,19 +116,19 @@ std::string LocationConfig::getCGIExtension() const{
 }
 
 bool LocationConfig::getAllowGET() const{
-	if (find(_methods_allowed.begin(), _methods_allowed.end(), "GET") != _methods_allowed.end())
+	if (_methods_allowed.find("GET") != _methods_allowed.end())
 		return true;
 	return false;
 }
 
 bool LocationConfig::getAllowPOST() const{
-	if (find(_methods_allowed.begin(), _methods_allowed.end(), "POST") != _methods_allowed.end())
+	if (_methods_allowed.find("POST") != _methods_allowed.end())
 		return true;
 	return false;
 }
 
 bool LocationConfig::getAllowDELETE() const{
-	if (find(_methods_allowed.begin(), _methods_allowed.end(), "DELETE") != _methods_allowed.end())
+	if (_methods_allowed.find("DELETE") != _methods_allowed.end())
 		return true;
 	return false;
 }
@@ -140,17 +140,16 @@ bool LocationConfig::getAutoindex() const {
 void LocationConfig::parseLocationDirective(tokeniterator begin, tokeniterator end) {
 	init();
 	if (_directives_set.find(*begin) == _directives_set.end()) {
-		return ; //THROW EXCEPTION
+		throw std::invalid_argument("invalid directive: " + *begin);
 	}
 	std::map<std::string, void (LocationConfig::*)(tokeniterator, tokeniterator)>::iterator function = _directives_validation_funcs.find(*begin);
 	if (function != _directives_validation_funcs.end()) {
-		// try {
+		try {
 			(this->*(function->second))(begin + 1, end);
-		// }
-		// catch(const std::exception& e) {
-			// throw InvalidConfigException();
-			// std::cerr << e.what() << std::endl;
-		// }
+		}
+		catch(const std::exception& e) {
+			throw std::invalid_argument("directive " + *begin + ": " + e.what());
+		}
 	}
 }
 
@@ -160,21 +159,21 @@ void LocationConfig::validateRoot(tokeniterator begin, tokeniterator end){
 	if (begin == end){
 		if (directoryExists(*begin)) {
 			if ((*_directives_set.find("root")).second)
-				std::cerr << COLOR_WARNING << "Warning: Multiple root directives. Will use last." << COLOR_STANDARD << std::endl;
+				std::cerr << COLOR_WARNING << "Warning: multiple root directives. using last." << COLOR_STANDARD << std::endl;
 			_root = (*begin);
 			_directives_set["root"] = true;
 		}
 		else
-			throw std::invalid_argument("Invalid root Directory: " + *begin);
+			throw std::invalid_argument("invalid parameter: " + *begin);
 	}
 	else
-		 std::invalid_argument("Invalid root Directory: " + *begin);
+		throw std::invalid_argument("invalid parameter: " + *begin);
 }
 
 void LocationConfig::validateIndeces(tokeniterator begin, tokeniterator end){
 	
 	if ((*_directives_set.find("index")).second)
-		std::cerr << COLOR_WARNING << "Warning: Multiple index directives. Will use last." << COLOR_STANDARD << std::endl;
+		std::cerr << COLOR_WARNING << "Warning: multiple index directives. using last." << COLOR_STANDARD << std::endl;
 
 	while (begin <= end)
 		_indeces.push_back(*begin++);
@@ -185,25 +184,24 @@ void LocationConfig::validateMethods(tokeniterator begin, tokeniterator end){
 	while (begin <= end){
 		if (!hasMethod(*begin) && 
 			(*begin == "GET" || *begin == "POST" || *begin == "DELETE"))
-			_methods_allowed.push_back(*begin);
+			_methods_allowed.insert(*begin);
 		else if (!hasMethod(*begin))
-			throw std::invalid_argument("Error: invalid method parameter: " + *begin);
+			throw std::invalid_argument("invalid parameter: " + *begin);
 		begin++;
 	}
 }
 
 void LocationConfig::validateRedirect(tokeniterator begin, tokeniterator end){
-	// std::cout << TEXT_BOLD << "validating redirect" << TEXT_NOFORMAT<< std::endl;
 	
 	if (begin + 1 == end){
 		int statusCode = std::atoi((*begin).c_str());
 		if (statusCode < 100 || statusCode > 599)
-			throw std::invalid_argument("Invalid status code: " + *begin);
+			throw std::invalid_argument("invalid parameter: " + *begin);
 		if (statusCode != 301 && statusCode != 302 &&
 				statusCode != 307 && statusCode != 308)
-			std::cerr << "Warning: Unusual status code for redirect: " << statusCode << std::endl;
+			std::cerr << "Warning: unusual status code for redirect: " << statusCode << std::endl;
 		if (++begin != end)
-			throw std::invalid_argument("Invalid redirect: " + *begin);
+			throw std::invalid_argument("invalid parameter: " + *begin);
 		if ((*_directives_set.find("return")).second)
 			std::cerr << COLOR_WARNING << "Warning: Multiple return directives. Will use last." << COLOR_STANDARD << std::endl;
 		_redirect.first = statusCode;
@@ -242,10 +240,10 @@ void LocationConfig::validateBodySize(tokeniterator begin, tokeniterator end){
 		else if (endptr == "G" || endptr == "GB")
 			_max_body_size = body * 1024 * 1024 * 1024;
 		else
-			throw std::invalid_argument("Error: invalid max_body_size: " + *begin);
+			throw std::invalid_argument("invalid parameter: " + *begin);
 	}
 	else
-		throw std::invalid_argument("Error: too many parameters for max_body_size");
+		throw std::invalid_argument("invalid number of parameters");
 }
 
 void LocationConfig::validateUploadLocation(tokeniterator begin, tokeniterator end){
@@ -254,10 +252,10 @@ void LocationConfig::validateUploadLocation(tokeniterator begin, tokeniterator e
 			_upload_location = (*begin);
 		}
 		else
-			throw std::invalid_argument("Upload directory not found: " + *begin);
+			throw std::invalid_argument("invalid parameter: " + *begin);
 	}
 	else
-		throw InvalidConfigException();
+		throw std::invalid_argument("invalid number of parameters.");
 }
 
 void LocationConfig::validateCGIExtension(tokeniterator begin, tokeniterator end){
@@ -265,42 +263,34 @@ void LocationConfig::validateCGIExtension(tokeniterator begin, tokeniterator end
 		_cgi_extension = *begin;
 }
 
-void LocationConfig::validateAutoindex(tokeniterator begin, tokeniterator end){
-	std::cout << "validation autoindex: " << *begin << std::endl;
-	
+void LocationConfig::validateAutoindex(tokeniterator begin, tokeniterator end){	
 	if (begin == end){
 		if (*begin == "1" || *begin == "on")
-			std::cout << "THIS" << std::endl;
-			// _autoindex = true;
+			_autoindex = true;
 		else if (*begin == "0" || *begin == "off")
 			_autoindex = false;
 		else
-			throw InvalidConfigException();
+			throw std::invalid_argument("invalid parameter: " + *begin);
 	}
 	else
-		throw InvalidConfigException();
+		throw std::invalid_argument("invalid number of parameters.");
 }
 
 LocationConfig::LocationConfig(tokeniterator begin, tokeniterator end){
-	// std::cout << TEXT_BOLD << "	Parsing Location from " << *begin << " to " << *end << std::endl;
-	// tokeniterator directiveend = std::find(begin, end, ";") ;
-	//IF FOUND ; CREATE TUPLE
-	// try	{
+	tokeniterator directiveend;
+	try	{
 		while (begin < end){
-			tokeniterator directiveend = std::find(begin, end, ";") ;
-			if (directiveend <= end) {
+			if ((directiveend = std::find(begin, end + 1, ";")) <= end) {
 				parseLocationDirective(begin, directiveend - 1);
 				begin = directiveend + 1;
 			}
-			else 
-				std::cerr << COLOR_ERROR << "Error: Cannot parse directive" << std::endl << COLOR_STANDARD;
+			else
+				throw std::invalid_argument("directive: " + *begin + " missing closing ';'.");
 		}
-	// }
-	// catch(const std::exception& e)	{
-		// throw InvalidConfigException();
-		// std::cerr << e.what() << '\n';
-		// }
-	std::cout << TEXT_NOFORMAT;
+	}
+	catch(const std::exception& e)	{
+			throw std::invalid_argument(e.what());
+		}
 }
 
 std::ostream& operator<<(std::ostream& os, const LocationConfig& locationconf) {
@@ -318,10 +308,12 @@ std::ostream& operator<<(std::ostream& os, const LocationConfig& locationconf) {
 	os << ";" << std::endl;
 	
 	os << "\t\tmethods\t\t\t";
-	printbuff = locationconf.getMethods();
-	for (std::vector<std::string>::iterator it = printbuff.begin(); it != printbuff.end(); it++){
+	std::set<std::string> printset = locationconf.getMethods();
+	for (std::set<std::string>::iterator it = printset.begin(); it != printset.end(); it++){
 		os << *it;
-		if (it + 1 != printbuff.end())
+  		std::set<std::string>::iterator next_it = it;
+		++next_it;
+		if (next_it != printset.end())
 			os << " ";
 	}
 	os << ";" << std::endl;
