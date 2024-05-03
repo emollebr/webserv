@@ -6,7 +6,7 @@
 /*   By: jschott <jschott@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/12 15:33:23 by jschott           #+#    #+#             */
-/*   Updated: 2024/04/18 15:06:55 by jschott          ###   ########.fr       */
+/*   Updated: 2024/05/02 18:20:53 by jschott          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,11 +15,11 @@
 
 
 void ServerConfig::init(){
-	std::string	directives[] = {"listen", "location", "host",
-									"server_name", "error_path"};
+	std::string	directives[] = {"port", "location", "host",
+									"server_name", "error_page", "listen"};
 	typedef void (ServerConfig::*ServerConfigFunction)(tokeniterator begin, tokeniterator end);							
 	ServerConfigFunction functions[] = {&ServerConfig::validatePort, &ServerConfig::validateLocation, &ServerConfig::validateHost, 
-										&ServerConfig::validateServerName, &ServerConfig::validateErrorPath};
+										&ServerConfig::validateServerName, &ServerConfig::validateErrorPath, &ServerConfig::validateHostPort};
 	int size = sizeof(directives) / sizeof(directives[0]);
 	for (int i = 0; i < size; i++){
 		_directives_set[directives[i]] = false;
@@ -33,51 +33,58 @@ ServerConfig::ServerConfig(){
 
 ServerConfig::ServerConfig(std::vector<size_t> ports){
 	for (std::vector<size_t>::iterator it = ports.begin(); it < ports.end(); it++)
-		this->_ports.push_back(*it);		
+		this->_ports.insert(*it);		
 }
 
 ServerConfig::ServerConfig(ServerConfig const & origin) {
 	*this = origin;
 }
 
-ServerConfig::ServerConfig(std::vector<std::string> names, std::vector<size_t> listen, std::string err, std::map<std::string, LocationConfig> location){
-	_server_names = names;
-	_ports = listen;
-	_error_path = err;
-	_locations = location;
-}
-
 ServerConfig::ServerConfig(std::deque<std::string> tokens, tokeniterator begin, tokeniterator end){
 	init();
 	tokeniterator statementend;
-
+	std::string	location_name;
+	
 	while (begin < end) {
+		while (*begin == "")
+			begin++;
 		if (*begin == "location"){
 			begin++;
 			while (*begin == "")
 				begin++;
-			std::pair<std::string, std::string> location_block;
-			location_block.first = *begin++;
+			location_name = *begin++;
 			while (*begin == "")
 				begin++;
 			//CHECK FOR OPENING BRAKET AND FIND CLOSING TO PARSE BLOCK
 			if (begin != end && *begin == "{" &&
-					((statementend = getClosingBraket(tokens, begin)) <= tokens.end())){
-				_locations[location_block.first] = LocationConfig(begin + 1, statementend - 1);;
-				begin = statementend + 1;
+					((statementend = getClosingBraket(tokens, begin, end)) <= end)){
+				try	{
+					// validateLocation(begin, statementend - 1);
+					_locations[*begin] = LocationConfig(begin + 1, statementend - 1);
+				}
+				catch(const std::exception& e) {
+					throw std::invalid_argument("location " + location_name + ": " + e.what());
+				}
 			}
+			else
+				throw std::invalid_argument("location block " + *begin + " missing closing '}'");
+			
 		}
-		// IF IS DIRECTIVE CHECK FOR ';', IF FOUND CREATE DIRECTIVE
-		else if ((statementend = std::find(begin, end, ";")) <= end ) {
+	// IF IS DIRECTIVE CHECK FOR ';', IF FOUND CREATE DIRECTIVE
+	else if ((statementend = std::find(begin, end + 1, ";")) <= end ) {
+		try {
 			parseServerDirective(begin, statementend - 1);
-			begin = std::find(begin, end, ";") + 1;
 		}
-
-/* 		else
-			throw InvalidDirectiveException (); // unknown directive */
+		catch(const std::exception& e) {
+			throw std::invalid_argument(e.what());
+		}
 		
 	}
-	std::cout << *this << std::endl;
+	else {
+		throw std::invalid_argument("server directive: " + *begin + " missing closing ';'");
+	}
+	begin = statementend + 1;		
+	}	
 }
 
 ServerConfig & ServerConfig::operator= (ServerConfig const & origin) {
@@ -87,7 +94,7 @@ ServerConfig & ServerConfig::operator= (ServerConfig const & origin) {
 	_locations = origin._locations;
 	_host = origin._host;
 	_server_names = origin._server_names;
-	_error_path = origin._error_path;
+	_error_pages = origin._error_pages;
 	return *this;
 }
 
@@ -102,14 +109,6 @@ void ServerConfig::addLocation(std::string location, LocationConfig config) {
 	return ;
 }
 
-void ServerConfig::setErrorPath(std::string error_path) {
-	if ((_directives_set.find("error_path") != _directives_set.end() )
-			&& (*_directives_set.find("error_path")).second)
-		_error_path = error_path;
-	// else
-		// throw exception
-}
-
 void ServerConfig::setServerName(std::vector<std::string> server_names) {
 	if ((_directives_set.find("server_name") != _directives_set.end() )
 			&& (*_directives_set.find("server_name")).second)
@@ -119,10 +118,22 @@ void ServerConfig::setServerName(std::vector<std::string> server_names) {
 }
 
 /* GETTER */
-std::vector<size_t> ServerConfig::getListenPorts() const{
+std::set<std::pair <std::string, size_t> > ServerConfig::getListen() const{
+	
+	// if (_host_ports_registry.empty()){
+	// 	std::cout << "nothing to see here" << std::endl;
+	// 	return std::set<std::pair <std::string, size_t> >();
+	// }
+	// _host_ports_registry.insert(test);
+	std::set<std::pair <std::string, size_t> > listen;
+	listen = _host_ports_registry;
+	return listen;
+}
+
+std::set<size_t> ServerConfig::getListenPorts() const{
 	if (_ports.empty())
-		return std::vector<size_t>();
-	std::vector<std::size_t> ports;
+		return std::set<size_t>();
+	std::set<std::size_t> ports;
 	ports = _ports;
 	return (ports);
 }
@@ -153,12 +164,21 @@ std::vector<std::string> const ServerConfig::getServerNames() const{
 	// throw std::expection;
 }
 
-std::string	const ServerConfig::getErrorPath() const{
-	return _error_path;	
+std::map<uint, std::string>	const ServerConfig::getErrorPages() const {
+	if (_error_pages.empty())
+		return std::map<uint, std::string>();
+	std::map<uint, std::string>	error_pages;
+	error_pages = _error_pages;
+	return error_pages;
 }
 
-void	ServerConfig::parseServerDirective(tokeniterator begin, 
-											tokeniterator end){
+std::string	const ServerConfig::getErrorPath(int statusCode) const{
+	if (_error_pages.find(statusCode) != _error_pages.end())
+		return (*_error_pages.find(statusCode)).second;
+	return NULL;
+}
+
+void	ServerConfig::parseServerDirective(tokeniterator begin, tokeniterator end){
 /* 	if (_directives_set.find(*begin) == _directives_set.end())
 		throw InvalidDirectiveException(); // no parameters
 	if ((*_directives_set.find(*begin)).second)
@@ -171,31 +191,110 @@ void	ServerConfig::parseServerDirective(tokeniterator begin,
 			(this->*(function->second))(begin + 1, end);
 			(*_directives_set.find(*begin)).second = true;
 		}
-		catch (const InvalidDirectiveException& e){
-			std::cerr << e.what() << std::endl;			
+		catch (const std::exception& e){
+			throw std::invalid_argument("server directive " + *begin + ": " + e.what());
 		}
 	}
-/* 	else
-		throw InvalidDirectiveException(); // no validation function found */
+	else
+		throw std::invalid_argument("invalid server directive: " + *begin);
 }
 
 
 void	ServerConfig::validatePort(tokeniterator begin, tokeniterator end){
-	while (begin <= end)
-		_ports.push_back((size_t) std::atoi((*(begin++)).c_str()));
-	//DO VALIDATION
+	for (NULL; begin <= end; begin++) {
+		char* error = NULL;
+		unsigned long int port = strtoul((*begin).c_str(), &error, 0);
+		if (strlen(error) > 0 || port > 65535)
+			throw std::invalid_argument("invalid parameter: " + *begin);
+		if (port > 49151)
+			std::cerr << COLOR_WARNING << "Warning: Unusual status port: " << port << COLOR_STANDARD << std::endl;
+		if (find(_ports.begin(), _ports.end(), port) == _ports.end())
+			_ports.insert(port);
+	}
 }
 
 void	ServerConfig::validateLocation(tokeniterator begin, tokeniterator end){
 	if (begin == end)
-		_locations[*begin] = LocationConfig(begin, end);
-	//DO VALIDATION
+		return ;
+	else
+		throw std::invalid_argument("missing parameter.");
+	// if (begin == end) {
+	try	{
+			_locations[*begin] = LocationConfig(begin, end);
+	}
+	catch(const std::exception& e)	{
+		std::cout << *begin << std::endl << std::endl;
+		throw std::invalid_argument(e.what());
+	}
+}
+
+bool	ServerConfig::isValidatePort(char* port_str){
+	char* error = NULL;
+	unsigned long int port = strtoul(port_str, &error, 0);
+	if (strlen(error) > 0 || port > 65535)
+		throw std::invalid_argument("invalid parameter: ");
+	if (port > 49151)
+		std::cerr << COLOR_WARNING << "Warning: Unusual status port: " << port << COLOR_STANDARD << std::endl;
+	return true;
+}
+
+bool	ServerConfig::isValidateHost(char* host){
+	if (!host)
+		return true;
+	char * IP = new char [strlen(host)];
+	strcpy(IP, host);
+	IP =  strtok(IP, ".");
+	for ( int i = 0; IP != NULL && i < 4; i++){
+		char* error = NULL;
+		unsigned long int body = strtoul(IP, &error, 0);
+		if (strlen(error) > 0 || body > 255)
+			throw std::invalid_argument("invalid parameter: ");
+		IP = strtok(NULL, ".");
+	}
+	return true;
+}
+
+void	ServerConfig::validateHostPort(tokeniterator begin, tokeniterator end){
+	char *tkns = new char [(*begin).length() + 1];
+	char* host = new char [strlen(tkns)];
+	_host_ports_registry.insert(std::make_pair("test", 13));
+	
+	if (begin == end){
+		
+		strcpy(tkns, (*begin).c_str());
+		host = strtok(tkns, ":");
+		tkns = strtok(NULL, ":");
+		if (isValidateHost(host) && isValidatePort(tkns)){
+			size_t port = strtoul(tkns, NULL, 0);
+			std::pair<std::string, size_t> test(host, port);
+			// _host_ports_registry.insert(test);
+			_host_ports_registry.insert(std::make_pair(host, port));
+			// _host_ports_registry.insert(std::make_pair("test", 13));
+			std::set<std::pair <std::string, size_t> > host_ports = _host_ports_registry;
+			for (std::set<std::pair <std::string, size_t> >::iterator it = host_ports.begin(); it != host_ports.end(); it++) {
+				std::cout << "\tlisten\t\t" << (*it).first << ":" << (*it).second << std::endl;
+			}
+		}
+			
+	}
 }
 
 void	ServerConfig::validateHost(tokeniterator begin, tokeniterator end){
-	if (begin == end)
-		_host = *(begin);
-	//DO VALIDATION
+	if (begin == end){
+		char *tkns = new char [(*begin).length() + 1];
+		strcpy(tkns, (*begin).c_str());
+		tkns =  strtok(tkns, ".");
+		while (tkns != NULL){
+			char* error = NULL;
+			unsigned long int body = strtoul(tkns, &error, 0);
+			if (strlen(error) > 0 || body > 255)
+				throw std::invalid_argument("invalid parameter: " + *begin);
+			tkns = strtok(NULL, ".");
+		}
+		_host = *begin;
+	}
+	else
+		throw std::invalid_argument("invalid number of parameters.");
 }
 
 void	ServerConfig::validateServerName(tokeniterator begin, tokeniterator end){
@@ -205,25 +304,72 @@ void	ServerConfig::validateServerName(tokeniterator begin, tokeniterator end){
 }
 
 void	ServerConfig::validateErrorPath(tokeniterator begin, tokeniterator end){
-	if (begin == end)
-		_error_path = *(begin);
+	
+	if (begin >= end || *end == "")
+		throw std::invalid_argument("invalid number of prameters.");
+		
+	std::string errorPage = *end;
+	if (!fileExists(errorPage))
+		throw std::invalid_argument("invalid parameter: " + *end);
+	--end;
+
+	for (; begin <= end; begin++){
+		char * error = NULL;
+		unsigned int statusCode = strtoul((*begin).c_str(), &error, 0);
+		if (strlen(error) > 0 || statusCode < 100 || statusCode > 599)
+			throw std::invalid_argument("invalid parameter: " + *begin);
+		if (statusCode < 400)
+			std::cerr << COLOR_WARNING << "Warning: unusual status code for error_pages: " << statusCode << COLOR_STANDARD << std::endl;
+		if (_error_pages.find(statusCode) != _error_pages.end())
+			std::cerr << COLOR_WARNING << "Warning: multiple error_pages for http status code: " << statusCode << ". Will use last." << COLOR_STANDARD << std::endl;
+		_error_pages[statusCode] = errorPage;
+		_directives_set["return"] = true;
+	}
+}
+
+void	ServerConfig::deletePort(size_t port){
+	if (_ports.find(port) == _ports.end())
+		return ;
+	std::cout << "erasing: " << port << std::endl;
+	_ports.erase(port);		
 }
 
 std::ostream& operator<<(std::ostream& os, const ServerConfig& serverconf) {
-	os << "server	{" << std::endl;
+	os << "server\t{" << std::endl;
 	
-	os << "	host		" << serverconf.getHost() << ";" << std::endl;
+	os << "\thost\t\t" << serverconf.getHost() << ";" << std::endl;
 	
-	os << "	ports		" ;
-	std::vector<size_t> ports = serverconf.getListenPorts();
-	for (std::vector<size_t>::iterator it = ports.begin(); it < ports.end(); it++)
-		os << *it << " ";
+	os << "\tports\t\t" ;
+	std::set<size_t> ports = serverconf.getListenPorts();
+	for (std::set<size_t>::iterator it = ports.begin(); it != ports.end(); it++) {
+		if (it != ports.begin())
+			os << " ";
+		os << *it;
+	}
 	os << ";" << std::endl;
 
+
+	std::set<std::pair <std::string, size_t> > host_ports = serverconf.getListen();
+	for (std::set<std::pair <std::string, size_t> >::iterator it = host_ports.begin(); it != host_ports.end(); it++) {
+		std::cout << "HELLO" << std::endl;
+		os << "\tlisten\t\t" << (*it).first << ":" << (*it).second << std::endl;
+	}
+
 	try {
-		os << "	error_path	" << serverconf.getErrorPath() << std::endl;
-	
-		os << "	server_name	";
+		std::map<uint, std::string> error_pages = serverconf.getErrorPages();
+		while (!error_pages.empty()){
+			os << "\terror_page\t";
+			std::string path = (*error_pages.begin()).second;
+			for (std::map<uint, std::string>::iterator it = error_pages.begin(); it != error_pages.end(); it++) {
+				if (it != error_pages.end() && path == (*it).second){
+				os << (*it).first << " ";	
+				error_pages.erase(it);
+				}
+			}
+			os << path << ";" << std::endl;
+		}
+		
+		os << "\tserver_name\t";
 		std::vector<std::string> server_names = serverconf.getServerNames();
 		for (std::vector<std::string>::iterator it = server_names.begin(); it < server_names.end(); it++)
 			os << *it << " ";
@@ -231,8 +377,8 @@ std::ostream& operator<<(std::ostream& os, const ServerConfig& serverconf) {
 
 		std::map<std::string, LocationConfig> locations = serverconf.getLocations();
 		for (std::map<std::string, LocationConfig>::iterator it = locations.begin(); it != locations.end(); it++)
-			os << "	location " << (*it).first << " {" << std::endl 
-				<< ((*it).second) << ";" << std::endl;
+			os << "\tlocation\t" << (*it).first << " {" << std::endl 
+				<< ((*it).second) << "" << std::endl;
 	}
 	
 	catch(const std::exception& e)	{

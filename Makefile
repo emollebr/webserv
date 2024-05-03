@@ -39,7 +39,7 @@ INCLDS := $(addprefix $(INCL_PATH), $(HDRS))
 
 # COMPILATION CMNDS
 CC = c++
-FT_FLAGS = -Wall -Wextra -Werror -std=c++98 -g -fsanitize=address
+FT_FLAGS = -Wall -Wextra -Werror -std=c++98 -g #-fsanitize=address
 INCLUDES = -I $(INCL_PATH)
 
 all: $(NAME)
