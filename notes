@@ -1,12 +1,24 @@
 has to be done: 
-    default error pages //config error pages // status codes
+
+nested locations?
+hostname / server name
+
+max body size per location
+
+- no default index for server
+-always min 1 location
+
+
+    if location and index = index
+    if location, no index and autoindex = list
+    else error
+
+    allowed methods check isnt working ! -merge newest
+
+    not all locations are stored in LocationConfig vec (ex. test_github conf, only until /tours)
 
     Try to list a directory. ?
 
     Try a redirected URL. ? http redirection
 
     default file to answer if the request is a directory
-
-Define a directory or a file from where the file should be searched (for example,
-if url /kapouet is rooted to /tmp/www, url /kapouet/pouic/toto/pouet is
-/tmp/www/pouic/toto/pouet).

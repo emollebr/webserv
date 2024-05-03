@@ -61,6 +61,6 @@ class ServerConfig;
 
 void 						signal_handler(int signum);
 std::string 				intToStr(int num);
-void 						handleListFiles(int clientSocket);
+bool                        is_directory(const char* path);
 std::vector<std::string> 	listFiles(const std::string& directoryPath);
 std::string 				getMimeType(const std::string& filename);
