@@ -64,8 +64,17 @@ std::vector<std::string> listFiles(const std::string& directoryPath) {
     return fileList;
 }
 
-void handleListFiles(int clientSocket) {
-    std::vector<std::string> files = listFiles("database/uploads");
+bool is_directory(const char* path) {
+    struct stat info;
+    if (stat(path, &info) != 0) {
+        // Failed to retrieve information
+        return false;
+    }
+    return S_ISDIR(info.st_mode);
+}
+
+int Request::_handleListFiles(std::string directory) {
+    std::vector<std::string> files = listFiles(directory);
 
     std::ostringstream response;
     response << "HTTP/1.1 200 OK\r\n"
@@ -76,5 +85,5 @@ void handleListFiles(int clientSocket) {
         response << *it << std::endl;
     }
 
-    send(clientSocket, response.str().c_str(), response.str().size(), 0);
+    return sendResponse(response.str().c_str(), response.str().size(), 0);
 }

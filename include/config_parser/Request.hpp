@@ -28,6 +28,7 @@ private:
     int 	_handlePost( void );
     int 	_handleGet( void );
     int 	_handleDelete( void );
+    int    _handleListFiles(std::string directory);
 
     bool    _isFullRequest() const {
         return _fullRequest;
@@ -40,6 +41,7 @@ private:
     void            _finishPath( void );
     bool            _fileExists(std::string filename);
     std::string     _generateNewFilename(const std::string& originalFilename);
+
 
     //LocationRequest.cpp
     int             _checkLocations( std::map<std::string, LocationConfig> locations);

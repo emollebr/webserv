@@ -26,10 +26,8 @@ int 	Request::_handleDelete() {
 }
 
 int 	Request::_handleGet() {
-    if (_object == "/list_files") {
-        handleListFiles(client);
-        return 0;
-    }
+    if (is_directory(_filePath.c_str()))
+        return _handleListFiles(_filePath);
 
     std::ifstream file(_filePath.c_str(), std::ios::binary); // Open the file
     if (!file) { 

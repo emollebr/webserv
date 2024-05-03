@@ -1,6 +1,6 @@
 #include "common.hpp"
 
-Request::Request(char *buffer, int client, int bytesRead, ServerConfig config) : _root("database"), _pendingResponse(0), _bytesSent(0),  _errorPages(config.getErrorPages()), _redirStatus(0), client(client) {
+Request::Request(char *buffer, int client, int bytesRead, ServerConfig config) : _root("database/"), _pendingResponse(0), _bytesSent(0),  _errorPages(config.getErrorPages()), _redirStatus(0), client(client) {
     
     std::istringstream iss(buffer);
     std::string line;
@@ -66,21 +66,6 @@ Request::Request(char *buffer, int client, int bytesRead, ServerConfig config) :
     _checkLocations(config.getLocations());
     _finishPath();
     return ;
-}
-
-//check for root, then replace specfic part of target
-int Request::_replaceRoot(std::string oldRoot) {
-    std::string newRoot = _location.getRoot();
-    if (!newRoot.empty()) {
-        size_t start_pos = _object.find(oldRoot);
-        if(start_pos == std::string::npos)
-            return false;
-        _object.replace(start_pos, oldRoot.length(), "");
-        _root = newRoot;
-        std::cout << "New object: " << _object << std::endl;
-        return true;
-    }
-    return false;
 }
 
 void Request::_validateContentHeaders(size_t maxBodySize) {
@@ -208,8 +193,13 @@ int		Request::_sendStatusPage(int statusCode, std::string msg) {
 }
 void Request::_finishPath() {
     std::cout << "OBJECT: " << _object << std::endl;
-    if (_object == "/")
-        _object = HTML_INDEX;
+    if (_object == "") {
+        _object = HTML_INDEX; //should be default from config
+        //if not location and server has default index -> object is that
+        //if _location and _location has index -> object is that
+        //else 
+        //    _handleListFiles(_root); but where to call it
+    }
     _filePath = _root + _object;
      std::cout << "PATH: " << _filePath << std::endl;
 }
