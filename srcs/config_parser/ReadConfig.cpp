@@ -6,7 +6,7 @@
 /*   By: jschott <jschott@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/05 10:20:40 by jschott           #+#    #+#             */
-/*   Updated: 2024/05/03 12:14:42 by jschott          ###   ########.fr       */
+/*   Updated: 2024/05/03 17:32:59 by jschott          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,17 +20,17 @@ void	printTokens(std::deque<std::string> tokens){
 
 // finds the closing limiter in a dequeue of tokens to a given opening limiter char
 // returns iterator to the position, NULL if limiter is not closed within the dequeue
-tokeniterator getClosingBraket (std::deque<std::string> &queue, tokeniterator start, tokeniterator end) {
+tokeniterator getClosingBraket (tokeniterator start, tokeniterator end) {
 	std::string	open =	"{[(\'\"`";
 	std::string	close =	"}])\'\"`";
 	std::string	limiter_open = *start;
 	std::string	limiter_close;
-	tokeniterator notfound = queue.end();
-	notfound = end;
+	// tokeniterator notfound = queue.end();
+	// notfound = end;
 
 	//return NULL if limiter_open is unknows
 	if (open.find(limiter_open) == open.length())
-		return notfound;
+		return end;
 	//set closing limiter
 	limiter_close = close[open.find(limiter_open)];
 	
@@ -46,7 +46,7 @@ tokeniterator getClosingBraket (std::deque<std::string> &queue, tokeniterator st
 		else if (*pos == limiter_open)
 			stack.push(*pos);
 	}
-	return notfound;
+	return end;
 }
 
 //Check if all brakets and quotes are closed correctly
@@ -229,10 +229,10 @@ std::vector<ServerConfig>	parseConfig (std::deque<std::string> tokens){
 			while (*blockstart == "")
 				tokens.erase(blockstart);
 			//CHECK FOR OPENING BRAKET AND FIND CLOSING TO PARSE BLOCK
-			blockend = getClosingBraket(tokens, blockstart, tokens.end());
+			blockend = getClosingBraket(blockstart, tokens.end());
 			if (*blockstart == "{" && (blockend != tokens.end())) {
 				tokens.erase(tokens.begin(), ++blockstart);
-				ServerConfig new_server(tokens, blockstart, blockend - 1);
+				ServerConfig new_server(blockstart, blockend - 1);
 				returnconfig.push_back(new_server);
 				blockstart = blockend + 1;
 			}

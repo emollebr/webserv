@@ -6,7 +6,7 @@
 /*   By: jschott <jschott@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/12 15:33:23 by jschott           #+#    #+#             */
-/*   Updated: 2024/05/03 11:07:07 by jschott          ###   ########.fr       */
+/*   Updated: 2024/05/03 17:41:37 by jschott          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -40,7 +40,7 @@ ServerConfig::ServerConfig(ServerConfig const & origin) {
 	*this = origin;
 }
 
-ServerConfig::ServerConfig(std::deque<std::string> tokens, tokeniterator begin, tokeniterator end){
+ServerConfig::ServerConfig(tokeniterator begin, tokeniterator end){
 	init();
 	tokeniterator statementend;
 	std::string	location_name;
@@ -57,10 +57,11 @@ ServerConfig::ServerConfig(std::deque<std::string> tokens, tokeniterator begin, 
 				begin++;
 			//CHECK FOR OPENING BRAKET AND FIND CLOSING TO PARSE BLOCK
 			if (begin != end && *begin == "{" &&
-					((statementend = getClosingBraket(tokens, begin, end)) <= end)){
+					((statementend = getClosingBraket(begin, end)) <= end)){
 				try	{
-					// validateLocation(begin, statementend - 1);
-					_locations[*begin] = LocationConfig(begin + 1, statementend - 1);
+					if (_locations.find(location_name) != _locations.end())
+						std::cerr << COLOR_WARNING << "Warning: duplicated location block " << location_name << ". Using last." << COLOR_STANDARD << std::endl;
+					_locations[location_name] = LocationConfig(begin + 1, statementend - 1);
 				}
 				catch(const std::exception& e) {
 					throw std::invalid_argument("location " + location_name + ": " + e.what());
@@ -68,7 +69,6 @@ ServerConfig::ServerConfig(std::deque<std::string> tokens, tokeniterator begin, 
 			}
 			else
 				throw std::invalid_argument("location block " + *begin + " missing closing '}'");
-			
 		}
 	// IF IS DIRECTIVE CHECK FOR ';', IF FOUND CREATE DIRECTIVE
 	else if ((statementend = std::find(begin, end + 1, ";")) <= end ) {
@@ -310,10 +310,10 @@ void	ServerConfig::validateErrorPath(tokeniterator begin, tokeniterator end){
 		
 	std::string errorPage = *end;
 	if (!fileExists(errorPage))
-		throw std::invalid_argument("invalid parameter: " + *end);
+		throw std::invalid_argument("invalid error file: " + *end);
 	--end;
 
-	for (; begin <= end; begin++){
+	for (NULL; begin <= end; begin++){
 		char * error = NULL;
 		unsigned int statusCode = strtoul((*begin).c_str(), &error, 0);
 		if (strlen(error) > 0 || statusCode < 100 || statusCode > 599)
@@ -351,41 +351,48 @@ std::ostream& operator<<(std::ostream& os, const ServerConfig& serverconf) {
 	os << ";" << std::endl;
 
 
-	std::set<std::pair <std::string, size_t> > host_ports = serverconf.getListen();
+/* 	std::set<std::pair <std::string, size_t> > host_ports = serverconf.getListen();
 	for (std::set<std::pair <std::string, size_t> >::iterator it = host_ports.begin(); it != host_ports.end(); it++) {
-		std::cout << "HELLO" << std::endl;
 		os << "\tlisten\t\t" << (*it).first << ":" << (*it).second << std::endl;
-	}
+	} */
 
-	try {
-		std::map<uint, std::string> error_pages = serverconf.getErrorPages();
-		while (!error_pages.empty()){
-			os << "\terror_page\t";
-			std::string path = (*error_pages.begin()).second;
-			for (std::map<uint, std::string>::iterator it = error_pages.begin(); it != error_pages.end(); it++) {
-				if (it != error_pages.end() && path == (*it).second){
-				os << (*it).first << " ";	
-				error_pages.erase(it);
-				}
-			}
-			os << path << ";" << std::endl;
-		}
+
+ 	std::map<uint, std::string> error_pages = serverconf.getErrorPages();
+
+	for (std::map<uint, std::string>::iterator it = error_pages.begin(); it != error_pages.end(); it++){
 		
-		os << "\tserver_name\t";
-		std::vector<std::string> server_names = serverconf.getServerNames();
-		for (std::vector<std::string>::iterator it = server_names.begin(); it < server_names.end(); it++)
-			os << *it << " ";
-		os << ";" << std::endl;
+	}
+		
 
-		std::map<std::string, LocationConfig> locations = serverconf.getLocations();
-		for (std::map<std::string, LocationConfig>::iterator it = locations.begin(); it != locations.end(); it++)
-			os << "\tlocation\t" << (*it).first << " {" << std::endl 
-				<< ((*it).second) << "" << std::endl;
+	while (!error_pages.empty()){	
+		std::cout << "\terror_page\t";
+		std::string path = (*error_pages.begin()).second;
+		std::stack<std::map<uint, std::string>::iterator> trash;
+		for (std::map<uint, std::string>::iterator it = error_pages.begin(); it != error_pages.end(); it++) {
+			if (path == (*it).second){
+				std::cout << (*it).first << " ";
+				trash.push(it);
+				// error_pages.erase(it);
+				// break ;
+			}
+		}
+		while (!trash.empty()){
+			error_pages.erase(trash.top());
+			trash.pop();
+		}
+		std::cout << path << ";" << std::endl;
 	}
-	
-	catch(const std::exception& e)	{
-		// std::cerr << e.what() << '\n';
-	}
+		
+	os << "\tserver_name\t";
+	std::vector<std::string> server_names = serverconf.getServerNames();
+	for (std::vector<std::string>::iterator it = server_names.begin(); it < server_names.end(); it++)
+		os << *it << " ";
+	os << ";" << std::endl;
+
+	std::map<std::string, LocationConfig> locations = serverconf.getLocations();
+	for (std::map<std::string, LocationConfig>::iterator it = locations.begin(); it != locations.end(); it++)
+		os << "\tlocation\t" << (*it).first << " {" << std::endl 
+			<< ((*it).second) << "" << std::endl;
 	
 	os << "}" << std::endl << std::endl;
 	return os;

@@ -17,7 +17,6 @@ private:
     bool                                      _fullRequest;
     size_t                                    _bytesReceived;
     size_t                                    _contentLength;
-    std::string                               _filePath;
     bool                                      _pendingResponse;
     off_t                                     _fileSize;
     ssize_t                                   _bytesSent;
@@ -36,6 +35,8 @@ private:
 
     std::string     _parseBoundary(std::string contentType);
     void            _validateContentHeaders(size_t maxBodySize);
+    void            _findLocation(const std::vector<std::string>& tokens, const std::map<std::string, LocationConfig>& locations, size_t index);
+    void            _handleLocation(const std::string& location);
     const char*     _createFileName( void );
     int		        _sendStatusPage(int statusCode, std::string msg);
     void            _finishPath( void );
@@ -62,7 +63,7 @@ public:
     void            pendingPostRequest(char* buffer, int bytesRead);
     bool            isCGIRequest();
     void            executeCGIScript(const std::string& scriptPath, char** env);
-
+    std::vector<std::string> tokenizePath(const std::string& path);
 
     bool            hasPendingResponse( void ) {
         return _pendingResponse;
