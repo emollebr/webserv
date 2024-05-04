@@ -13,12 +13,15 @@
 #include "LocationConfig.hpp"
 
 void LocationConfig::init(){
+	_max_body_size = 4.2 * 1024;
+
+
 	std::string	directives[] = {"root", "index", "methods",
 									"return", "CGI", "client_max_body_size",
 									"upload_location", "cgi_extension", "autoindex"};
 	typedef void (LocationConfig::*LocationConfigFunction)(tokeniterator begin, tokeniterator end);
 	LocationConfigFunction functions[] = {&LocationConfig::validateRoot, 
-											&LocationConfig::validateIndeces, 
+											&LocationConfig::validateIndex, 
 											&LocationConfig::validateMethods, 
 											&LocationConfig::validateRedirect, 
 											&LocationConfig::validateCGI, 
@@ -49,7 +52,7 @@ LocationConfig & LocationConfig::operator=(LocationConfig const & origin){
 	if (this == &origin)
 		return *this;
 	_root = origin._root;
-	_indeces = origin._indeces;
+	_index = origin._index;
 	_methods_allowed = origin._methods_allowed;
 	_redirect = origin._redirect;
 	_CGI = origin._CGI;
@@ -64,12 +67,8 @@ LocationConfig & LocationConfig::operator=(LocationConfig const & origin){
 LocationConfig::~LocationConfig(){
 }
 
-std::vector<std::string>	LocationConfig::getIndeces() const{
-	if (_indeces.empty())
-		return std::vector<std::string>();
-	std::vector<std::string>	Indeces;
-	Indeces = _indeces;
-	return (Indeces);
+std::string	LocationConfig::getIndex() const{
+	return (_index);
 }
 
 /* bool LocationConfig::getIndex(std::string index){
@@ -113,6 +112,14 @@ std::string LocationConfig::getUploadLocation() const{
 
 std::string LocationConfig::getCGIExtension() const{
 	return _cgi_extension;
+}
+
+std::map<std::string, LocationConfig> const LocationConfig::getLocations() const{
+	if (_locations.empty())
+		return std::map<std::string, LocationConfig>();
+	std::map<std::string, LocationConfig>	locations;
+	locations = _locations;
+	return (locations);
 }
 
 bool LocationConfig::getAllowGET() const{
@@ -170,13 +177,15 @@ void LocationConfig::validateRoot(tokeniterator begin, tokeniterator end){
 		throw std::invalid_argument("invalid parameter: " + *begin);
 }
 
-void LocationConfig::validateIndeces(tokeniterator begin, tokeniterator end){
+void LocationConfig::validateIndex(tokeniterator begin, tokeniterator end){
 	
+	if (begin != end)
+		throw std::invalid_argument("invalid parameter: " + *begin);
+
 	if ((*_directives_set.find("index")).second)
 		std::cerr << COLOR_WARNING << "Warning: multiple index directives. using last." << COLOR_STANDARD << std::endl;
 
-	while (begin <= end)
-		_indeces.push_back(*begin++);
+	_index = *begin;
 }
 
 void LocationConfig::validateMethods(tokeniterator begin, tokeniterator end){
@@ -277,12 +286,37 @@ void LocationConfig::validateAutoindex(tokeniterator begin, tokeniterator end){
 }
 
 LocationConfig::LocationConfig(tokeniterator begin, tokeniterator end){
-	tokeniterator directiveend;
+	tokeniterator statementend;
 	try	{
 		while (begin < end){
-			if ((directiveend = std::find(begin, end + 1, ";")) <= end) {
-				parseLocationDirective(begin, directiveend - 1);
-				begin = directiveend + 1;
+			if (*begin == "location"){
+				begin++;
+				while (*begin == "")
+					begin++;
+				std::string location_name = *begin++;
+				while (*begin == "")
+					begin++;
+				//CHECK FOR OPENING BRAKET AND FIND CLOSING TO PARSE BLOCK
+				if (begin != end && *begin == "{" &&
+						((statementend = getClosingBraket(begin, end)) <= end)){
+					try	{
+						if (_locations.find(location_name) != _locations.end())
+							std::cerr << COLOR_WARNING << "Warning: duplicated location block " << location_name << ". Using last." << COLOR_STANDARD << std::endl;
+						//LOCATION BLOCK DOES NOT PERSIST
+						_locations[location_name] = LocationConfig(begin + 1, statementend - 1);
+						std::cout << "added" << location_name << " to locationblock" << std::endl;
+					}
+					catch(const std::exception& e) {
+						throw std::invalid_argument("location " + location_name + ": " + e.what());
+					}
+					begin = statementend + 1;
+				}
+				else
+					throw std::invalid_argument("location block " + *begin + " missing closing '}'");
+			}
+			else if ((statementend = std::find(begin, end + 1, ";")) <= end) {
+				parseLocationDirective(begin, statementend - 1);
+				begin = statementend + 1;
 			}
 			else
 				throw std::invalid_argument("directive: " + *begin + " missing closing ';'.");
@@ -298,14 +332,7 @@ std::ostream& operator<<(std::ostream& os, const LocationConfig& locationconf) {
 	std::vector<std::string> printbuff;
 	os << "\t\troot\t\t\t" << locationconf.getRoot() << ";" << std::endl;
 
-	os << "\t\tindex\t\t\t";
-	printbuff = locationconf.getIndeces();
-	for (std::vector<std::string>::iterator it = printbuff.begin(); it != printbuff.end(); it++){
-		os << *it;
-		if (it + 1 != printbuff.end())
-			os << " ";
-	}
-	os << ";" << std::endl;
+	os << "\t\tindex\t\t\t" << locationconf.getIndex() << ";" << std::endl;
 	
 	os << "\t\tmethods\t\t\t";
 	std::set<std::string> printset = locationconf.getMethods();
@@ -324,6 +351,12 @@ std::ostream& operator<<(std::ostream& os, const LocationConfig& locationconf) {
 	os << "\t\tupload location\t\t" << locationconf.getUploadLocation() << ";" << std::endl;
 	os << "\t\tCGI extension\t\t" << locationconf.getCGIExtension() << ";" << std::endl;
 	os << "\t\tautoindex\t\t" << locationconf.getAutoindex() << ";" << std::endl;
+	std::map<std::string, LocationConfig> locations = locationconf.getLocations();
+	for (std::map<std::string, LocationConfig>::iterator it = locations.begin(); it != locations.end(); it++)
+		os << "\tlocation\t" << (*it).first << " {" << std::endl 
+			<< ((*it).second) << "" << std::endl;
+	
+	os << "}" << std::endl << std::endl;
 	os << "	}";
 	return os;
 }

@@ -19,7 +19,9 @@ Request::Request(char *buffer, int client, int bytesRead, ServerConfig config) :
             _headers[key] = value;
         }
     }
-    _checkLocations(config.getLocations());
+
+    std::vector<std::string> tokens = tokenizePath(_object);
+    _findLocation(tokens, config.getLocations(), 0);
   
     if (_method == "POST") {
         _boundary = _headers["Content-Type"];
@@ -177,7 +179,7 @@ bool Request::_fileExists(std::string filename) {
 int		Request::_sendStatusPage(int statusCode, std::string msg) {
     std::map<unsigned int, std::string>::iterator it = _errorPages.find(statusCode);
     if (it != _errorPages.end()) { //check for default error pages
-        _filePath = it->second;
+        _object = it->second;
         return (_handleGet());
     }
     else { //no default || success
@@ -187,17 +189,6 @@ int		Request::_sendStatusPage(int statusCode, std::string msg) {
         response << "HTTP/1.1 " + intToStr(statusCode) + "\r\nContent-Type: text/plain\r\n" << msg.size() + 1 << "\r\n\r\n" + msg + "\r\n";
         return (sendResponse(response.str().c_str(), response.str().size(), 0));
     }
-}
-void Request::_finishPath() {
-    if (is_directory(_filePath.c_str())) {
-        if (_location.getIndex())
-            _filePath += _location.getIndex();
-        else if (_location.getAutoindex())
-            _handleListFiles(_filePath);
-        else
-            _sendStatusPage(403, "403 Forbidden: i dont know if its the right status code??");
-    }
-     std::cout << "PATH: " << _filePath << std::endl;
 }
 
 // Function to generate a new filename if the original filename already exists
