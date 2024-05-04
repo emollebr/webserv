@@ -1,7 +1,5 @@
 #include "Request.hpp"
 
-#define MSG_MORE 0x8000
-
 int    Request::detectRequestType() {
     std::string methods[3] ={"GET", "POST", "DELETE"};
     int (Request::*requestFun[3])() = {&Request::_handleGet, &Request::_handlePost, &Request::_handleDelete};
@@ -31,13 +29,13 @@ int 	Request::_handleGet() {
     std::cout << "handleGet: filepath: " << _object << std::endl;
     if (is_directory(_object.c_str())) {
         std::string index = _location.getIndex();
-        std::cout << "handleGet: index: " << index << std::endl;
+        std::cout << "handleGet: autoindex: " << _location.getAutoindex() << std::endl;
         if (!index.empty())
             _object += index;
         else if (_location.getAutoindex())
-            _handleListFiles(_object);
+            return _handleListFiles(_object);
         else
-            _sendStatusPage(403, "403 Forbidden: i dont know if its the right status code??");
+            return _sendStatusPage(403, "403 Forbidden: i dont know if its the right status code??");
     }
      std::cout << "filePATH: " << _object << std::endl;
 

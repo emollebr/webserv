@@ -33,9 +33,12 @@ private:
         return _fullRequest;
     };
 
+    void            _parseContentHeaders(char *buffer, std::streampos pos);
+    void            _parseRequestBody(char *buffer, int bytesRead);
     std::string     _parseBoundary(std::string contentType);
     void            _validateContentHeaders(size_t maxBodySize);
-    void            _findLocation(const std::vector<std::string>& tokens, const std::map<std::string, LocationConfig>& locations, size_t index);
+    int            _findLocation(const std::vector<std::string>& tokens, const std::map<std::string, LocationConfig>& locations, size_t index);
+    void            _getDefaultLocation(std::map<std::string, LocationConfig> locations);
     void            _handleLocation(const std::string& location);
     const char*     _createFileName( void );
     int		        _sendStatusPage(int statusCode, std::string msg);
@@ -101,29 +104,47 @@ public:
         return _boundary;
     };
 
+
     class MaxBodySizeExceededException : public std::exception {
-        public:
-            virtual const char* what() const throw();
+    public:
+        virtual const char* what() const throw() {
+           return "Max body size exceeded";
+        }
     };
 
     class MissingRequestHeaderException : public std::exception {
-        public:
-            virtual const char* what() const throw();
+    public:
+        virtual const char* what() const throw() {
+            return "Missing request header";
+        }
     };
 
     class MethodNotAllowedException : public std::exception {
-        public:
-            virtual const char* what() const throw();
+    public:
+        virtual const char* what() const throw() {
+            return "Method not allowed in this location";
+        }
+    };
+
+    class NoMatchingLocationException : public std::exception {
+    public:
+        virtual const char* what() const throw() {
+            return "No matching location found for request";
+        }
     };
 
     class EmptyRequestedFileException : public std::exception {
-        public:
-            virtual const char* what() const throw();
+    public:
+        virtual const char* what() const throw() {
+           return "Requested file is empty";
+        }
     };
 
     class FileReadException : public std::exception {
-        public:
-            virtual const char* what() const throw();
+    public:
+        virtual const char* what() const throw() {
+            return "Failed to read requested file";
+        }
     };
 
 };

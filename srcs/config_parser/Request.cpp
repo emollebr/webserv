@@ -20,55 +20,71 @@ Request::Request(char *buffer, int client, int bytesRead, ServerConfig config) :
         }
     }
 
+    //Find appropriate location
+    //_root = config.getRoot(); TO DO
     std::vector<std::string> tokens = tokenizePath(_object);
-    _findLocation(tokens, config.getLocations(), 0);
+    if (tokens.size() == 0 || !_findLocation(tokens, config.getLocations(), 0)) {
+        std::cout << "default location called here" << std::endl;
+        _getDefaultLocation(config.getLocations());
+    }
   
+    //TO DO: Adapt to work with CGI
     if (_method == "POST") {
         _boundary = _headers["Content-Type"];
         _boundary.erase(0, 30); // 30 characters to boundary
-
-        //get content headers
-        while (std::getline(iss, line)  && line == "\r") {
-            continue;
-        }
-        while (std::getline(iss, line) && line != "\r") {
-            size_t pos = line.find(": ");
-            if (pos != std::string::npos) {
-                std::string key = line.substr(0, pos);
-                std::string value = line.substr(pos + 2);
-                _headers[key] = value;
-            }
-        }
-
-        //save the request body
-        char *bodyStart = std::strstr(buffer, "\r\n\r\n");
-        if (bodyStart != NULL) {
-            if (_object.find("cgi-bin") == std::string::npos) {
-                 _validateContentHeaders(_location.getBodySize());
-                // Skip an additional 3 occurrences of "\r\n"
-                for (int i = 0; i < 5; ++i) {
-                    bodyStart = std::strstr(bodyStart + 2, "\r\n");
-                    if (bodyStart == NULL) {
-                        break; // Stop if we reach the end of the buffer
-                    }
-                }
-            }
-
-            if (bodyStart != NULL) {
-                bodyStart += 4; // Move past the last "\r\n"
-                size_t bodySize = bytesRead - (bodyStart - buffer); // Calculate the size of the binary data
-                _body.append(bodyStart, bodySize); // Append the binary data
-            }
-        }
-        
+        _parseContentHeaders(buffer, iss.tellg());
+        _parseRequestBody(buffer, bytesRead);
         _bytesReceived = bytesRead - bytesProcessed;
         _fullRequest = (_bytesReceived < _contentLength) ? false : true;
     }
     return ;
 }
 
+void    Request::_parseContentHeaders(char *buffer, std::streampos pos) {
+    std::string line;
+    std::istringstream iss(buffer);
+    iss.seekg(pos);
+    while (std::getline(iss, line)  && line == "\r") {
+        continue;
+    }
+    while (std::getline(iss, line) && line != "\r") {
+        size_t pos = line.find(": ");
+        if (pos != std::string::npos) {
+            std::string key = line.substr(0, pos);
+            std::string value = line.substr(pos + 2);
+            _headers[key] = value;
+        }
+    }
+}
+
+void Request::_parseRequestBody(char *buffer, int bytesRead) {
+  
+    //save the request body
+    char *bodyStart = std::strstr(buffer, "\r\n\r\n");
+    if (bodyStart != NULL) {
+        if (_object.find("cgi-bin") == std::string::npos) {
+                _validateContentHeaders(_location.getBodySize());
+            // Skip an additional 3 occurrences of "\r\n"
+            for (int i = 0; i < 5; ++i) {
+                bodyStart = std::strstr(bodyStart + 2, "\r\n");
+                if (bodyStart == NULL) {
+                    break; // Stop if we reach the end of the buffer
+                }
+            }
+        }
+
+        if (bodyStart != NULL) {
+            bodyStart += 4; // Move past the last "\r\n"
+            size_t bodySize = bytesRead - (bodyStart - buffer); // Calculate the size of the binary data
+            _body.append(bodyStart, bodySize); // Append the binary data
+        }
+    }
+    
+
+}
+
+//validate content headers /handle errors
 void Request::_validateContentHeaders(size_t maxBodySize) {
-    //validate content headers headers/handle errors
     std::map<std::string, std::string>::const_iterator it = _headers.find("Content-Disposition");
     if (it == _headers.end()) {
         _sendStatusPage(400, "400 Bad Request: Missing 'Content-Disposition' header for POST request");
@@ -89,8 +105,8 @@ void Request::_validateContentHeaders(size_t maxBodySize) {
 }
 
 
-bool Request::isCGIRequest() {
 // Check if the request URL starts with "/cgi-bin/"
+bool Request::isCGIRequest() {
     std::cout << "OBJECTcgi:" << _object << std::endl;
     std::string url = _object; // Skip space and slash
     size_t cgiPos = url.find("cgi-bin/");
@@ -105,8 +121,8 @@ bool Request::isCGIRequest() {
 }
 
 
+// Create pipes for inter-process communication
 void Request::executeCGIScript(const std::string& scriptPath, char** env) {
-    // Create pipes for inter-process communication
     
 
     std::string path = scriptPath;
@@ -164,7 +180,7 @@ void Request::executeCGIScript(const std::string& scriptPath, char** env) {
     }
 }
 
-
+//appends the new request body to the pending request
 void    Request::pendingPostRequest(char* buffer, int bytesRead) {
     _body.append(std::string(buffer, bytesRead));
     _bytesReceived += bytesRead;
@@ -230,26 +246,6 @@ const char* Request::_createFileName() {
 
     char* result = strdup(filename.data()); // Allocate memory and copy the data
     return result;
-}
-
-const char* Request::MaxBodySizeExceededException::what() const throw() {
-    return "Max body size exceeded";
-}
-
-const char* Request::MissingRequestHeaderException::what() const throw() {
-    return "Missing request header";
-}
-
-const char* Request::MethodNotAllowedException::what() const throw() {
-    return "Method not allowed in this location";
-}
-
-const char* Request::EmptyRequestedFileException::what() const throw() {
-    return "Requested file is empty";
-}
-
-const char* Request::FileReadException::what() const throw() {
-    return "Failed to read requested file";
 }
 
 std::ostream &operator<<(std::ostream &str, Request &rp)
