@@ -13,9 +13,11 @@ int Request::_validateMethod() {
     return false;
 }
 
-int Request::_replaceRoot(std::string oldRoot) {
+/* int Request::_replaceRoot(std::string oldRoot) {
     std::cout << "Old object: " << _object << std::endl;
     _root = _location.getRoot();
+    if (_root.empty())
+        _root = "database";
     size_t start_pos = _object.find(oldRoot);
     std::cout << "root: " << _root << std::endl;
     if(start_pos == std::string::npos)
@@ -23,7 +25,7 @@ int Request::_replaceRoot(std::string oldRoot) {
     _object.replace(start_pos, oldRoot.length(), _root);
     std::cout << "New filepath: " << _object << std::endl;
     return true;
-}
+} */
 
 std::vector<std::string> Request::tokenizePath(const std::string& path) {
     std::vector<std::string> tokens;
@@ -31,17 +33,19 @@ std::vector<std::string> Request::tokenizePath(const std::string& path) {
     std::string token;
     while (std::getline(iss, token, '/')) {
         if (!token.empty()) {
-            tokens.push_back(token);
+            tokens.push_back("/" + token);
         }
     }
     return tokens;
 }
 
 void Request::_handleLocation(const std::string& location) {
-    _replaceRoot(location); 
+    _object = _location.getRoot() + _object;
+    std::cout << "Handle location: added root an URI is now: " << _object << std::endl;
 
     if (_validateMethod() == false) {
         _sendStatusPage(405, "405 Method Not Allowed in this location");
+        std::cout << "Method: " << _method << " not allowed in location: " << location << std::endl; 
         throw MethodNotAllowedException();
     }
 
@@ -56,36 +60,50 @@ void Request::_handleLocation(const std::string& location) {
     //default file (??) if directory
 }
 
-void Request::_findLocation(const std::vector<std::string>& tokens, const std::map<std::string, LocationConfig>& locations, size_t index) {
+void    Request::_getDefaultLocation(std::map<std::string, LocationConfig> locations) {
+    std::cout << "Looking for default loc " << std::endl;
+    std::map<std::string, LocationConfig>::const_iterator it = locations.begin();
+    for (it = locations.begin(); it != locations.end(); ++it) {
+        if (it->first == "/") {
+            _location = it->second;
+            _handleLocation(it->first);
+            return ;
+        }
+
+    }
+    std::cout << "No matching location found for " << _object << " and no server default configured" << std::endl; 
+    throw NoMatchingLocationException();
+}
+
+int Request::_findLocation(const std::vector<std::string>& tokens, const std::map<std::string, LocationConfig>& locations, size_t index) {
+    std::cout << "amount of tokens: " << tokens.size() << " for object: " << _object << std::endl;
     if (index >= tokens.size()) {
-        std::cout << "No matching location found for request." << std::endl;
-        return;
+        return 0;
     }
 
     std::string target;
     for (size_t i = 0; i <= index; ++i) {
-        target += "/" + tokens[i];
+        target += tokens[i];
     }
 
-    std::map<std::string, LocationConfig>::const_iterator it = locations.find(target);
-    if (it != locations.end()) {
-        _location = it->second;
-        _handleLocation(it->first);
-
-        // Check if there are nested locations
-        std::map<std::string, LocationConfig> nested = it->second.getLocations();
-        if (/*nested != NULL && */index + 1 < tokens.size()) {
-            _findLocation(tokens, nested, index + 1);
-        }
-    } else {
-        it = locations.find("/");
-        if (it != locations.end()) {
+    bool foundMatch = false;
+    std::cout << "Looking for target: " << target << std::endl;
+    std::map<std::string, LocationConfig>::const_iterator it;
+    for (it = locations.begin(); it != locations.end(); ++it) {
+        if (it->first == target) {
+            std::cout << "Found mathcing location: " << it->first << std::endl;
             _location = it->second;
+            foundMatch = true;
+            // Check if there are nested locations
+            std::map<std::string, LocationConfig> nested = it->second.getLocations();
+            if (/*nested != NULL && */index + 1 < tokens.size()) {
+                _findLocation(tokens, nested, index + 1);
+            }
             _handleLocation(it->first);
+            return 1;
         }
-        else
-            throw std::runtime_error("No matching location for for request");
     }
+   return 0;
 }
 
 

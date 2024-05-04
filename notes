@@ -2,24 +2,23 @@ has to be done:
 
 nested locations?
 How to know if there are nested locations
-hostname / server name
+MAKE tests for locations, are they all being checked, are nested locations working
+MAKE tests for server run, is it non blocking, what if multiple big uploads or downloads at the same time
+TEST if directory listing works when autoindex = 1 and index is not configured
+MAKE hostname / server name
+MAKE max body size per location
+TEST redirections
 
-max body size per location
-
-- no default index for server
--always min 1 location
+CONFIG
+There should be a default root for the server
+Autoindex is not properly detected (off when configured on)
 
 
     if location and index = index
     if location, no index and autoindex = list
     else error
 
-    allowed methods check isnt working ! -merge newest
-
-    not all locations are stored in LocationConfig vec (ex. test_github conf, only until /tours)
-
     Try to list a directory. ?
 
     Try a redirected URL. ? http redirection
 
-    default file to answer if the request is a directory (index)
