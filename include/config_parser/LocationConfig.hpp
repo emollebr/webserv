@@ -37,6 +37,7 @@ private:
 	bool										_autoindex; // 0 | off
 	std::map<std::string, LocationConfig>		_locations;
 
+	size_t										_indent_lvl; // 
 	std::map<std::string, bool>					_directives_set;
 	std::map<std::string, void (LocationConfig::*)(tokeniterator begin, tokeniterator end)> 
 												_directives_validation_funcs;
@@ -64,6 +65,9 @@ public:
 	bool										getAllowPOST() const;
 	bool										getAllowDELETE() const;
 	bool										getAutoindex() const;
+	size_t										getIndent() const;
+
+	void										set_indent(size_t new_level);
 
 	void										parseLocationDirective(tokeniterator begin, tokeniterator end);
 	void										validateRoot(tokeniterator begin, tokeniterator end);
@@ -75,6 +79,7 @@ public:
 	void										validateUploadLocation(tokeniterator begin, tokeniterator end);
 	void										validateCGIExtension(tokeniterator begin, tokeniterator end);
 	void										validateAutoindex(tokeniterator begin, tokeniterator end);
+
 
 	bool										hasIndex(std::string index);
 	bool										hasMethod(std::string method);

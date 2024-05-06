@@ -1,4 +1,5 @@
 #include "common.hpp"
+#include "ReadConfig.hpp"
 #include "Server.hpp"
 
 void handleSigint(std::vector<Server> servers) {
@@ -10,6 +11,7 @@ void handleSigint(std::vector<Server> servers) {
 int main (int argc, char** argv){
 
 	
+
 	if (argc < 2) {
 		std::cerr << "Missing config file as argument" << std::endl;
 		return (1);
@@ -18,13 +20,14 @@ int main (int argc, char** argv){
 		std::cerr << COLOR_ERROR << "Error: More than one argument." << COLOR_STANDARD << std::endl;
 		return (1);
 	}
-
 	signal(SIGPIPE, signal_handler);
     signal(SIGINT, signal_handler);
 
 	try {
 		std::deque<std::string> tokens = readFile2Buffer(argv[1]);
 		std::vector<ServerConfig> configs = parseConfig(tokens);
+
+		//set up servers
 		std::vector<Server> servers;
 		for (unsigned long i = 0; i < configs.size(); ++i) {
 			std::cout << configs[i] << std::endl << std::endl;

@@ -14,7 +14,7 @@
 
 void LocationConfig::init(){
 	_max_body_size = 4.2 * 1024;
-
+	_indent_lvl = 0;
 
 	std::string	directives[] = {"root", "index", "methods",
 									"return", "CGI", "client_max_body_size",
@@ -51,7 +51,8 @@ LocationConfig::LocationConfig(LocationConfig const & origin){
 LocationConfig & LocationConfig::operator=(LocationConfig const & origin){
 	if (this == &origin)
 		return *this;
-	_root = origin._root;
+
+	_root = origin._root; 
 	_index = origin._index;
 	_methods_allowed = origin._methods_allowed;
 	_redirect = origin._redirect;
@@ -60,7 +61,13 @@ LocationConfig & LocationConfig::operator=(LocationConfig const & origin){
 	_upload_location = origin._upload_location;
 	_cgi_extension = origin._cgi_extension;
 	_allow_get = origin._allow_get;
-	_allow_get = origin._allow_get;
+	_allow_post = origin._allow_post;
+	_autoindex = origin._autoindex;
+	_locations = origin._locations;
+	_indent_lvl = origin._indent_lvl;
+	_directives_set = origin._directives_set; 
+	_directives_validation_funcs = origin._directives_validation_funcs;
+
 	return (*this);
 }
 
@@ -144,8 +151,18 @@ bool LocationConfig::getAutoindex() const {
 	return _autoindex;
 }
 
+size_t LocationConfig::getIndent() const {
+	return _indent_lvl;
+}
+
+void	LocationConfig::set_indent(size_t new_level){
+	_indent_lvl = new_level;
+}
+
 void LocationConfig::parseLocationDirective(tokeniterator begin, tokeniterator end) {
-	init();
+	while (*end == "")
+		--end;
+	// init();
 	if (_directives_set.find(*begin) == _directives_set.end()) {
 		throw std::invalid_argument("invalid directive: " + *begin);
 	}
@@ -161,7 +178,6 @@ void LocationConfig::parseLocationDirective(tokeniterator begin, tokeniterator e
 }
 
 void LocationConfig::validateRoot(tokeniterator begin, tokeniterator end){
-	// std::cout << TEXT_BOLD << "validating root" << TEXT_NOFORMAT<< std::endl;
 	
 	if (begin == end){
 		if (directoryExists(*begin)) {
@@ -222,26 +238,28 @@ void LocationConfig::validateRedirect(tokeniterator begin, tokeniterator end){
 }
 
 void LocationConfig::validateCGI(tokeniterator begin, tokeniterator end){
-	if (begin == end)
-		_CGI = *begin;
+	if (begin == end){
+		if (directoryExists(*begin)) {
+			_CGI = (*begin);
+		}
+		else
+			throw std::invalid_argument("invalid parameter: " + *begin);
+	}
+	else
+		throw std::invalid_argument("invalid number of parameters.");
 }
 
 void LocationConfig::validateBodySize(tokeniterator begin, tokeniterator end){
 
 	if (begin == end){
 		char* endptrx = NULL;
-
-		unsigned long int body = strtoul((*begin).c_str(), &endptrx, 0);
+		long double body = strtod((*begin).c_str(), &endptrx);
 		std::string endptr = endptrx;
 
-	// MISSING INTERNAL LIMIT FOR UPLOAD SIZE THAT MAY NOT BE EXCEEDED TBD
-
-		if (endptr == "" || endptr == "B") {
-			if ((*_directives_set.find("client_max_body_size")).second)
-				std::cerr << COLOR_WARNING << "Warning: Multiple client_max_body_size directives. Will use last." << COLOR_STANDARD << std::endl;
+		if (body < 0)
+			throw std::invalid_argument("invalid parameter: " + *begin);
+		if (endptr == "" || endptr == "B")
 			_max_body_size = body;
-			_directives_set["client_max_body_size"] = true;
-		}
 		else if (endptr == "M" || endptr == "MB")
 			_max_body_size = body * 1024;
 		else if (endptr == "M" || endptr == "MB")
@@ -253,6 +271,10 @@ void LocationConfig::validateBodySize(tokeniterator begin, tokeniterator end){
 	}
 	else
 		throw std::invalid_argument("invalid number of parameters");
+	if ((*_directives_set.find("client_max_body_size")).second){
+		std::cerr << COLOR_WARNING << "Warning: Multiple client_max_body_size directives. Will use last." << COLOR_STANDARD << std::endl;
+		_directives_set["client_max_body_size"] = true;
+	}
 }
 
 void LocationConfig::validateUploadLocation(tokeniterator begin, tokeniterator end){
@@ -287,8 +309,11 @@ void LocationConfig::validateAutoindex(tokeniterator begin, tokeniterator end){
 
 LocationConfig::LocationConfig(tokeniterator begin, tokeniterator end){
 	tokeniterator statementend;
+	init();
 	try	{
 		while (begin < end){
+			while (*begin == "")
+				begin++;
 			if (*begin == "location"){
 				begin++;
 				while (*begin == "")
@@ -302,9 +327,7 @@ LocationConfig::LocationConfig(tokeniterator begin, tokeniterator end){
 					try	{
 						if (_locations.find(location_name) != _locations.end())
 							std::cerr << COLOR_WARNING << "Warning: duplicated location block " << location_name << ". Using last." << COLOR_STANDARD << std::endl;
-						//LOCATION BLOCK DOES NOT PERSIST
 						_locations[location_name] = LocationConfig(begin + 1, statementend - 1);
-						std::cout << "added" << location_name << " to locationblock" << std::endl;
 					}
 					catch(const std::exception& e) {
 						throw std::invalid_argument("location " + location_name + ": " + e.what());
@@ -329,12 +352,17 @@ LocationConfig::LocationConfig(tokeniterator begin, tokeniterator end){
 
 std::ostream& operator<<(std::ostream& os, const LocationConfig& locationconf) {
 	// os << "++START LOCATION CONFIGURATION++" << std::endl << std::endl;
-	std::vector<std::string> printbuff;
-	os << "\t\troot\t\t\t" << locationconf.getRoot() << ";" << std::endl;
 
-	os << "\t\tindex\t\t\t" << locationconf.getIndex() << ";" << std::endl;
+	std::string indent = "\t\t";
+	for (int lvl = locationconf.getIndent(); lvl >= 0; lvl--)
+		indent += "\t";
+
+	std::vector<std::string> printbuff;
+	os <<  indent << "root\t\t\t" << locationconf.getRoot() << ";" << std::endl;
+
+	os <<  indent << "index\t\t\t" << locationconf.getIndex() << ";" << std::endl;
 	
-	os << "\t\tmethods\t\t\t";
+	os <<  indent << "methods\t\t\t";
 	std::set<std::string> printset = locationconf.getMethods();
 	for (std::set<std::string>::iterator it = printset.begin(); it != printset.end(); it++){
 		os << *it;
@@ -345,18 +373,18 @@ std::ostream& operator<<(std::ostream& os, const LocationConfig& locationconf) {
 	}
 	os << ";" << std::endl;
 
-	os << "\t\treturn\t\t\t" << locationconf.getRedirect().first << " " << locationconf.getRedirect().second << ";" << std::endl;
-	os << "\t\tCGI\t\t\t" << locationconf.getCGI() << ";" << std::endl;
-	os << "\t\tclient_max_body_size\t" << locationconf.getBodySize() << ";" << std::endl;
-	os << "\t\tupload location\t\t" << locationconf.getUploadLocation() << ";" << std::endl;
-	os << "\t\tCGI extension\t\t" << locationconf.getCGIExtension() << ";" << std::endl;
-	os << "\t\tautoindex\t\t" << locationconf.getAutoindex() << ";" << std::endl;
+	os <<  indent << "return\t\t\t" << locationconf.getRedirect().first << " " << locationconf.getRedirect().second << ";" << std::endl;
+	os <<  indent << "CGI\t\t\t" << locationconf.getCGI() << ";" << std::endl;
+	os <<  indent << "client_max_body_size\t" << locationconf.getBodySize() << ";" << std::endl;
+	os <<  indent << "upload location\t\t" << locationconf.getUploadLocation() << ";" << std::endl;
+	os <<  indent << "CGI extension\t\t" << locationconf.getCGIExtension() << ";" << std::endl;
+	os <<  indent << "autoindex\t\t" << locationconf.getAutoindex() << ";" << std::endl;
 	std::map<std::string, LocationConfig> locations = locationconf.getLocations();
-	for (std::map<std::string, LocationConfig>::iterator it = locations.begin(); it != locations.end(); it++)
-		os << "\tlocation\t" << (*it).first << " {" << std::endl 
+	for (std::map<std::string, LocationConfig>::iterator it = locations.begin(); it != locations.end(); it++){
+		(*it).second.set_indent(locationconf.getIndent() + 1);
+		os <<  indent << "location\t\t" << (*it).first << " {" << std::endl 
 			<< ((*it).second) << "" << std::endl;
-	
-	os << "}" << std::endl << std::endl;
-	os << "	}";
+		}
+	os << indent << "}";
 	return os;
 }

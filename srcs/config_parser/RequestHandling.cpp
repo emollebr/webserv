@@ -15,6 +15,7 @@ int    Request::detectRequestType() {
     return 0;
 }
 
+
 int 	Request::_handleDelete() {
     std::string response;
     if (std::remove(_object.c_str()) != 0) {
@@ -24,6 +25,34 @@ int 	Request::_handleDelete() {
     else
         return _sendStatusPage(200, "File successfully deleted");
 }
+
+
+void freeEnvironmentVariables(char** env) {
+    // Iterate through the environment array and free each string
+    for (int i = 0; env[i] != NULL; ++i) {
+        delete[] env[i];
+    }
+
+    // Free the array itself
+    delete[] env;
+}
+
+char** fillEnvironmentVariables(const std::string& formData) {
+    std::string queryString = "QUERY_STRING=" + formData;
+    std::cout << queryString << std::endl;
+
+    char **env = new char*[2];
+
+    // Allocate memory for the QUERY_STRING string and copy the content
+    env[0] = new char[queryString.length() + 1]; // +1 for null terminator
+    strcpy(env[0], queryString.c_str());
+
+    // Set the null terminator
+    env[1] = NULL;
+
+    return env;
+}
+
 
 int 	Request::_handleGet() {
     std::cout << "handleGet: filepath: " << _object << std::endl;
@@ -122,23 +151,12 @@ int Request::sendResponse(const char* response, size_t size, int flag) {
     return SUCCESS;
 }
 
-char** fillEnvironmentVariables(const std::string& formData) {
-    std::string queryString = "QUERY_STRING=" + formData;
-    std::cout << queryString << std::endl;
-    char **env = new char*[3]; // Three elements: QUERY_STRING, CONTENT_TYPE, and null terminator
-    // Copy the environment variable strings to the allocated memory
-    env[0] = strdup(queryString.c_str());
-    env[1] = 0;
-    env[2] = 0;
-    return env;
-}
-
-
 int 	Request::_handlePost() {
     char **env = fillEnvironmentVariables(_body);
     if (isCGIRequest())
     {
-       executeCGIScript(_object, env);
+       executeCGIScript(_object, client, env);
+       freeEnvironmentVariables(env);
        return 0;
     }
     if (!_isFullRequest()) {
