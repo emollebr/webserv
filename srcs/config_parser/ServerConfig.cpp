@@ -6,7 +6,7 @@
 /*   By: jschott <jschott@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/12 15:33:23 by jschott           #+#    #+#             */
-/*   Updated: 2024/05/06 12:01:15 by jschott          ###   ########.fr       */
+/*   Updated: 2024/05/06 12:34:50 by jschott          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -109,7 +109,7 @@ void ServerConfig::addLocation(std::string location, LocationConfig config) {
 	return ;
 }
 
-void ServerConfig::setServerName(std::vector<std::string> server_names) {
+void ServerConfig::setServerName(std::set<std::string> server_names) {
 	if ((_directives_set.find("server_name") != _directives_set.end() )
 			&& (*_directives_set.find("server_name")).second)
 	_server_names = server_names;
@@ -156,10 +156,10 @@ LocationConfig const ServerConfig::getLocation(std::string directory) const {
 	return ((*_locations.end()).second);
 }
 
-std::vector<std::string> const ServerConfig::getServerNames() const{
+std::set<std::string> const ServerConfig::getServerNames() const{
 	if ((*_directives_set.find("server_name")).second)
 		return _server_names;
-	std::vector<std::string> const test;
+	std::set<std::string> const test;
 	return test;
 	// throw std::expection;
 }
@@ -299,8 +299,12 @@ void	ServerConfig::validateHost(tokeniterator begin, tokeniterator end){
 
 void	ServerConfig::validateServerName(tokeniterator begin, tokeniterator end){
 	//DO VALIDATION
-	while (begin <= end)
-		_server_names.push_back(*begin++);
+	if (begin > end)
+		throw std::invalid_argument("invalid number of parameters.");
+	while (begin <= end){
+		std::cout << *begin << std::endl;
+		_server_names.insert(*begin++);
+	}
 }
 
 void	ServerConfig::validateErrorPath(tokeniterator begin, tokeniterator end){
@@ -383,11 +387,14 @@ std::ostream& operator<<(std::ostream& os, const ServerConfig& serverconf) {
 		std::cout << path << ";" << std::endl;
 	}
 		
-	os << "\tserver_name\t";
-	std::vector<std::string> server_names = serverconf.getServerNames();
-	for (std::vector<std::string>::iterator it = server_names.begin(); it < server_names.end(); it++)
-		os << *it << " ";
-	os << ";" << std::endl;
+	
+	std::set<std::string> server_names = serverconf.getServerNames();
+	if (!server_names.empty()){
+		os << "\tserver_name\t";
+		for (std::set<std::string>::iterator it = server_names.begin(); it != server_names.end(); it++)
+			os << *it << " ";
+		os << ";" << std::endl;
+	}
 
 	std::map<std::string, LocationConfig> locations = serverconf.getLocations();
 	for (std::map<std::string, LocationConfig>::iterator it = locations.begin(); it != locations.end(); it++)
