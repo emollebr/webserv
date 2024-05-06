@@ -63,6 +63,8 @@ LocationConfig & LocationConfig::operator=(LocationConfig const & origin){
 	_allow_get = origin._allow_get;
 	_locations = origin._locations;
 	_indent_lvl = origin._indent_lvl;
+	_directives_set = origin._directives_set;
+	_directives_validation_funcs = origin._directives_validation_funcs;
 	return (*this);
 }
 
@@ -155,7 +157,9 @@ void	LocationConfig::set_indent(size_t new_level){
 }
 
 void LocationConfig::parseLocationDirective(tokeniterator begin, tokeniterator end) {
-	init();
+	while (*end == "")
+		--end;
+	// init();
 	if (_directives_set.find(*begin) == _directives_set.end()) {
 		throw std::invalid_argument("invalid directive: " + *begin);
 	}
@@ -171,7 +175,6 @@ void LocationConfig::parseLocationDirective(tokeniterator begin, tokeniterator e
 }
 
 void LocationConfig::validateRoot(tokeniterator begin, tokeniterator end){
-	// std::cout << TEXT_BOLD << "validating root" << TEXT_NOFORMAT<< std::endl;
 	
 	if (begin == end){
 		if (directoryExists(*begin)) {
@@ -297,6 +300,7 @@ void LocationConfig::validateAutoindex(tokeniterator begin, tokeniterator end){
 
 LocationConfig::LocationConfig(tokeniterator begin, tokeniterator end){
 	tokeniterator statementend;
+	init();
 	try	{
 		while (begin < end){
 			while (*begin == "")
