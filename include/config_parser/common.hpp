@@ -28,16 +28,12 @@
 #include "Request.hpp"
 #include "Server.hpp"
 
-#define IP "127.0.0.1"
-#define PORT 9999
-#define SERVERSOCKETS_NUM 1
 #define QUEUE 10
 #define BUF_SIZE 8000
 #define MAX_BODY_SIZE 100000
 #define DATABASE_DIR "database"
 #define UPLOADS_DIR "database/uploads"
 #define HTML_INDEX "/index.html"
-#define HTML_404 "404.html"
 #define HTML_FILE "web.html"
 #define HTML_FILE_MANAGER "file_manager.html"
 

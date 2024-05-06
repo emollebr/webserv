@@ -3,7 +3,6 @@
 
 #include "common.hpp"
 
-
 class Request {
 private:
     LocationConfig                            _location;

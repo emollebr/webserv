@@ -16,6 +16,11 @@ client = Client("ysharma/Chat_with_Meta_llama3_8b")
 
 sys.stdout = sys.__stdout__
 
+i = 0
+
+while True:
+    i = 0
+ 
 result = client.predict(
 	message=str(input_text),	# str  in 'Input' Textbox component
 	request=0.95,

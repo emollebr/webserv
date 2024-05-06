@@ -6,7 +6,7 @@
 /*   By: jschott <jschott@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/04 16:51:38 by jschott           #+#    #+#             */
-/*   Updated: 2024/05/03 17:32:40 by jschott          ###   ########.fr       */
+/*   Updated: 2024/05/06 13:16:15 by jschott          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,8 +20,6 @@
 #include <set>
 #include "ReadConfig.hpp"
 
-
-
 class LocationConfig;
 
 class ServerConfig
@@ -33,10 +31,8 @@ private:
 
 	std::set<std::pair <std::string, size_t> > 	_host_ports_registry;
 
-	// std::map<std::string, std::vector<size_t> >	_listen; 
-
 //OPTIONAL INFORMATION
-	std::vector<std::string>					_server_names; // www.uri.com
+	std::set<std::string>						_server_names; // www.uri.com
 	std::map<unsigned int, std::string>			_error_pages;// /directory/to/errorfiles.html validation DONE
 
 //INDECES
@@ -60,14 +56,14 @@ public:
 
 	void 										addLocation(std::string location, LocationConfig config);
 	// void										setErrorPath(std::string error_path);
-	void										setServerName(std::vector<std::string> server_name);
+	void										setServerName(std::set<std::string> server_name);
 	
 	std::set<std::pair <std::string, size_t> > 	getListen() const;
 	std::set<size_t>							getListenPorts() const;
 	std::string									getHost() const;
 	std::map<std::string, LocationConfig> const	getLocations() const;
 	LocationConfig const						getLocation(std::string directory) const;
-	std::vector<std::string> const				getServerNames() const;
+	std::set<std::string> const					getServerNames() const;
 	std::map<uint, std::string>	const 			getErrorPages() const;
 	std::string	const							getErrorPath(int StatusCode) const;
 
