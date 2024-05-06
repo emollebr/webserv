@@ -6,7 +6,11 @@
 /*   By: jschott <jschott@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/05 10:20:40 by jschott           #+#    #+#             */
+<<<<<<< .merge_file_z5IalV
 /*   Updated: 2024/05/06 11:59:43 by jschott          ###   ########.fr       */
+=======
+/*   Updated: 2024/05/02 18:24:14 by jschott          ###   ########.fr       */
+>>>>>>> .merge_file_nX8GHA
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -171,12 +175,18 @@ std::deque<std::string>	readFile2Buffer (std::string filename){
 void removeConfDuplicates(std::vector<ServerConfig> &config){
 	if (config.size() == 1)
 		return ;
+<<<<<<< .merge_file_z5IalV
 	//FIND AND STORE DUPLICATED HOSTS
 	std::map < std::string, std::vector<ServerConfig*> > more_duplicates;
+=======
+	std::vector<ServerConfig> duplicates;
+	std::map < std::string, std::vector<ServerConfig> > more_duplicates;
+>>>>>>> .merge_file_nX8GHA
 	for (std::vector<ServerConfig>::iterator it = config.begin(); it < config.end(); it++){
 		std::string hostaddr = (*it).getHost();
 		if (more_duplicates.find(hostaddr) != more_duplicates.end())
 			continue;
+<<<<<<< .merge_file_z5IalV
 		more_duplicates[hostaddr].push_back(&(*it));
 		for (std::vector<ServerConfig>::iterator it2 = it + 1; it2 < config.end(); it2++){
 			if ((*it2).getHost() == hostaddr){
@@ -209,6 +219,53 @@ void removeConfDuplicates(std::vector<ServerConfig> &config){
 				std::cerr << COLOR_WARNING << "Warning: No valid Port left. Deleting server." << COLOR_STANDARD << std::endl;
 			}
 	}
+=======
+		more_duplicates[hostaddr].push_back(*it);
+		for (std::vector<ServerConfig>::iterator it2 = it + 1; it2 < config.end(); it2++){
+			if ((*it2).getHost() == hostaddr)
+				more_duplicates[hostaddr].push_back(*it2);
+		}
+	}
+	std::cout << "DUPLICATE HOST CHECKED" << std::endl;
+	if (more_duplicates.empty())
+		return ;
+	std::cout << "DUPLICATES FOUND" << std::endl;
+
+	for (std::map < std::string, std::vector<ServerConfig> >::iterator it = more_duplicates.begin();
+																		it != more_duplicates.end(); it++){
+		std::set< size_t > ports2keep = (*it).second.front().getListenPorts();
+		for (std::vector<ServerConfig>::iterator it2 = (*it).second.begin() + 1; it2 != (*it).second.end(); it2++){
+			std::cout << "checking for host ip: " << (*it2).getHost() << std::endl << "ports: ";
+			for (std::set< size_t >::iterator it_ports = ports2keep.begin(); it_ports != ports2keep.end(); it_ports++){
+				std::cout << (*it_ports);
+				(*it2).deletePort(*it_ports);
+			}
+			std::cout << std::endl;
+		}
+	}
+																	
+	
+/* 	for (std::vector<ServerConfig>::iterator it2 = duplicates.begin(); it2 < duplicates.end(); it2++){
+		std::set< size_t > ports_keep = (*it2).getListenPorts();
+		std::cout << "Checking for host: " << (*it2).getHost() << std::endl;
+		for (std::vector<ServerConfig>::iterator it3 = it2 + 1; it3 != duplicates.end(); ++it3){
+			std::set< size_t > ports2check = (*it3).getListenPorts();
+			for (std::set<size_t>::iterator it_portkeep= ports_keep.begin(); it_portkeep != ports_keep.end(); it_portkeep++){
+				size_t port2keep = *it_portkeep;
+				std::cout << "\t for port: " << port2keep << std::endl;
+				
+				if (ports2check.find(port2keep) != ports2check.end()){
+					(*it3).deletePort(port2keep);
+					std::cerr << COLOR_WARNING << "Warning: Duplicate of " << (*it3).getHost() << ":" << port2keep << " found. Using first." << COLOR_STANDARD << std::endl;
+					if (((*it3).getListenPorts()).empty()){
+						config.erase(it3);
+						std::cerr << COLOR_WARNING << "Warning: No valid Port left. Deleting server." << COLOR_STANDARD << std::endl;
+					}
+				}
+			}
+		}
+	} */
+>>>>>>> .merge_file_nX8GHA
 }
 
 // Gets a dequeue of tokens, looks for server keyword and {} to identify serverblock and hand it to ServerConfig Class
