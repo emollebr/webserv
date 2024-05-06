@@ -6,7 +6,7 @@
 /*   By: jschott <jschott@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/12 15:33:23 by jschott           #+#    #+#             */
-/*   Updated: 2024/05/06 12:34:50 by jschott          ###   ########.fr       */
+/*   Updated: 2024/05/06 13:15:35 by jschott          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -90,11 +90,13 @@ ServerConfig::ServerConfig(tokeniterator begin, tokeniterator end){
 ServerConfig & ServerConfig::operator= (ServerConfig const & origin) {
 	if (this == &origin)
 		return *this;
-	_ports = origin._ports;
-	_locations = origin._locations;
 	_host = origin._host;
+	_ports = origin._ports;
 	_server_names = origin._server_names;
 	_error_pages = origin._error_pages;
+	_directives_set = origin._directives_set;
+	_directives_validation_funcs = origin._directives_validation_funcs;
+	_locations = origin._locations;
 	return *this;
 }
 

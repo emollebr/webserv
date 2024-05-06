@@ -51,7 +51,8 @@ LocationConfig::LocationConfig(LocationConfig const & origin){
 LocationConfig & LocationConfig::operator=(LocationConfig const & origin){
 	if (this == &origin)
 		return *this;
-	_root = origin._root;
+
+	_root = origin._root; 
 	_index = origin._index;
 	_methods_allowed = origin._methods_allowed;
 	_redirect = origin._redirect;
@@ -60,12 +61,13 @@ LocationConfig & LocationConfig::operator=(LocationConfig const & origin){
 	_upload_location = origin._upload_location;
 	_cgi_extension = origin._cgi_extension;
 	_allow_get = origin._allow_get;
-	_allow_get = origin._allow_get;
+	_allow_post = origin._allow_post;
+	_autoindex = origin._autoindex;
 	_locations = origin._locations;
 	_indent_lvl = origin._indent_lvl;
-	_directives_set = origin._directives_set;
+	_directives_set = origin._directives_set; 
 	_directives_validation_funcs = origin._directives_validation_funcs;
-	_autoindex = origin._autoindex;
+
 	return (*this);
 }
 
