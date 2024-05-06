@@ -62,6 +62,8 @@ Request::Request(char *buffer, int client, int bytesRead, size_t maxBodySize, st
         
         _bytesReceived = bytesRead - bytesProcessed;
         _fullRequest = (_bytesReceived < _contentLength) ? false : true;
+    } else if (_method == "GET") {
+        
     }
     return ;
 }
@@ -103,11 +105,10 @@ bool Request::isCGIRequest() {
     return false;
 }
 
+#include <fcntl.h> // Include for non-blocking I/O
 
-void Request::executeCGIScript(const std::string& scriptPath, char** env) {
+void Request::executeCGIScript(const std::string& scriptPath, int clientSocket, char** env) {
     // Create pipes for inter-process communication
-    
-
     std::string path = scriptPath;
     if (!path.empty() && path[0] == '/')
         path = path.substr(1);
@@ -132,6 +133,7 @@ void Request::executeCGIScript(const std::string& scriptPath, char** env) {
 
         char* argv[] = {(char*)path.c_str(), 0};
 
+        // Execute the CGI script
         execve(path.c_str(), argv, env);
 
         // If execve fails, it will continue here
@@ -148,20 +150,49 @@ void Request::executeCGIScript(const std::string& scriptPath, char** env) {
         char buffer[1024];
         ssize_t bytesRead;
         std::string responseData;
-        bytesRead = read(pipefd[0], buffer, sizeof(buffer));
-        responseData.append(buffer, bytesRead);
+        bool timeout = false;
+
+        // Set a timeout duration (e.g., 3 seconds)
+        const time_t timeoutDuration = 3; // 3 seconds
+        time_t startTime = time(NULL);
+
+        // Wait for the child process to finish or timeout
+        pid_t pidWait = 0;
+        while (pidWait == 0 && (time(NULL) - startTime) <= timeoutDuration) {
+            pidWait = waitpid(pid, NULL, WNOHANG);
+            bytesRead = read(pipefd[0], buffer, sizeof(buffer));
+            if (bytesRead > 0) {
+                responseData.append(buffer, bytesRead);
+            }
+        }
+
+        // Check if a timeout occurred
+        if (pidWait == 0) {
+            timeout = true;
+            // Kill the child process
+            kill(pid, SIGKILL);
+        } else if (pidWait == -1) {
+            perror("waitpid");
+            exit(EXIT_FAILURE);
+        }
+
         // Close read end of the pipe
         close(pipefd[0]);
 
-        // Wait for the child process to finish
-        int status;
-        waitpid(pid, &status, 0);
-
-        // Send HTTP response with CGI script output
-        std::string response = "HTTP/1.1 200 OK\nContent-Type: text/html\n\n" + responseData;
-        sendResponse(response.c_str(), response.size(), 0);
+        // Check if a timeout occurred
+        if (timeout) {
+            const std::string timeoutResponse = "HTTP/1.1 200 OK\nContent-Type: text/html\n\nThe server took too long to process the request.";
+            send(clientSocket, timeoutResponse.c_str(), timeoutResponse.size(), 0);
+            //close(clientSocket);
+        } else {
+            // Send HTTP response with CGI script output
+            std::string response = "HTTP/1.1 200 OK\nContent-Type: text/html\n\n" + responseData;
+            send(clientSocket, response.c_str(), response.size(), 0);
+            //close(clientSocket);
+        }
     }
 }
+
 
 
 void    Request::pendingPostRequest(char* buffer, int bytesRead) {

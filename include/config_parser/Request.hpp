@@ -3,7 +3,6 @@
 
 #include "common.hpp"
 
-
 class Request {
 private:
     std::string                               _method;
@@ -50,7 +49,7 @@ public:
     int             sendResponse(const char* response, size_t size, int flag);
     void            pendingPostRequest(char* buffer, int bytesRead);
     bool            isCGIRequest();
-    void            executeCGIScript(const std::string& scriptPath, char** env);
+    void            executeCGIScript(const std::string& scriptPath, int clientSocket ,char** env);
 
 
     bool            hasPendingResponse( void ) {
