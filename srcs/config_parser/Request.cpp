@@ -6,9 +6,10 @@ Request::Request(char *buffer, int client, int bytesRead, ServerConfig config) :
     std::string line;
     int bytesProcessed = 0;
 
-    //Parse method and object
+    //Parse method and PATH
     iss >> _method >> _object >> _protocol;
-    bytesProcessed += _method.size() + _object.size() + _protocol.size() + 3;
+    _path = _object;
+    bytesProcessed += _method.size() + _path.size() + _protocol.size() + 3;
     std::getline(iss, line);
 
     //Parse headers
@@ -25,14 +26,14 @@ Request::Request(char *buffer, int client, int bytesRead, ServerConfig config) :
 /*  //check for CGI extension
    	std::map<std::string, std::string> cgi_map = config.getCGI();
     std::string ext;
-	for (size_t i = _object.find_last_of('.'); _object[i] != NULL; i++) 
-		ext += _object[i];
+	for (size_t i = _path.find_last_of('.'); _path[i] != NULL; i++) 
+		ext += _path[i];
 	std::map<std::string, std::string>::iterator cgi_it = cgi_map.find(ext);
     if (cgi_it != cgi_map.end())
         _cgi_path = cgi_it->second;
     else { */
         //Find appropriate location
-        std::vector<std::string> tokens = tokenizePath(_object);
+        std::vector<std::string> tokens = tokenizePath(_path);
         if (tokens.size() == 0 || !_findLocation(tokens, config.getLocations(), 0)) {
             std::cout << "default location called here" << std::endl;
             _getDefaultLocation(config.getLocations());
@@ -48,7 +49,7 @@ Request::Request(char *buffer, int client, int bytesRead, ServerConfig config) :
         _bytesReceived = bytesRead - bytesProcessed;
         _fullRequest = (_bytesReceived < _contentLength) ? false : true;
     }
-/*     else if (_method == "GET" && _object.find('&') != std::string::npos) {
+/*     else if (_method == "GET" && _path.find('&') != std::string::npos) {
         //do something
     } */
     return ;
@@ -76,7 +77,7 @@ void Request::_parseRequestBody(char *buffer, int bytesRead) {
     //save the request body
     char *bodyStart = std::strstr(buffer, "\r\n\r\n");
     if (bodyStart != NULL) {
-        if (_object.find("cgi-bin") == std::string::npos) {
+        if (_path.find("cgi-bin") == std::string::npos) {
                 _validateContentHeaders(_location.getBodySize());
             // Skip an additional 3 occurrences of "\r\n"
             for (int i = 0; i < 5; ++i) {
@@ -121,7 +122,7 @@ void Request::_validateContentHeaders(size_t maxBodySize) {
 
 // Check if the request URL starts with "/cgi-bin/"
 bool Request::isCGIRequest() {
-    size_t cgiPos = _object.find("cgi-bin/");
+    size_t cgiPos = _path.find("cgi-bin/");
     if (cgiPos != std::string::npos) {
         // Request URL starts with "/cgi-bin/", consider it as CGI
         std::cout << "IS CGI\n";
@@ -235,7 +236,7 @@ bool Request::_fileExists(std::string filename) {
 int		Request::_sendStatusPage(int statusCode, std::string msg) {
     std::map<unsigned int, std::string>::iterator it = _errorPages.find(statusCode);
     if (it != _errorPages.end()) { //check for default error pages
-        _object = it->second;
+        _path = it->second;
         return (_handleGet());
     }
     else { //no default || success
@@ -292,7 +293,7 @@ std::ostream &operator<<(std::ostream &str, Request &rp)
 {
     str << "Client FD: " << rp.client << std::endl;
     str << "Method: " << rp.getMethod() << std::endl;
-    str << "Path: " << rp.getObject() << std::endl;
+    str << "Path: " << rp.getPATH() << std::endl;
     str << "Protocol: " << rp.getProtocol() << std::endl;
     str << "Headers: " << std::endl;
     std::map<std::string, std::string> headers = rp.getHeaders();

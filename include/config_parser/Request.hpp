@@ -9,6 +9,7 @@ private:
     std::string                               _root;
     std::string                               _method;
     std::string                               _object;
+    std::string                               _path;
     std::string                               _protocol;
     std::map<std::string, std::string>        _headers;
     std::string                               _boundary;
@@ -92,7 +93,7 @@ public:
     };
 
     const std::string& getObject() const {
-        return _object;
+        return _path;
     };
 
     const std::string& getProtocol() const {
