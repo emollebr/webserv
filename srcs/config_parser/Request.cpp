@@ -293,7 +293,7 @@ std::ostream &operator<<(std::ostream &str, Request &rp)
 {
     str << "Client FD: " << rp.client << std::endl;
     str << "Method: " << rp.getMethod() << std::endl;
-    str << "Path: " << rp.getPATH() << std::endl;
+    str << "Path: " << rp.getPath() << std::endl;
     str << "Protocol: " << rp.getProtocol() << std::endl;
     str << "Headers: " << std::endl;
     std::map<std::string, std::string> headers = rp.getHeaders();

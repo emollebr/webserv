@@ -92,7 +92,7 @@ public:
         return _method;
     };
 
-    const std::string& getObject() const {
+    const std::string& getPath() const {
         return _path;
     };
 
