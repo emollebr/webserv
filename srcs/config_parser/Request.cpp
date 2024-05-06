@@ -23,19 +23,14 @@ Request::Request(char *buffer, int client, int bytesRead, ServerConfig config) :
         }
     }
 
-    //check for CGI extension
-   	std::map<std::string, std::string> cgi_map = config.getCGIExtention();
-    std::string ext;
-	for (size_t i = _path.find_last_of('.'); _path[i] != NULL; i++) 
-		ext += _path[i];
-	std::map<std::string, std::string>::iterator cgi_it = cgi_map.find(ext);
-    if (cgi_it != cgi_map.end())
-        _cgi_path = cgi_it->second;
-    else {
+    std::cout << "ReqCon: URL is " << _path << std::endl;
+
+    //Get CGI extension OR locations
+    if (_getCGIPath(config.getCGIExtention()) == false) {
         //Find appropriate location
         std::vector<std::string> tokens = tokenizePath(_path);
         if (tokens.size() == 0 || !_findLocation(tokens, config.getLocations(), 0)) {
-            std::cout << "default location called here" << std::endl;
+            //No match found, set default location
             _getDefaultLocation(config.getLocations());
         }
     }
@@ -53,6 +48,19 @@ Request::Request(char *buffer, int client, int bytesRead, ServerConfig config) :
         //do something
     } */
     return ;
+}
+
+int  Request::_getCGIPath(std::map<std::string, std::string> cgi_map) {
+    size_t dotPos = _path.find_last_of('.');
+    if (dotPos != std::string::npos) {
+        std::string ext = _path.substr(dotPos); // Extract the extension
+	    std::map<std::string, std::string>::iterator cgi_it = cgi_map.find(ext);
+        if (cgi_it != cgi_map.end()) {
+            _cgi_path = cgi_it->second;
+            return 1;
+        }
+    }
+    return 0;
 }
 
 void    Request::_parseContentHeaders(char *buffer, std::streampos pos) {
