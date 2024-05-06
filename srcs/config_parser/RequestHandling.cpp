@@ -56,6 +56,14 @@ char** fillEnvironmentVariables(const std::string& formData) {
 
 int 	Request::_handleGet() {
     std::cout << "handleGet: filepath: " << _object << std::endl;
+    char **env = fillEnvironmentVariables(_body);
+    std::cout << "OBJECT: " << _object << std::endl;
+    if (isCGIRequest())
+    {
+       executeCGIScript(_object, client, env);
+       freeEnvironmentVariables(env);
+       return 0;
+    }
     if (is_directory(_object.c_str())) {
         std::string index = _location.getIndex();
         std::cout << "handleGet: autoindex: " << _location.getAutoindex() << std::endl;

@@ -12,7 +12,7 @@ private:
     std::string                               _protocol;
     std::map<std::string, std::string>        _headers;
     std::string                               _boundary;
-    std::string                               _body; 
+    std::string                               _body;
     bool                                      _fullRequest;
     size_t                                    _bytesReceived;
     size_t                                    _contentLength;
@@ -21,7 +21,7 @@ private:
     ssize_t                                   _bytesSent;
     std::map<unsigned int, std::string>       _errorPages;
     int                                       _redirStatus;
-
+    std::string                               _cgi_path;
 
     int 	_handlePost( void );
     int 	_handleGet( void );
@@ -64,7 +64,7 @@ public:
     int             sendResponse(const char* response, size_t size, int flag);
     void            pendingPostRequest(char* buffer, int bytesRead);
     bool            isCGIRequest();
-    void            executeCGIScript(const std::string& scriptPath, char** env);
+    void            executeCGIScript(const std::string& scriptPath, int clientSocket, char** env);
     std::vector<std::string> tokenizePath(const std::string& path);
 
     bool            hasPendingResponse( void ) {

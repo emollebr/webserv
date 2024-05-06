@@ -6,10 +6,12 @@ Request::Request(char *buffer, int client, int bytesRead, ServerConfig config) :
     std::string line;
     int bytesProcessed = 0;
 
+    //Parse method and object
     iss >> _method >> _object >> _protocol;
     bytesProcessed += _method.size() + _object.size() + _protocol.size() + 3;
     std::getline(iss, line);
 
+    //Parse headers
     while (std::getline(iss, line)  && line != "\r") {
         bytesProcessed += line.size() + 1;
         size_t pos = line.find(": ");
@@ -20,14 +22,23 @@ Request::Request(char *buffer, int client, int bytesRead, ServerConfig config) :
         }
     }
 
-    //Find appropriate location
-    //_root = config.getRoot(); TO DO
-    std::vector<std::string> tokens = tokenizePath(_object);
-    if (tokens.size() == 0 || !_findLocation(tokens, config.getLocations(), 0)) {
-        std::cout << "default location called here" << std::endl;
-        _getDefaultLocation(config.getLocations());
-    }
-  
+/*  //check for CGI extension
+   	std::map<std::string, std::string> cgi_map = config.getCGI();
+    std::string ext;
+	for (size_t i = _object.find_last_of('.'); _object[i] != NULL; i++) 
+		ext += _object[i];
+	std::map<std::string, std::string>::iterator cgi_it = cgi_map.find(ext);
+    if (cgi_it != cgi_map.end())
+        _cgi_path = cgi_it->second;
+    else { */
+        //Find appropriate location
+        std::vector<std::string> tokens = tokenizePath(_object);
+        if (tokens.size() == 0 || !_findLocation(tokens, config.getLocations(), 0)) {
+            std::cout << "default location called here" << std::endl;
+            _getDefaultLocation(config.getLocations());
+        }
+    //}
+
     //TO DO: Adapt to work with CGI
     if (_method == "POST") {
         _boundary = _headers["Content-Type"];
@@ -37,6 +48,9 @@ Request::Request(char *buffer, int client, int bytesRead, ServerConfig config) :
         _bytesReceived = bytesRead - bytesProcessed;
         _fullRequest = (_bytesReceived < _contentLength) ? false : true;
     }
+/*     else if (_method == "GET" && _object.find('&') != std::string::npos) {
+        //do something
+    } */
     return ;
 }
 
@@ -107,10 +121,7 @@ void Request::_validateContentHeaders(size_t maxBodySize) {
 
 // Check if the request URL starts with "/cgi-bin/"
 bool Request::isCGIRequest() {
-    std::cout << "OBJECTcgi:" << _object << std::endl;
-    std::string url = _object; // Skip space and slash
-    size_t cgiPos = url.find("cgi-bin/");
-    std::cout << "IS CGI\n";
+    size_t cgiPos = _object.find("cgi-bin/");
     if (cgiPos != std::string::npos) {
         // Request URL starts with "/cgi-bin/", consider it as CGI
         std::cout << "IS CGI\n";

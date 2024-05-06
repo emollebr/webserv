@@ -78,12 +78,26 @@ int Request::_handleListFiles(std::string directory) {
 
     std::ostringstream response;
     response << "HTTP/1.1 200 OK\r\n"
-             << "Content-Type: text/plain\r\n"
+             << "Content-Type: text/html\r\n" // Change content type to HTML
              << "Connection: close\r\n\r\n";
 
-    for (std::vector<std::string>::const_iterator it = files.begin(); it != files.end(); ++it) {
-        response << *it << std::endl;
+    // Start HTML body
+    response << "<html><head><title>Files in " << directory << "</title></head><body>\n";
+
+    size_t pos = directory.find(_root);
+    if (pos != std::string::npos) {
+        directory.erase(pos, _root.length());
     }
+    std::cout << "Removed root: " << _root << ", directory is " << directory << std::endl;
+    // Create hyperlinks for each file
+    for (std::vector<std::string>::const_iterator it = files.begin(); it != files.end(); ++it) {
+        
+        std::string filePath = directory + "/" + *it; // Concatenate directory path with filename
+        response << "<a href=\"" << filePath << "\">" << *it << "</a><br>\n";
+    }
+
+    // End HTML body
+    response << "</body></html>";
 
     return sendResponse(response.str().c_str(), response.str().size(), 0);
 }
