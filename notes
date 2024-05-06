@@ -1,26 +1,18 @@
 has to be done: 
 
 nested locations?
+what happens if theres a root in a nested location
 How to know if there are nested locations
 MAKE tests for locations, are they all being checked, are nested locations working
 MAKE tests for server run, is it non blocking, what if multiple big uploads or downloads at the same time
 TEST if directory listing works when autoindex = 1 and index is not configured
 MAKE hostname / server name
-MAKE max body size per location
 TEST redirections
 
-CONFIG
-There should be a default root for the server
-Autoindex is not properly detected (off when configured on)
 
+Try to list a directory. ?
 
-    if location and index = index
-    if location, no index and autoindex = list
-    else error
-
-    Try to list a directory. ?
-
-    Try a redirected URL. ? http redirection
+Try a redirected URL. ? http redirection
 
 
 proper status and error code check:

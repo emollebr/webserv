@@ -40,8 +40,13 @@ std::vector<std::string> Request::tokenizePath(const std::string& path) {
 }
 
 void Request::_handleLocation(const std::string& location) {
-    _object = _location.getRoot() + _object;
-    std::cout << "Handle location: added root an URI is now: " << _object << std::endl;
+    //replace URL location with root directive
+    if (!_location.getRoot().empty()){
+        _root = _location.getRoot();
+        size_t start_pos = _object.find(location);
+        _object.replace(start_pos, location.length(), _root);
+        std::cout << "Handle location: replaced location with root, URL is now: " << _object << std::endl;
+    }
 
     if (_validateMethod() == false) {
         _sendStatusPage(405, "405 Method Not Allowed in this location");
@@ -55,9 +60,6 @@ void Request::_handleLocation(const std::string& location) {
         _redirStatus = redirect.first;
         _object = redirect.second;
     }
-    //HANDLED IN HANDLE GET
-    //autoindex on or off - call listfiles function
-    //default file (??) if directory
 }
 
 void    Request::_getDefaultLocation(std::map<std::string, LocationConfig> locations) {
@@ -93,13 +95,14 @@ int Request::_findLocation(const std::vector<std::string>& tokens, const std::ma
         if (it->first == target) {
             std::cout << "Found mathcing location: " << it->first << std::endl;
             _location = it->second;
+            _handleLocation(it->first);
             foundMatch = true;
+
             // Check if there are nested locations
             std::map<std::string, LocationConfig> nested = it->second.getLocations();
             if (/*nested != NULL && */index + 1 < tokens.size()) {
                 _findLocation(tokens, nested, index + 1);
             }
-            _handleLocation(it->first);
             return 1;
         }
     }

@@ -25,7 +25,7 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
 function refreshFileList() {
-    fetch('/database/uploads') // Send GET request to server to get list of files
+    fetch('/uploads') // Send GET request to server to get list of files
     .then(response => response.text()) // Parse response as text
     .then(files => {
         var fileList = document.getElementById('fileList');
