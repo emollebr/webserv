@@ -24,7 +24,7 @@ SRC_FILES =	ReadConfig.cpp \
 			main.cpp
 SRCS := $(addprefix $(SRC_PATH), $(SRC_FILES))
 
-# OBJECTS
+# PATHS
 OBJ_PATH = obj/
 OBJS = $(addprefix $(OBJ_PATH), $(SRC_FILES:.cpp=.o))
 

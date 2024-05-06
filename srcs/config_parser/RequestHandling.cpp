@@ -18,7 +18,7 @@ int    Request::detectRequestType() {
 
 int 	Request::_handleDelete() {
     std::string response;
-    if (std::remove(_object.c_str()) != 0) {
+    if (std::remove(_path.c_str()) != 0) {
         std::cerr << "Error deleting file: " << strerror(errno) << std::endl;
        return _sendStatusPage(400, "404 Not Found");
     }
@@ -55,31 +55,31 @@ char** fillEnvironmentVariables(const std::string& formData) {
 
 
 int 	Request::_handleGet() {
-    std::cout << "handleGet: filepath: " << _object << std::endl;
+    std::cout << "handleGet: filepath: " << _path << std::endl;
     char **env = fillEnvironmentVariables(_body);
-    std::cout << "OBJECT: " << _object << std::endl;
+    std::cout << "PATH: " << _path << std::endl;
     if (isCGIRequest())
     {
-       executeCGIScript(_object, client, env);
+       executeCGIScript(_path, client, env);
        freeEnvironmentVariables(env);
        return 0;
     }
-    if (is_directory(_object.c_str())) {
+    if (is_directory(_path.c_str())) {
         std::string index = _location.getIndex();
         std::cout << "handleGet: autoindex: " << _location.getAutoindex() << std::endl;
         if (!index.empty())
-            _object += index;
+            _path += index;
         else if (_location.getAutoindex())
-            return _handleListFiles(_object);
+            return _handleListFiles(_path);
         else
             return _sendStatusPage(403, "403 Forbidden: i dont know if its the right status code??");
     }
-     std::cout << "filePATH: " << _object << std::endl;
+     std::cout << "filePATH: " << _path << std::endl;
 
-    std::ifstream file(_object.c_str(), std::ios::binary); // Open the file
+    std::ifstream file(_path.c_str(), std::ios::binary); // Open the file
     if (!file) { 
         // Error opening index.html file
-        std::cerr << "Failed to open " << _object << " file" << std::endl;
+        std::cerr << "Failed to open " << _path << " file" << std::endl;
         return _sendStatusPage(404, "404 Not Found");
     }
     // Get the size of the file
@@ -89,7 +89,7 @@ int 	Request::_handleGet() {
     
     // Send HTTP response headers
     std::ostringstream responseHeader;
-    responseHeader << "HTTP/1.1 200 OK\nContent-Type: " << getMimeType(_object) << "\nContent-Length: " << _fileSize << "\n\n";
+    responseHeader << "HTTP/1.1 200 OK\nContent-Type: " << getMimeType(_path) << "\nContent-Length: " << _fileSize << "\n\n";
     sendResponse(responseHeader.str().c_str(), responseHeader.str().size(), MSG_MORE);
     _pendingResponse = 1;
     return _pendingResponse;
@@ -97,10 +97,10 @@ int 	Request::_handleGet() {
 
 int    Request::createResponse() {    
     // Read file in chunks and send each chunk if file size exceeds buffer size
-    std::ifstream file(_object.c_str(), std::ios::binary);
+    std::ifstream file(_path.c_str(), std::ios::binary);
     if (!file) { 
         // Error opening index.html file
-        std::cerr << "Failed to open " << _object << " file" << std::endl;
+        std::cerr << "Failed to open " << _path << " file" << std::endl;
         _sendStatusPage(500, "500 Internal Error: failed to send requested content");
         return 0;
     }
@@ -163,7 +163,7 @@ int 	Request::_handlePost() {
     char **env = fillEnvironmentVariables(_body);
     if (isCGIRequest())
     {
-       executeCGIScript(_object, client, env);
+       executeCGIScript(_path, client, env);
        freeEnvironmentVariables(env);
        return 0;
     }

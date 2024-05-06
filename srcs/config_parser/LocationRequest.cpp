@@ -14,16 +14,16 @@ int Request::_validateMethod() {
 }
 
 /* int Request::_replaceRoot(std::string oldRoot) {
-    std::cout << "Old object: " << _object << std::endl;
+    std::cout << "Old PATH: " << _path << std::endl;
     _root = _location.getRoot();
     if (_root.empty())
         _root = "database";
-    size_t start_pos = _object.find(oldRoot);
+    size_t start_pos = _path.find(oldRoot);
     std::cout << "root: " << _root << std::endl;
     if(start_pos == std::string::npos)
         return false;
-    _object.replace(start_pos, oldRoot.length(), _root);
-    std::cout << "New filepath: " << _object << std::endl;
+    _path.replace(start_pos, oldRoot.length(), _root);
+    std::cout << "New filepath: " << _path << std::endl;
     return true;
 } */
 
@@ -43,9 +43,9 @@ void Request::_handleLocation(const std::string& location) {
     //replace URL location with root directive
     if (!_location.getRoot().empty()){
         _root = _location.getRoot();
-        size_t start_pos = _object.find(location);
-        _object.replace(start_pos, location.length(), _root);
-        std::cout << "Handle location: replaced location with root, URL is now: " << _object << std::endl;
+        size_t start_pos = _path.find(location);
+        _path.replace(start_pos, location.length(), _root);
+        std::cout << "Handle location: replaced location with root, URL is now: " << _path << std::endl;
     }
 
     if (_validateMethod() == false) {
@@ -58,7 +58,7 @@ void Request::_handleLocation(const std::string& location) {
     std::pair<int, std::string> redirect = _location.getRedirect();
     if (redirect.first != 0) {
         _redirStatus = redirect.first;
-        _object = redirect.second;
+        _path = redirect.second;
     }
 }
 
@@ -73,12 +73,12 @@ void    Request::_getDefaultLocation(std::map<std::string, LocationConfig> locat
         }
 
     }
-    std::cout << "No matching location found for " << _object << " and no server default configured" << std::endl; 
+    std::cout << "No matching location found for " << _path << " and no server default configured" << std::endl; 
     throw NoMatchingLocationException();
 }
 
 int Request::_findLocation(const std::vector<std::string>& tokens, const std::map<std::string, LocationConfig>& locations, size_t index) {
-    std::cout << "amount of tokens: " << tokens.size() << " for object: " << _object << std::endl;
+    std::cout << "amount of tokens: " << tokens.size() << " for PATH: " << _path << std::endl;
     if (index >= tokens.size()) {
         return 0;
     }

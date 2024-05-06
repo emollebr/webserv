@@ -2,7 +2,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // Form submission handler
     document.getElementById('uploadForm').addEventListener('submit', function (event) {
         event.preventDefault(); // Prevent default form submission
-        var formData = new FormData(this); // Create FormData object
+        var formData = new FormData(this); // Create FormData PATH
         // Send POST request to server with FormData
         fetch('/', {
             method: 'POST',
@@ -93,13 +93,13 @@ function refreshFileList() {
                 if (response.ok) {
                     // Trigger the file download
                     response.blob().then(blob => {
-                        const url = window.URL.createObjectURL(blob);
+                        const url = window.URL.createPATHURL(blob);
                         const a = document.createElement('a');
                         a.href = url;
                         a.download = filename;
                         document.body.appendChild(a);
                         a.click();
-                        window.URL.revokeObjectURL(url);
+                        window.URL.revokePATHURL(url);
                     });
                 } else {
                     alert('Failed to download file!');
