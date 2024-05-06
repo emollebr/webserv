@@ -55,9 +55,7 @@ char** fillEnvironmentVariables(const std::string& formData) {
 
 
 int 	Request::_handleGet() {
-    std::cout << "handleGet: filepath: " << _path << std::endl;
     char **env = fillEnvironmentVariables(_body);
-    std::cout << "PATH: " << _path << std::endl;
     if (isCGIRequest())
     {
        executeCGIScript(_path, client, env);
@@ -74,7 +72,6 @@ int 	Request::_handleGet() {
         else
             return _sendStatusPage(403, "403 Forbidden: i dont know if its the right status code??");
     }
-     std::cout << "filePATH: " << _path << std::endl;
 
     std::ifstream file(_path.c_str(), std::ios::binary); // Open the file
     if (!file) { 

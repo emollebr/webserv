@@ -13,20 +13,6 @@ int Request::_validateMethod() {
     return false;
 }
 
-/* int Request::_replaceRoot(std::string oldRoot) {
-    std::cout << "Old PATH: " << _path << std::endl;
-    _root = _location.getRoot();
-    if (_root.empty())
-        _root = "database";
-    size_t start_pos = _path.find(oldRoot);
-    std::cout << "root: " << _root << std::endl;
-    if(start_pos == std::string::npos)
-        return false;
-    _path.replace(start_pos, oldRoot.length(), _root);
-    std::cout << "New filepath: " << _path << std::endl;
-    return true;
-} */
-
 std::vector<std::string> Request::tokenizePath(const std::string& path) {
     std::vector<std::string> tokens;
     std::istringstream iss(path);

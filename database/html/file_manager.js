@@ -24,36 +24,86 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
-function refreshFileList() {
-    fetch('/uploads') // Send GET request to server to get list of files
-    .then(response => response.text()) // Parse response as text
-    .then(files => {
-        var fileList = document.getElementById('fileList');
-        fileList.innerHTML = ''; // Clear existing file list
-
-        // Split the response into an array of file names
-        var fileLines = files.split('\n');
-
-        // Add each file to the file list
-        fileLines.forEach(file => {
-            var trimmedFile = file.trim();
-            if (trimmedFile !== '') {
+    function refreshFileList() {
+        fetch('/uploads') // Send GET request to server to get list of files
+        .then(response => response.text()) // Parse response as text
+        .then(html => {
+            var fileListContainer = document.getElementById('fileList');
+            fileListContainer.innerHTML = ''; // Clear existing content
+    
+            // Create a temporary div to parse the HTML
+            var tempDiv = document.createElement('div');
+            tempDiv.innerHTML = html;
+    
+            // Get all the hyperlinks from the temporary div
+            var links = tempDiv.querySelectorAll('a');
+    
+            // Iterate over each hyperlink
+            links.forEach(link => {
                 var listItem = document.createElement('div');
-                listItem.innerHTML = `
-                    <span>${trimmedFile}</span>
-                    <button class="deleteButton" data-filename="${trimmedFile}">Delete</button>
-                    <button class="downloadButton" data-filename="${trimmedFile}">Download</button>
-                    <button class="viewButton" data-filename="${trimmedFile}">View</button> <!-- Add View button -->
-                `;
-                fileList.appendChild(listItem);
-            }
+    
+                // Create delete button
+                var deleteButton = document.createElement('button');
+                deleteButton.classList.add('deleteButton');
+                deleteButton.textContent = 'Delete';
+                deleteButton.setAttribute('data-filename', link.getAttribute('href'));
+    
+                // Create download button
+                var downloadButton = document.createElement('button');
+                downloadButton.classList.add('downloadButton');
+                downloadButton.textContent = 'Download';
+                downloadButton.setAttribute('data-filename', link.getAttribute('href'));
+    
+                // Append hyperlink, download button, and delete button to list item
+                listItem.appendChild(link);
+                listItem.appendChild(downloadButton);
+                listItem.appendChild(deleteButton);
+    
+                // Append list item to file list container
+                fileListContainer.appendChild(listItem);
+            });
+    
+            // Add event listeners for delete buttons in the file list
+            var deleteButtons = document.querySelectorAll('.deleteButton');
+            deleteButtons.forEach(button => {
+                button.addEventListener('click', function (event) {
+                    var filename = event.target.getAttribute('data-filename');
+                    // Send DELETE request to server with filename
+                    fetch(`${filename}`, {
+                        method: 'DELETE'
+                    })
+                    .then(response => {
+                        if (response.ok) {
+                            alert('File deleted successfully!');
+                            // Refresh file list after successful delete
+                            refreshFileList();
+                        } else {
+                            alert('Failed to delete file!');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('An error occurred while deleting file.');
+                    });
+                });
+            });
+    
+            // Add event listeners for download buttons in the file list
+            var downloadButtons = document.querySelectorAll('.downloadButton');
+            downloadButtons.forEach(button => {
+                button.addEventListener('click', function (event) {
+                    var filename = event.target.getAttribute('data-filename');
+                    // Open the file in a new tab for download
+                    window.open(`${filename}`, '_blank');
+                });
+            });
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while fetching file list.');
         });
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('An error occurred while fetching file list.');
-    });
-}
+    }
+    
 
     // Initial file list refresh
     refreshFileList();
@@ -63,7 +113,7 @@ function refreshFileList() {
         if (event.target.classList.contains('deleteButton')) {
             var filename = event.target.getAttribute('data-filename');
             // Send DELETE request to server with filename
-            fetch(`database/uploads/${filename}`, {
+            fetch(`${filename}`, {
                 method: 'DELETE'
             })
             .then(response => {
@@ -86,7 +136,7 @@ function refreshFileList() {
         if (event.target.classList.contains('downloadButton')) {
             var filename = event.target.getAttribute('data-filename');
             // Send GET request to server to download the file
-            fetch(`database/uploads/${filename}`, {
+            fetch(`${filename}`, {
                 method: 'GET'
             })
             .then(response => {
@@ -111,7 +161,7 @@ function refreshFileList() {
             });
         } else if (event.target.classList.contains('viewButton')) { // View button click handler
             var filename = event.target.getAttribute('data-filename');
-            window.open(`uploads/${filename}`, '_blank'); // Open file in new tab
+            window.open(`${filename}`, '_blank'); // Open file in new tab
         }
     });
 });
