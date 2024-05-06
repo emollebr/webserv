@@ -17,17 +17,17 @@ void LocationConfig::init(){
 	_indent_lvl = 0;
 
 	std::string	directives[] = {"root", "index", "methods",
-									"return", "CGI", "client_max_body_size",
-									"upload_location", "cgi_extension", "autoindex"};
+									"return", "client_max_body_size",
+									"upload_location", "autoindex"};
 	typedef void (LocationConfig::*LocationConfigFunction)(tokeniterator begin, tokeniterator end);
 	LocationConfigFunction functions[] = {&LocationConfig::validateRoot, 
 											&LocationConfig::validateIndex, 
 											&LocationConfig::validateMethods, 
 											&LocationConfig::validateRedirect, 
-											&LocationConfig::validateCGI, 
+											// &LocationConfig::validateCGI, 
 											&LocationConfig::validateBodySize, 
 											&LocationConfig::validateUploadLocation, 
-											&LocationConfig::validateCGIExtension,
+											// &LocationConfig::validateCGIExtension,
 											&LocationConfig::validateAutoindex};
 	int size = sizeof(directives) / sizeof(directives[0]);
 	for (int i = 0; i < size; i++){
@@ -56,10 +56,10 @@ LocationConfig & LocationConfig::operator=(LocationConfig const & origin){
 	_index = origin._index;
 	_methods_allowed = origin._methods_allowed;
 	_redirect = origin._redirect;
-	_CGI = origin._CGI;
+	// _CGI = origin._CGI;
 	_max_body_size = origin._max_body_size;
 	_upload_location = origin._upload_location;
-	_cgi_extension = origin._cgi_extension;
+	// _cgi_extension = origin._cgi_extension;
 	_allow_get = origin._allow_get;
 	_allow_post = origin._allow_post;
 	_autoindex = origin._autoindex;
@@ -105,9 +105,9 @@ std::pair<int, std::string>	LocationConfig::getRedirect() const{
 	return _redirect;
 }
 
-std::string	LocationConfig::getCGI() const{
+/* std::string	LocationConfig::getCGI() const{
 	return _CGI;
-}
+} */
 
 size_t LocationConfig::getBodySize() const{
 	return _max_body_size;	
@@ -117,9 +117,9 @@ std::string LocationConfig::getUploadLocation() const{
 	return _upload_location;
 }
 
-std::string LocationConfig::getCGIExtension() const{
+/* std::string LocationConfig::getCGIExtension() const{
 	return _cgi_extension;
-}
+} */
 
 std::map<std::string, LocationConfig> const LocationConfig::getLocations() const{
 	if (_locations.empty())
@@ -237,7 +237,7 @@ void LocationConfig::validateRedirect(tokeniterator begin, tokeniterator end){
 		throw std::invalid_argument("Invalid return arguments.");
 }
 
-void LocationConfig::validateCGI(tokeniterator begin, tokeniterator end){
+/* void LocationConfig::validateCGI(tokeniterator begin, tokeniterator end){
 	if (begin == end){
 		if (directoryExists(*begin)) {
 			_CGI = (*begin);
@@ -247,7 +247,7 @@ void LocationConfig::validateCGI(tokeniterator begin, tokeniterator end){
 	}
 	else
 		throw std::invalid_argument("invalid number of parameters.");
-}
+} */
 
 void LocationConfig::validateBodySize(tokeniterator begin, tokeniterator end){
 
@@ -289,10 +289,10 @@ void LocationConfig::validateUploadLocation(tokeniterator begin, tokeniterator e
 		throw std::invalid_argument("invalid number of parameters.");
 }
 
-void LocationConfig::validateCGIExtension(tokeniterator begin, tokeniterator end){
+/* void LocationConfig::validateCGIExtension(tokeniterator begin, tokeniterator end){
 	if (begin == end)
 		_cgi_extension = *begin;
-}
+} */
 
 void LocationConfig::validateAutoindex(tokeniterator begin, tokeniterator end){	
 	if (begin == end){
@@ -374,10 +374,10 @@ std::ostream& operator<<(std::ostream& os, const LocationConfig& locationconf) {
 	os << ";" << std::endl;
 
 	os <<  indent << "return\t\t\t" << locationconf.getRedirect().first << " " << locationconf.getRedirect().second << ";" << std::endl;
-	os <<  indent << "CGI\t\t\t" << locationconf.getCGI() << ";" << std::endl;
+	// os <<  indent << "CGI\t\t\t" << locationconf.getCGI() << ";" << std::endl;
 	os <<  indent << "client_max_body_size\t" << locationconf.getBodySize() << ";" << std::endl;
 	os <<  indent << "upload location\t\t" << locationconf.getUploadLocation() << ";" << std::endl;
-	os <<  indent << "CGI extension\t\t" << locationconf.getCGIExtension() << ";" << std::endl;
+	// os <<  indent << "CGI extension\t\t" << locationconf.getCGIExtension() << ";" << std::endl;
 	os <<  indent << "autoindex\t\t" << locationconf.getAutoindex() << ";" << std::endl;
 	std::map<std::string, LocationConfig> locations = locationconf.getLocations();
 	for (std::map<std::string, LocationConfig>::iterator it = locations.begin(); it != locations.end(); it++){

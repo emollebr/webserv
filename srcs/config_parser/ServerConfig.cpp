@@ -6,7 +6,7 @@
 /*   By: jschott <jschott@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/12 15:33:23 by jschott           #+#    #+#             */
-/*   Updated: 2024/05/06 13:15:35 by jschott          ###   ########.fr       */
+/*   Updated: 2024/05/06 16:23:49 by jschott          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,10 +16,12 @@
 
 void ServerConfig::init(){
 	std::string	directives[] = {"port", "location", "host",
-									"server_name", "error_page", "listen"};
+									"server_name", "error_page", "listen",
+									"cgi_extension"};
 	typedef void (ServerConfig::*ServerConfigFunction)(tokeniterator begin, tokeniterator end);							
 	ServerConfigFunction functions[] = {&ServerConfig::validatePort, &ServerConfig::validateLocation, &ServerConfig::validateHost, 
-										&ServerConfig::validateServerName, &ServerConfig::validateErrorPath, &ServerConfig::validateHostPort};
+										&ServerConfig::validateServerName, &ServerConfig::validateErrorPath, &ServerConfig::validateHostPort,
+										&ServerConfig::validateCGIExtension};
 	int size = sizeof(directives) / sizeof(directives[0]);
 	for (int i = 0; i < size; i++){
 		_directives_set[directives[i]] = false;
@@ -96,6 +98,7 @@ ServerConfig & ServerConfig::operator= (ServerConfig const & origin) {
 	_error_pages = origin._error_pages;
 	_directives_set = origin._directives_set;
 	_directives_validation_funcs = origin._directives_validation_funcs;
+	_cgi_extension = origin._cgi_extension;
 	_locations = origin._locations;
 	return *this;
 }
@@ -178,6 +181,15 @@ std::string	const ServerConfig::getErrorPath(int statusCode) const{
 	if (_error_pages.find(statusCode) != _error_pages.end())
 		return (*_error_pages.find(statusCode)).second;
 	return NULL;
+}
+
+
+std::map<std::string, std::string> ServerConfig::getCGIExtention() const{
+	if (_error_pages.empty())
+		return std::map<std::string, std::string>();
+	std::map<std::string, std::string>	cgi_extension;
+	cgi_extension = _cgi_extension;
+	return cgi_extension;
 }
 
 void	ServerConfig::parseServerDirective(tokeniterator begin, tokeniterator end){
@@ -311,9 +323,12 @@ void	ServerConfig::validateServerName(tokeniterator begin, tokeniterator end){
 
 void	ServerConfig::validateErrorPath(tokeniterator begin, tokeniterator end){
 	
-	if (begin >= end || *end == "")
+	if (begin >= end)
 		throw std::invalid_argument("invalid number of prameters.");
-		
+	
+	while (*end == "")
+		--end;
+
 	std::string errorPage = *end;
 	if (!fileExists(errorPage))
 		throw std::invalid_argument("invalid error file: " + *end);
@@ -331,6 +346,35 @@ void	ServerConfig::validateErrorPath(tokeniterator begin, tokeniterator end){
 		_error_pages[statusCode] = errorPage;
 		_directives_set["return"] = true;
 	}
+}
+
+void	ServerConfig::validateCGIExtension(tokeniterator begin, tokeniterator end){
+	if (begin >= end)
+		throw std::invalid_argument("invalid number of prameters.");
+	
+	while (*begin == "")
+		begin++;
+	std::string extension = *begin++;
+	if (extension[0] != '.' || extension[1] == '\0')
+		throw std::invalid_argument("invalid parameter: " + extension);
+	for (int i = 1; extension[i] != '\0'; i++){
+		if (!isalnum(extension[i]))
+			throw std::invalid_argument("invalid parameter: " + extension);
+	}
+
+	while (*begin == "")
+		begin++;
+	if (begin > end)
+		throw std::invalid_argument("invalid number of prameters.");
+
+	std::string cgi_path = *begin;
+	if (!directoryExists(cgi_path))
+		throw std::invalid_argument("invalid cgi path: " + *end);
+
+	if (_cgi_extension.find(extension) != _cgi_extension.end())
+		std::cerr << COLOR_WARNING << "Warning: multiple cgi paths for file extension " << extension << ". Will use last." << COLOR_STANDARD << std::endl;
+	_cgi_extension[extension] = cgi_path;
+	_directives_set["cgi_extension"] = true;
 }
 
 void	ServerConfig::deletePort(size_t port){
@@ -396,6 +440,12 @@ std::ostream& operator<<(std::ostream& os, const ServerConfig& serverconf) {
 		for (std::set<std::string>::iterator it = server_names.begin(); it != server_names.end(); it++)
 			os << *it << " ";
 		os << ";" << std::endl;
+	}
+
+	std::map<std::string, std::string> cgi_extension = serverconf.getCGIExtention();
+	if (!cgi_extension.empty()){
+		for (std::map<std::string, std::string>::iterator it = cgi_extension.begin(); it != cgi_extension.end(); it++)
+		os << "\tcgi_extension\t" << (*it).first << " " << (*it).second << ";" << std::endl;
 	}
 
 	std::map<std::string, LocationConfig> locations = serverconf.getLocations();
