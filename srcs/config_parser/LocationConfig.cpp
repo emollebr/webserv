@@ -243,22 +243,21 @@ void LocationConfig::validateBodySize(tokeniterator begin, tokeniterator end){
 
 	if (begin == end){
 		char* endptrx = NULL;
-
 		long double body = strtod((*begin).c_str(), &endptrx);
 		std::string endptr = endptrx;
 
-	// MISSING INTERNAL LIMIT FOR UPLOAD SIZE THAT MAY NOT BE EXCEEDED TBD
-
-	if (endptr == "" || endptr == "B")
-		_max_body_size = body;
-	else if (endptr == "M" || endptr == "MB")
-		_max_body_size = body * 1024;
-	else if (endptr == "M" || endptr == "MB")
-		_max_body_size = body * 1024 * 1024;
-	else if (endptr == "G" || endptr == "GB")
-		_max_body_size = body * 1024 * 1024 * 1024;
-	else
-		throw std::invalid_argument("invalid parameter: " + *begin);
+		if (body < 0)
+			throw std::invalid_argument("invalid parameter: " + *begin);
+		if (endptr == "" || endptr == "B")
+			_max_body_size = body;
+		else if (endptr == "M" || endptr == "MB")
+			_max_body_size = body * 1024;
+		else if (endptr == "M" || endptr == "MB")
+			_max_body_size = body * 1024 * 1024;
+		else if (endptr == "G" || endptr == "GB")
+			_max_body_size = body * 1024 * 1024 * 1024;
+		else
+			throw std::invalid_argument("invalid parameter: " + *begin);
 	}
 	else
 		throw std::invalid_argument("invalid number of parameters");
