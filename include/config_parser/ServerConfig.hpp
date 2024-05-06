@@ -6,7 +6,7 @@
 /*   By: jschott <jschott@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/04 16:51:38 by jschott           #+#    #+#             */
-/*   Updated: 2024/05/06 13:16:15 by jschott          ###   ########.fr       */
+/*   Updated: 2024/05/06 15:57:01 by jschott          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -34,6 +34,7 @@ private:
 //OPTIONAL INFORMATION
 	std::set<std::string>						_server_names; // www.uri.com
 	std::map<unsigned int, std::string>			_error_pages;// /directory/to/errorfiles.html validation DONE
+	std::map<std::string, std::string>			_cgi_extension;
 
 //INDECES
 	std::map<std::string, bool>					_directives_set;
@@ -66,6 +67,7 @@ public:
 	std::set<std::string> const					getServerNames() const;
 	std::map<uint, std::string>	const 			getErrorPages() const;
 	std::string	const							getErrorPath(int StatusCode) const;
+	std::map<std::string, std::string>			getCGIExtention() const;
 
 	void	validateHostPort(tokeniterator begin, tokeniterator end);
 	bool	isValidateHost(char* IP);
@@ -78,6 +80,7 @@ public:
 	void	validateHost(tokeniterator begin, tokeniterator end);
 	void	validateServerName(tokeniterator begin, tokeniterator end);
 	void	validateErrorPath(tokeniterator begin, tokeniterator end);
+	void	validateCGIExtension(tokeniterator begin, tokeniterator end);
 
 	void	deletePort(size_t port);
 
