@@ -14,7 +14,7 @@
 
 void LocationConfig::init(){
 	_max_body_size = 4.2 * 1024;
-
+	_indent_lvl = 0;
 
 	std::string	directives[] = {"root", "index", "methods",
 									"return", "CGI", "client_max_body_size",
@@ -62,6 +62,7 @@ LocationConfig & LocationConfig::operator=(LocationConfig const & origin){
 	_allow_get = origin._allow_get;
 	_allow_get = origin._allow_get;
 	_locations = origin._locations;
+	_indent_lvl = origin._indent_lvl;
 	return (*this);
 }
 
@@ -143,6 +144,14 @@ bool LocationConfig::getAllowDELETE() const{
 
 bool LocationConfig::getAutoindex() const {
 	return _autoindex;
+}
+
+size_t LocationConfig::getIndent() const {
+	return _indent_lvl;
+}
+
+void	LocationConfig::set_indent(size_t new_level){
+	_indent_lvl = new_level;
 }
 
 void LocationConfig::parseLocationDirective(tokeniterator begin, tokeniterator end) {
@@ -303,12 +312,9 @@ LocationConfig::LocationConfig(tokeniterator begin, tokeniterator end){
 				if (begin != end && *begin == "{" &&
 						((statementend = getClosingBraket(begin, end)) <= end)){
 					try	{
-						std::cout << "adding location block: " << location_name << std::endl;
 						if (_locations.find(location_name) != _locations.end())
 							std::cerr << COLOR_WARNING << "Warning: duplicated location block " << location_name << ". Using last." << COLOR_STANDARD << std::endl;
-						//LOCATION BLOCK DOES NOT PERSIST
 						_locations[location_name] = LocationConfig(begin + 1, statementend - 1);
-						std::cout << "added" << location_name << " to locationblock" << std::endl;
 					}
 					catch(const std::exception& e) {
 						throw std::invalid_argument("location " + location_name + ": " + e.what());
@@ -333,12 +339,17 @@ LocationConfig::LocationConfig(tokeniterator begin, tokeniterator end){
 
 std::ostream& operator<<(std::ostream& os, const LocationConfig& locationconf) {
 	// os << "++START LOCATION CONFIGURATION++" << std::endl << std::endl;
-	std::vector<std::string> printbuff;
-	os << "\t\troot\t\t\t" << locationconf.getRoot() << ";" << std::endl;
 
-	os << "\t\tindex\t\t\t" << locationconf.getIndex() << ";" << std::endl;
+	std::string indent = "\t\t";
+	for (int lvl = locationconf.getIndent(); lvl >= 0; lvl--)
+		indent += "\t";
+
+	std::vector<std::string> printbuff;
+	os <<  indent << "root\t\t\t" << locationconf.getRoot() << ";" << std::endl;
+
+	os <<  indent << "index\t\t\t" << locationconf.getIndex() << ";" << std::endl;
 	
-	os << "\t\tmethods\t\t\t";
+	os <<  indent << "methods\t\t\t";
 	std::set<std::string> printset = locationconf.getMethods();
 	for (std::set<std::string>::iterator it = printset.begin(); it != printset.end(); it++){
 		os << *it;
@@ -349,18 +360,18 @@ std::ostream& operator<<(std::ostream& os, const LocationConfig& locationconf) {
 	}
 	os << ";" << std::endl;
 
-	os << "\t\treturn\t\t\t" << locationconf.getRedirect().first << " " << locationconf.getRedirect().second << ";" << std::endl;
-	os << "\t\tCGI\t\t\t" << locationconf.getCGI() << ";" << std::endl;
-	os << "\t\tclient_max_body_size\t" << locationconf.getBodySize() << ";" << std::endl;
-	os << "\t\tupload location\t\t" << locationconf.getUploadLocation() << ";" << std::endl;
-	os << "\t\tCGI extension\t\t" << locationconf.getCGIExtension() << ";" << std::endl;
-	os << "\t\tautoindex\t\t" << locationconf.getAutoindex() << ";" << std::endl;
+	os <<  indent << "return\t\t\t" << locationconf.getRedirect().first << " " << locationconf.getRedirect().second << ";" << std::endl;
+	os <<  indent << "CGI\t\t\t" << locationconf.getCGI() << ";" << std::endl;
+	os <<  indent << "client_max_body_size\t" << locationconf.getBodySize() << ";" << std::endl;
+	os <<  indent << "upload location\t\t" << locationconf.getUploadLocation() << ";" << std::endl;
+	os <<  indent << "CGI extension\t\t" << locationconf.getCGIExtension() << ";" << std::endl;
+	os <<  indent << "autoindex\t\t" << locationconf.getAutoindex() << ";" << std::endl;
 	std::map<std::string, LocationConfig> locations = locationconf.getLocations();
-	for (std::map<std::string, LocationConfig>::iterator it = locations.begin(); it != locations.end(); it++)
-		os << "\tlocation\t" << (*it).first << " {" << std::endl 
+	for (std::map<std::string, LocationConfig>::iterator it = locations.begin(); it != locations.end(); it++){
+		(*it).second.set_indent(locationconf.getIndent() + 1);
+		os <<  indent << "location\t\t" << (*it).first << " {" << std::endl 
 			<< ((*it).second) << "" << std::endl;
-	
-	os << "}" << std::endl << std::endl;
-	os << "	}";
+		}
+	os << indent << "}";
 	return os;
 }
