@@ -65,6 +65,7 @@ LocationConfig & LocationConfig::operator=(LocationConfig const & origin){
 	_indent_lvl = origin._indent_lvl;
 	_directives_set = origin._directives_set;
 	_directives_validation_funcs = origin._directives_validation_funcs;
+	_autoindex = origin._autoindex;
 	return (*this);
 }
 
@@ -235,8 +236,15 @@ void LocationConfig::validateRedirect(tokeniterator begin, tokeniterator end){
 }
 
 void LocationConfig::validateCGI(tokeniterator begin, tokeniterator end){
-	if (begin == end)
-		_CGI = *begin;
+	if (begin == end){
+		if (directoryExists(*begin)) {
+			_CGI = (*begin);
+		}
+		else
+			throw std::invalid_argument("invalid parameter: " + *begin);
+	}
+	else
+		throw std::invalid_argument("invalid number of parameters.");
 }
 
 void LocationConfig::validateBodySize(tokeniterator begin, tokeniterator end){
