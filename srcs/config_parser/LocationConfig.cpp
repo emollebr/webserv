@@ -61,6 +61,7 @@ LocationConfig & LocationConfig::operator=(LocationConfig const & origin){
 	_cgi_extension = origin._cgi_extension;
 	_allow_get = origin._allow_get;
 	_allow_get = origin._allow_get;
+	_locations = origin._locations;
 	return (*this);
 }
 
@@ -289,6 +290,8 @@ LocationConfig::LocationConfig(tokeniterator begin, tokeniterator end){
 	tokeniterator statementend;
 	try	{
 		while (begin < end){
+			while (*begin == "")
+				begin++;
 			if (*begin == "location"){
 				begin++;
 				while (*begin == "")
@@ -300,6 +303,7 @@ LocationConfig::LocationConfig(tokeniterator begin, tokeniterator end){
 				if (begin != end && *begin == "{" &&
 						((statementend = getClosingBraket(begin, end)) <= end)){
 					try	{
+						std::cout << "adding location block: " << location_name << std::endl;
 						if (_locations.find(location_name) != _locations.end())
 							std::cerr << COLOR_WARNING << "Warning: duplicated location block " << location_name << ". Using last." << COLOR_STANDARD << std::endl;
 						//LOCATION BLOCK DOES NOT PERSIST
