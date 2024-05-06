@@ -244,28 +244,28 @@ void LocationConfig::validateBodySize(tokeniterator begin, tokeniterator end){
 	if (begin == end){
 		char* endptrx = NULL;
 
-		unsigned long int body = strtoul((*begin).c_str(), &endptrx, 0);
+		long double body = strtod((*begin).c_str(), &endptrx);
 		std::string endptr = endptrx;
 
 	// MISSING INTERNAL LIMIT FOR UPLOAD SIZE THAT MAY NOT BE EXCEEDED TBD
 
-		if (endptr == "" || endptr == "B") {
-			if ((*_directives_set.find("client_max_body_size")).second)
-				std::cerr << COLOR_WARNING << "Warning: Multiple client_max_body_size directives. Will use last." << COLOR_STANDARD << std::endl;
-			_max_body_size = body;
-			_directives_set["client_max_body_size"] = true;
-		}
-		else if (endptr == "M" || endptr == "MB")
-			_max_body_size = body * 1024;
-		else if (endptr == "M" || endptr == "MB")
-			_max_body_size = body * 1024 * 1024;
-		else if (endptr == "G" || endptr == "GB")
-			_max_body_size = body * 1024 * 1024 * 1024;
-		else
-			throw std::invalid_argument("invalid parameter: " + *begin);
+	if (endptr == "" || endptr == "B")
+		_max_body_size = body;
+	else if (endptr == "M" || endptr == "MB")
+		_max_body_size = body * 1024;
+	else if (endptr == "M" || endptr == "MB")
+		_max_body_size = body * 1024 * 1024;
+	else if (endptr == "G" || endptr == "GB")
+		_max_body_size = body * 1024 * 1024 * 1024;
+	else
+		throw std::invalid_argument("invalid parameter: " + *begin);
 	}
 	else
 		throw std::invalid_argument("invalid number of parameters");
+	if ((*_directives_set.find("client_max_body_size")).second){
+		std::cerr << COLOR_WARNING << "Warning: Multiple client_max_body_size directives. Will use last." << COLOR_STANDARD << std::endl;
+		_directives_set["client_max_body_size"] = true;
+	}
 }
 
 void LocationConfig::validateUploadLocation(tokeniterator begin, tokeniterator end){
