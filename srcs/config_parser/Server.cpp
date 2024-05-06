@@ -90,7 +90,7 @@ int  Server::_checkConnections()
             }
             //set timeout for connection
             struct timeval timeout;
-            timeout.tv_sec = 10;  // 10 seconds timeout
+            timeout.tv_sec = 20;  // 10 seconds timeout
             timeout.tv_usec = 0;
             if (setsockopt(new_socket, SOL_SOCKET, SO_RCVTIMEO, (const char*)&timeout, sizeof(timeout)) < 0) {
                 perror("Error setting timeout");
@@ -132,7 +132,7 @@ int Server::_handleRequest(int i) {
         if (bytesRead == 0)
             throw ConnectionClosedException("Client closed the connection\n");
         else if (bytesRead == -1)
-            throw SocketReceiveErrorException(errno);
+            throw SocketReceiveErrorException("Failed to read from client's socket");
     } catch (const std::exception& e) {
         std::cerr << "Caught exception: " << e.what() << std::endl;
         return -1;

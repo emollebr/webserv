@@ -50,15 +50,12 @@ class Server
 		// Exception for socket receive error
 		class SocketReceiveErrorException : public std::exception {
 			public:
-				SocketReceiveErrorException(int errorCode) : m_errorCode(errorCode) {}
+				SocketReceiveErrorException(const char* message) : m_message(message) {}
 				virtual const char* what() const throw() {
-					return strerror(m_errorCode);
-				}
-				int errorCode() const {
-					return m_errorCode;
+					return m_message;
 				}
 			private:
-				int m_errorCode;
+				const char* m_message;
 		};
 
 		class SocketInitException : public std::runtime_error {

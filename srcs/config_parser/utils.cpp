@@ -1,4 +1,4 @@
-#include "common.hpp"
+#include "Server.hpp"
 
 void signal_handler(int signum) {
     g_signal_received = signum;
