@@ -6,7 +6,7 @@
 /*   By: jschott <jschott@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/12 15:33:23 by jschott           #+#    #+#             */
-/*   Updated: 2024/05/06 16:13:12 by jschott          ###   ########.fr       */
+/*   Updated: 2024/05/06 16:23:49 by jschott          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -184,7 +184,7 @@ std::string	const ServerConfig::getErrorPath(int statusCode) const{
 }
 
 
-std::map<std::string, std::string>			ServerConfig::getCGIExtention() const{
+std::map<std::string, std::string> ServerConfig::getCGIExtention() const{
 	if (_error_pages.empty())
 		return std::map<std::string, std::string>();
 	std::map<std::string, std::string>	cgi_extension;
@@ -355,9 +355,13 @@ void	ServerConfig::validateCGIExtension(tokeniterator begin, tokeniterator end){
 	while (*begin == "")
 		begin++;
 	std::string extension = *begin++;
-	if (extension[0] != '.')
+	if (extension[0] != '.' || extension[1] == '\0')
 		throw std::invalid_argument("invalid parameter: " + extension);
-	
+	for (int i = 1; extension[i] != '\0'; i++){
+		if (!isalnum(extension[i]))
+			throw std::invalid_argument("invalid parameter: " + extension);
+	}
+
 	while (*begin == "")
 		begin++;
 	if (begin > end)
