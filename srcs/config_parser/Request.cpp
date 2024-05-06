@@ -23,22 +23,22 @@ Request::Request(char *buffer, int client, int bytesRead, ServerConfig config) :
         }
     }
 
-/*  //check for CGI extension
-   	std::map<std::string, std::string> cgi_map = config.getCGI();
+    //check for CGI extension
+   	std::map<std::string, std::string> cgi_map = config.getCGIExtention();
     std::string ext;
 	for (size_t i = _path.find_last_of('.'); _path[i] != NULL; i++) 
 		ext += _path[i];
 	std::map<std::string, std::string>::iterator cgi_it = cgi_map.find(ext);
     if (cgi_it != cgi_map.end())
         _cgi_path = cgi_it->second;
-    else { */
+    else {
         //Find appropriate location
         std::vector<std::string> tokens = tokenizePath(_path);
         if (tokens.size() == 0 || !_findLocation(tokens, config.getLocations(), 0)) {
             std::cout << "default location called here" << std::endl;
             _getDefaultLocation(config.getLocations());
         }
-    //}
+    }
 
     //TO DO: Adapt to work with CGI
     if (_method == "POST") {
