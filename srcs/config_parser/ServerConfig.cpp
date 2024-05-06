@@ -6,7 +6,7 @@
 /*   By: jschott <jschott@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/12 15:33:23 by jschott           #+#    #+#             */
-/*   Updated: 2024/05/06 16:08:17 by jschott          ###   ########.fr       */
+/*   Updated: 2024/05/06 16:13:12 by jschott          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -440,9 +440,8 @@ std::ostream& operator<<(std::ostream& os, const ServerConfig& serverconf) {
 
 	std::map<std::string, std::string> cgi_extension = serverconf.getCGIExtention();
 	if (!cgi_extension.empty()){
-		os << "\tcgi_extension\t";
 		for (std::map<std::string, std::string>::iterator it = cgi_extension.begin(); it != cgi_extension.end(); it++)
-			os << (*it).first << " " << (*it).second << ";" << std::endl;
+		os << "\tcgi_extension\t" << (*it).first << " " << (*it).second << ";" << std::endl;
 	}
 
 	std::map<std::string, LocationConfig> locations = serverconf.getLocations();
