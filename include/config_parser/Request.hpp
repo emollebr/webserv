@@ -49,6 +49,7 @@ private:
 
 
     //LocationRequest.cpp
+    std::vector<std::string>    tokenizePath(const std::string& path);
     int             _checkLocations( std::map<std::string, LocationConfig> locations);
     int             _replaceRoot(std::string oldRoot);
     int             _validateMethod( void );
@@ -66,8 +67,8 @@ public:
     int             sendResponse(const char* response, size_t size, int flag);
     void            pendingPostRequest(char* buffer, int bytesRead);
     bool            isCGIRequest();
-    void            executeCGIScript(const std::string& scriptPath, int clientSocket, char** env);
-    std::vector<std::string> tokenizePath(const std::string& path);
+    void            executeCGIScript(const std::string& scriptPath, char** env);
+    std::string     urlDecode(const std::string& str);
 
     bool            hasPendingResponse( void ) {
         return _pendingResponse;

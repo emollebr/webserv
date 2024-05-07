@@ -58,7 +58,7 @@ int 	Request::_handleGet() {
     char **env = fillEnvironmentVariables(_body);
     if (isCGIRequest())
     {
-       executeCGIScript(_path, client, env);
+       executeCGIScript(_path, env);
        freeEnvironmentVariables(env);
        return 0;
     }
@@ -105,6 +105,7 @@ int    Request::createResponse() {
     char buffer[BUF_SIZE];
     file.seekg(_bytesSent); // Move file pointer to the correct position
     size_t bytesRead = file.read(buffer, (_fileSize - _bytesSent > BUF_SIZE) ? BUF_SIZE : _fileSize - _bytesSent).gcount();
+    
     if (bytesRead == 0) {
         return _sendStatusPage(500, "500 Internal Error: failed to send requested content");        std::cout << "sendResponse: error: Requested file is empty" << std::endl;
     }
@@ -160,7 +161,7 @@ int 	Request::_handlePost() {
     char **env = fillEnvironmentVariables(_body);
     if (isCGIRequest())
     {
-       executeCGIScript(_path, client, env);
+       executeCGIScript(_object, env);
        freeEnvironmentVariables(env);
        return 0;
     }
