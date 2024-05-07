@@ -43,8 +43,10 @@ void Request::_handleLocation(const std::string& location) {
     //check if redirection, change target and save status code
     std::pair<int, std::string> redirect = _location.getRedirect();
     if (redirect.first != 0) {
-        _redirStatus = redirect.first;
-        _path = redirect.second;
+        std::stringstream response;
+        response << "HTTP/1.1 " + intToStr(redirect.first) + "\r\nLocation: " << redirect.second;
+        sendResponse(response.str().c_str(), response.str().size(), 0);
+        throw std::runtime_error("Redirected client");
     }
 }
 
