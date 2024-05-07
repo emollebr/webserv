@@ -26,7 +26,8 @@ Request::Request(char *buffer, int client, int bytesRead, ServerConfig config) :
     std::cout << "ReqCon: URL is " << _path << std::endl;
 
     //Get CGI extension OR locations
-    if (_getCGIPath(config.getCGIExtention()) == false) {
+    if (_getCGIPath(config.getCGIExtention()) == 0) {
+        std::cout << "ReqCon looking for location" << std::endl;
         //Find appropriate location
         std::vector<std::string> tokens = tokenizePath(_path);
         if (tokens.size() == 0 || !_findLocation(tokens, config.getLocations(), 0)) {
@@ -34,6 +35,7 @@ Request::Request(char *buffer, int client, int bytesRead, ServerConfig config) :
             _getDefaultLocation(config.getLocations());
         }
     }
+    std::cout << "_cgipath is " << _cgi_path << std::endl;
 
     //TO DO: Adapt to work with CGI
     if (_method == "POST") {
@@ -44,17 +46,75 @@ Request::Request(char *buffer, int client, int bytesRead, ServerConfig config) :
         _bytesReceived = bytesRead - bytesProcessed;
         _fullRequest = (_bytesReceived < _contentLength) ? false : true;
     }
-/*     else if (_method == "GET" && _path.find('&') != std::string::npos) {
-        //do something
-    } */
+    else if (_method == "GET" && _path.find('&') != std::string::npos) {
+    // Find the position of '?' in the request object
+        std::cout << "ONJECT CONSTRUCTOR: " << _path << std::endl;
+        size_t pos = _path.find('?');
+        if (pos != std::string::npos) {
+            // Extract the query string after '?'
+            std::string queryString = _path.substr(pos + 1);
+            _path = _path.substr(0, pos);
+            //_filePath = finishPath(_path);
+
+            // Split the query string by '&' to separate key-value pairs
+            std::istringstream queryStream(queryString);
+            std::string keyValue;
+            while (std::getline(queryStream, keyValue, '&')) {
+                // Split each key-value pair by '='
+                size_t equalPos = keyValue.find('=');
+                if (equalPos != std::string::npos) {
+                    std::string key = keyValue.substr(0, equalPos);
+                    std::string value = keyValue.substr(equalPos + 1);
+
+                    // URL decode the key and value
+                    key = urlDecode(key);
+                    value = urlDecode(value);
+
+                    // Store the key-value pair in _body
+                    _body += key + "=" + value + "\n";
+                }
+            }
+        }
+    }
     return ;
 }
 
+std::string Request::urlDecode(const std::string& str) {
+    std::ostringstream decodedStream;
+    for (size_t i = 0; i < str.size(); ++i) {
+        if (str[i] == '%') {
+            if (i + 2 < str.size() && isxdigit(str[i + 1]) && isxdigit(str[i + 2])) {
+                int hexValue;
+                std::istringstream hexStream(str.substr(i + 1, 2));
+                hexStream >> std::hex >> hexValue;
+                decodedStream << static_cast<char>(hexValue);
+                i += 2;
+            } else {
+                // Invalid percent encoding, ignore '%'
+                decodedStream << '%';
+            }
+        } else if (str[i] == '+') {
+            // Convert '+' to space
+            decodedStream << ' ';
+        } else {
+            // Copy other characters as is
+            decodedStream << str[i];
+        }
+    }
+    return decodedStream.str();
+}
+
 int  Request::_getCGIPath(std::map<std::string, std::string> cgi_map) {
+        std::map<std::string, std::string>::iterator it;
+    for (it = cgi_map.begin(); it != cgi_map.end(); ++it) {
+        std::cout << it->first << " => " << it->second << std::endl;
+    }
+
     size_t dotPos = _path.find_last_of('.');
     if (dotPos != std::string::npos) {
         std::string ext = _path.substr(dotPos); // Extract the extension
 	    std::map<std::string, std::string>::iterator cgi_it = cgi_map.find(ext);
+        std::cout << "getCGIPath extension: " << ext << std::endl;
         if (cgi_it != cgi_map.end()) {
             _cgi_path = cgi_it->second;
             return 1;
@@ -134,15 +194,17 @@ bool Request::isCGIRequest() {
     if (cgiPos != std::string::npos) {
         // Request URL starts with "/cgi-bin/", consider it as CGI
         std::cout << "IS CGI\n";
-        return true;
+        if (!_cgi_path.empty())
+            return true;
     }
     // If does not start with "/cgi-bin/", it's not a CGI request
     return false;
 }
 
 #include <fcntl.h> // Include for non-blocking I/O
+#include <fcntl.h> // Include for non-blocking I/O
 
-void Request::executeCGIScript(const std::string& scriptPath, int clientSocket, char** env) {
+void Request::executeCGIScript(const std::string& scriptPath, char** env) {
     // Create pipes for inter-process communication
     std::string path = scriptPath;
     if (!path.empty() && path[0] == '/')
@@ -154,7 +216,11 @@ void Request::executeCGIScript(const std::string& scriptPath, int clientSocket, 
         perror("pipe");
         exit(EXIT_FAILURE);
     }
+    time_t startTime = time(0);
 
+        // Wait for the child process to finish or timeout
+    bool timeout = false;
+    pid_t pidWait = 0;
     pid_t pid = fork();
     if (pid == 0) { // Child process
         // Close read end of the pipe
@@ -182,26 +248,13 @@ void Request::executeCGIScript(const std::string& scriptPath, int clientSocket, 
         close(pipefd[1]);
 
         // Read output from the pipe
-        char buffer[1024];
-        ssize_t bytesRead;
-        std::string responseData;
-        bool timeout = false;
+        
 
         // Set a timeout duration (e.g., 3 seconds)
-        const time_t timeoutDuration = 3; // 3 seconds
-        time_t startTime = time(NULL);
+        const time_t timeoutDuration = 5; // 3 seconds
 
-        // Wait for the child process to finish or timeout
-        pid_t pidWait = 0;
-        while (pidWait == 0 && (time(NULL) - startTime) <= timeoutDuration) {
+        while (pidWait == 0 && (time(0) - startTime) <= timeoutDuration)
             pidWait = waitpid(pid, NULL, WNOHANG);
-            bytesRead = read(pipefd[0], buffer, sizeof(buffer));
-            if (bytesRead > 0) {
-                responseData.append(buffer, bytesRead);
-            }
-        }
-
-        // Check if a timeout occurred
         if (pidWait == 0) {
             timeout = true;
             // Kill the child process
@@ -211,23 +264,30 @@ void Request::executeCGIScript(const std::string& scriptPath, int clientSocket, 
             exit(EXIT_FAILURE);
         }
 
-        // Close read end of the pipe
-        close(pipefd[0]);
+    }
+    std::string responseData;
 
-        // Check if a timeout occurred
-        if (timeout) {
-            const std::string timeoutResponse = "HTTP/1.1 200 OK\nContent-Type: text/html\n\nThe server took too long to process the request.";
-            send(clientSocket, timeoutResponse.c_str(), timeoutResponse.size(), 0);
-            //close(clientSocket);
-        } else {
-            // Send HTTP response with CGI script output
-            std::string response = "HTTP/1.1 200 OK\nContent-Type: text/html\n\n" + responseData;
-            send(clientSocket, response.c_str(), response.size(), 0);
-            //close(clientSocket);
+        if (timeout == false){
+        char buffer[1024];
+        ssize_t bytesRead;
+
+        bytesRead = read(pipefd[0], buffer, sizeof(buffer));
+        if (bytesRead > 0) {
+            responseData.append(buffer, bytesRead);
         }
+        close(pipefd[0]);
+    }
+        if (timeout == true) {
+        const std::string timeoutResponse = "HTTP/1.1 200 OK\nContent-Type: text/html\n\nThe server took too long to process the request.";
+        send(client, timeoutResponse.c_str(), timeoutResponse.size(), 0);
+        //close(clientSocket);
+    } else {
+        // Send HTTP response with CGI script output
+        std::string response = "HTTP/1.1 200 OK\nContent-Type: text/html\n\n" + responseData;
+        send(client, response.c_str(), response.size(), 0);
+        //close(clientSocket);
     }
 }
-
 
 //appends the new request body to the pending request
 void    Request::pendingPostRequest(char* buffer, int bytesRead) {

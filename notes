@@ -1,4 +1,5 @@
 has to be done: 
+<<<<<<< HEAD
 
 nested locations?
 what happens if theres a root in a nested location
@@ -10,6 +11,8 @@ TEST redirections
 
 Try a redirected URL. ? http redirection
 
+=======
+>>>>>>> main
 proper status and error code check:
     sending 404 page when needed
     differentiating 0 and -1 from recv()

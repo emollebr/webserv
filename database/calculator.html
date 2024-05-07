@@ -111,16 +111,15 @@
 
         function calculate() {
             var expression = document.getElementById("display").innerHTML;
-            var url = "/cgi-bin/calculator.php?expression=" + encodeURIComponent(expression);
             var xhr = new XMLHttpRequest();
-            xhr.open("GET", url, true);
+            xhr.open("POST", "/cgi-bin/calculator.php", true);
             xhr.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
             xhr.onreadystatechange = function() {
                 if (xhr.readyState == 4 && xhr.status == 200) {
                     document.getElementById("display").innerHTML = xhr.responseText;
                 }
             };
-            xhr.send();
+            xhr.send("expression=" + expression);
         }
     </script>
 </body>
