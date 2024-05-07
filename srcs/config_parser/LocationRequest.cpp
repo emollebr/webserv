@@ -39,15 +39,6 @@ void Request::_handleLocation(const std::string& location) {
         std::cout << "Method: " << _method << " not allowed in location: " << location << std::endl; 
         throw MethodNotAllowedException();
     }
-
-    //check if redirection, change target and save status code
-    std::pair<int, std::string> redirect = _location.getRedirect();
-    if (redirect.first != 0) {
-        std::stringstream response;
-        response << "HTTP/1.1 " + intToStr(redirect.first) + "\r\nLocation: " << redirect.second;
-        sendResponse(response.str().c_str(), response.str().size(), 0);
-        throw std::runtime_error("Redirected client");
-    }
 }
 
 void    Request::_getDefaultLocation(std::map<std::string, LocationConfig> locations) {
@@ -63,6 +54,17 @@ void    Request::_getDefaultLocation(std::map<std::string, LocationConfig> locat
     }
     std::cout << "No matching location found for " << _path << " and no server default configured" << std::endl; 
     throw NoMatchingLocationException();
+}
+
+void    Request::_handleRedirect() {
+    //handle redirect if present
+    std::pair<int, std::string> redirect = _location.getRedirect();
+    if (redirect.first != 0) {
+        std::stringstream response;
+        response << "HTTP/1.1 " + intToStr(redirect.first) + "\r\nLocation: " << redirect.second;
+        sendResponse(response.str().c_str(), response.str().size(), 0);
+        throw std::runtime_error("Redirected client");
+    }
 }
 
 int Request::_findLocation(const std::vector<std::string>& tokens, const std::map<std::string, LocationConfig>& locations, size_t index) {
