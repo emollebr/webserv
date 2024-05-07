@@ -29,8 +29,8 @@ void Request::_handleLocation(const std::string& location) {
     //replace URL location with root directive
     if (!_location.getRoot().empty()){
         _root = _location.getRoot();
-        size_t start_pos = _path.find(location);
-        _path.replace(start_pos, location.length(), _root);
+        size_t pos = _path.find(location); 
+        _path.replace(0, pos + location.length(), _root);
         std::cout << "Handle location: replaced location with root, URL is now: " << _path << std::endl;
     }
 
@@ -66,22 +66,19 @@ void    Request::_getDefaultLocation(std::map<std::string, LocationConfig> locat
 }
 
 int Request::_findLocation(const std::vector<std::string>& tokens, const std::map<std::string, LocationConfig>& locations, size_t index) {
-    std::cout << "amount of tokens: " << tokens.size() << " for PATH: " << _path << std::endl;
     if (index >= tokens.size()) {
         return 0;
     }
 
     std::string target;
     for (size_t i = 0; i <= index; ++i) {
-        target += tokens[i];
+        target = tokens[i];
     }
 
     bool foundMatch = false;
-    std::cout << "Looking for target: " << target << std::endl;
     std::map<std::string, LocationConfig>::const_iterator it;
     for (it = locations.begin(); it != locations.end(); ++it) {
         if (it->first == target) {
-            std::cout << "Found mathcing location: " << it->first << std::endl;
             _location = it->second;
             _handleLocation(it->first);
             foundMatch = true;

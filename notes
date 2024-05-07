@@ -9,8 +9,6 @@ MAKE tests for server run, is it non blocking, what if multiple big uploads or d
 MAKE hostname / server name
 TEST redirections
 
-Try a redirected URL. ? http redirection
-
 =======
 >>>>>>> main
 proper status and error code check:
