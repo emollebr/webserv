@@ -308,10 +308,8 @@ int		Request::_sendStatusPage(int statusCode, std::string msg) {
         return (_handleGet());
     }
     else { //no default || success
-        if (_redirStatus != 0)
-            statusCode = _redirStatus;
         std::stringstream response;
-        response << "HTTP/1.1 " + intToStr(statusCode) + "\r\nContent-Type: text/plain\r\n" << msg.size() + 1 << "\r\n\r\n" + msg + "\r\n";
+        response << "HTTP/1.1 " + intToStr(statusCode) + "\r\nContent-Type: text/plain\r\nContent-Length: " << msg.size() + 1 << "\r\n\r\n" + msg + "\r\n";
         return (sendResponse(response.str().c_str(), response.str().size(), 0));
     }
 }
