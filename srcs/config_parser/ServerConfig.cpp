@@ -6,7 +6,7 @@
 /*   By: jschott <jschott@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/12 15:33:23 by jschott           #+#    #+#             */
-/*   Updated: 2024/05/06 16:23:49 by jschott          ###   ########.fr       */
+/*   Updated: 2024/05/07 16:57:53 by jschott          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -295,10 +295,13 @@ void	ServerConfig::validateHostPort(tokeniterator begin, tokeniterator end){
 
 void	ServerConfig::validateHost(tokeniterator begin, tokeniterator end){
 	if (begin == end){
+		int group = 0;
 		char *tkns = new char [(*begin).length() + 1];
 		strcpy(tkns, (*begin).c_str());
 		tkns =  strtok(tkns, ".");
 		while (tkns != NULL){
+			if (group++ > 3)
+				throw std::invalid_argument("invalid parameter: " + *begin);				
 			char* error = NULL;
 			unsigned long int body = strtoul(tkns, &error, 0);
 			if (strlen(error) > 0 || body > 255)
