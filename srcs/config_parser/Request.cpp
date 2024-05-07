@@ -34,8 +34,9 @@ Request::Request(char *buffer, int client, int bytesRead, ServerConfig config) :
             //No match found, set default location
             _getDefaultLocation(config.getLocations());
         }
+        //If location has redirect, do it now
+        _handleRedirect();
     }
-    std::cout << "_cgipath is " << _cgi_path << std::endl;
 
     //TO DO: Adapt to work with CGI
     if (_method == "POST") {

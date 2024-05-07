@@ -38,7 +38,6 @@ private:
     std::string     _parseBoundary(std::string contentType);
     void            _validateContentHeaders(size_t maxBodySize);
     int             _getCGIPath(std::map<std::string, std::string> cgi_map);
-    int             _findLocation(const std::vector<std::string>& tokens, const std::map<std::string, LocationConfig>& locations, size_t index);
     void            _getDefaultLocation(std::map<std::string, LocationConfig> locations);
     void            _handleLocation(const std::string& location);
     const char*     _createFileName( void );
@@ -49,10 +48,12 @@ private:
 
 
     //LocationRequest.cpp
+    int                         _findLocation(const std::vector<std::string>& tokens, const std::map<std::string, LocationConfig>& locations, size_t index);
     std::vector<std::string>    tokenizePath(const std::string& path);
-    int             _checkLocations( std::map<std::string, LocationConfig> locations);
-    int             _replaceRoot(std::string oldRoot);
-    int             _validateMethod( void );
+    int                         _checkLocations( std::map<std::string, LocationConfig> locations);
+    void                        _handleRedirect();
+    int                         _replaceRoot(std::string oldRoot);
+    int                         _validateMethod( void );
 
 public:
 
