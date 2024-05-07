@@ -27,7 +27,6 @@ Request::Request(char *buffer, int client, int bytesRead, ServerConfig config) :
 
     //Get CGI extension OR locations
     if (_getCGIPath(config.getCGIExtention()) == 0) {
-        std::cout << "ReqCon looking for location" << std::endl;
         //Find appropriate location
         std::vector<std::string> tokens = tokenizePath(_path);
         if (tokens.size() == 0 || !_findLocation(tokens, config.getLocations(), 0)) {

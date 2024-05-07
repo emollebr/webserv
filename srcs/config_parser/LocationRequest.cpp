@@ -29,9 +29,10 @@ void Request::_handleLocation(const std::string& location) {
     //replace URL location with root directive
     if (!_location.getRoot().empty()){
         _root = _location.getRoot();
-        size_t pos = _path.find(location); 
-        _path.replace(0, pos + location.length(), _root);
-        std::cout << "Handle location: replaced location with root, URL is now: " << _path << std::endl;
+        _path = _root + _path;
+       // size_t pos = _path.find(location); 
+        //_path.replace(0, pos - 1, _root);
+        std::cout << "Handle location: prepended root to location, URL is now: " << _path << std::endl;
     }
 
     if (_validateMethod() == false) {
@@ -42,7 +43,6 @@ void Request::_handleLocation(const std::string& location) {
 }
 
 void    Request::_getDefaultLocation(std::map<std::string, LocationConfig> locations) {
-    std::cout << "Looking for default loc " << std::endl;
     std::map<std::string, LocationConfig>::const_iterator it = locations.begin();
     for (it = locations.begin(); it != locations.end(); ++it) {
         if (it->first == "/") {
@@ -77,19 +77,14 @@ int Request::_findLocation(const std::vector<std::string>& tokens, const std::ma
         target = tokens[i];
     }
 
-    bool foundMatch = false;
     std::map<std::string, LocationConfig>::const_iterator it;
     for (it = locations.begin(); it != locations.end(); ++it) {
         if (it->first == target) {
             _location = it->second;
-            _handleLocation(it->first);
-            foundMatch = true;
-
             // Check if there are nested locations
             std::map<std::string, LocationConfig> nested = it->second.getLocations();
-            if (/*nested != NULL && */index + 1 < tokens.size()) {
-                _findLocation(tokens, nested, index + 1);
-            }
+            if (_findLocation(tokens, nested, index + 1) == 0)
+                _handleLocation(it->first);
             return 1;
         }
     }

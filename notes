@@ -1,16 +1,12 @@
 has to be done: 
-<<<<<<< HEAD
 
-nested locations?
-what happens if theres a root in a nested location
-How to know if there are nested locations
-MAKE tests for locations, are they all being checked, are nested locations working
-MAKE tests for server run, is it non blocking, what if multiple big uploads or downloads at the same time
+!!!
+ROOT DIRECTIVE: NGINX: Location block will have the root prepended to the URL, NOT replacing the location match
+!!!
+
+MAKE tests for server run, is it non blocking at all times, what if multiple big uploads or downloads at the same time
 MAKE hostname / server name
-TEST redirections
 
-=======
->>>>>>> main
 proper status and error code check:
     sending 404 page when needed
     differentiating 0 and -1 from recv()
