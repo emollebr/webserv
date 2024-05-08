@@ -6,7 +6,7 @@
 /*   By: jschott <jschott@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/12 15:33:23 by jschott           #+#    #+#             */
-/*   Updated: 2024/05/08 14:51:08 by jschott          ###   ########.fr       */
+/*   Updated: 2024/05/08 17:18:19 by jschott          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -237,7 +237,6 @@ void	ServerConfig::validateLocation(tokeniterator begin, tokeniterator end){
 			_locations[*begin] = LocationConfig(begin, end);
 	}
 	catch(const std::exception& e)	{
-		std::cout << *begin << std::endl << std::endl;
 		throw std::invalid_argument(e.what());
 	}
 }
@@ -319,7 +318,6 @@ void	ServerConfig::validateServerName(tokeniterator begin, tokeniterator end){
 	if (begin > end)
 		throw std::invalid_argument("invalid number of parameters.");
 	while (begin <= end){
-		std::cout << *begin << std::endl;
 		_server_names.insert(*begin++);
 	}
 }
@@ -381,10 +379,8 @@ void	ServerConfig::validateCGIExtension(tokeniterator begin, tokeniterator end){
 }
 
 void	ServerConfig::deletePort(size_t port){
-	std::cout << "erasing: " << port << std::endl;
 	if (_ports.find(port) == _ports.end())
 		return ;
-	std::cout << "erasing: " << port << std::endl;
 	_ports.erase(port);
 	_ports.erase(8080);
 }
@@ -400,7 +396,13 @@ void	ServerConfig::fillDirectives(ServerConfig &reference){
 				_ports = reference.getListenPorts();
 				break;
 			case 1:
-				_locations = reference.getLocations();
+				if (_locations.empty())
+					_locations = reference.getLocations();
+				else {
+					for (std::map<std::string, LocationConfig>::iterator it = _locations.begin();
+									it != _locations.end(); it++)
+						(*it).second.fillNestedLocation();
+				}
 				break;
 			case 2:
 				_host = reference.getHost();
@@ -420,7 +422,6 @@ void	ServerConfig::fillDirectives(ServerConfig &reference){
 		(*_directives_set.find(directives[i])).second = true;
 		}
 	}
-
 }
 
 std::ostream& operator<<(std::ostream& os, const ServerConfig& serverconf) {
@@ -452,12 +453,12 @@ std::ostream& operator<<(std::ostream& os, const ServerConfig& serverconf) {
 		
 
 	while (!error_pages.empty()){	
-		std::cout << "\terror_page\t";
+		os << "\terror_page\t";
 		std::string path = (*error_pages.begin()).second;
 		std::stack<std::map<uint, std::string>::iterator> trash;
 		for (std::map<uint, std::string>::iterator it = error_pages.begin(); it != error_pages.end(); it++) {
 			if (path == (*it).second){
-				std::cout << (*it).first << " ";
+				os << (*it).first << " ";
 				trash.push(it);
 				// error_pages.erase(it);
 				// break ;
@@ -467,7 +468,7 @@ std::ostream& operator<<(std::ostream& os, const ServerConfig& serverconf) {
 			error_pages.erase(trash.top());
 			trash.pop();
 		}
-		std::cout << path << ";" << std::endl;
+		os << path << ";" << std::endl;
 	}
 		
 	

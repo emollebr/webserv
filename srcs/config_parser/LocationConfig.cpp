@@ -162,7 +162,6 @@ void	LocationConfig::set_indent(size_t new_level){
 void LocationConfig::parseLocationDirective(tokeniterator begin, tokeniterator end) {
 	while (*end == "")
 		--end;
-	// init();
 	if (_directives_set.find(*begin) == _directives_set.end()) {
 		throw std::invalid_argument("invalid directive: " + *begin);
 	}
@@ -170,6 +169,7 @@ void LocationConfig::parseLocationDirective(tokeniterator begin, tokeniterator e
 	if (function != _directives_validation_funcs.end()) {
 		try {
 			(this->*(function->second))(begin + 1, end);
+			(*_directives_set.find(*begin)).second = true;
 		}
 		catch(const std::exception& e) {
 			throw std::invalid_argument("directive " + *begin + ": " + e.what());
@@ -194,10 +194,9 @@ void LocationConfig::validateRoot(tokeniterator begin, tokeniterator end){
 }
 
 void LocationConfig::validateIndex(tokeniterator begin, tokeniterator end){
-	
-	if (begin != end)
-		throw std::invalid_argument("invalid parameter: " + *begin);
 
+	if (begin != end)
+		throw std::invalid_argument("invalid number of parameters.");
 	if ((*_directives_set.find("index")).second)
 		std::cerr << COLOR_WARNING << "Warning: multiple index directives. using last." << COLOR_STANDARD << std::endl;
 
@@ -217,7 +216,7 @@ void LocationConfig::validateMethods(tokeniterator begin, tokeniterator end){
 }
 
 void LocationConfig::validateRedirect(tokeniterator begin, tokeniterator end){
-	
+
 	if (begin + 1 == end){
 		int statusCode = std::atoi((*begin).c_str());
 		if (statusCode < 100 || statusCode > 599)
@@ -323,7 +322,10 @@ void LocationConfig::fillNestedLocation(){
 					(*it).second._root = _root;
 					break;
 				case 1:
-					(*it).second._index = _root + _index;
+					if ((*it).second._root != _root)
+						(*it).second._index = _root + _index;
+					else
+						(*it).second._index = _index;
 					break;
 				case 2:
 					(*it).second._methods_allowed = _methods_allowed;
