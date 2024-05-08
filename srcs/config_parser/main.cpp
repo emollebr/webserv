@@ -17,9 +17,15 @@ int main (int argc, char** argv){
     signal(SIGINT, signal_handler);
 
 	try {
+		//read file content into token queue
 		std::deque<std::string> tokens = readFile2Buffer(argv[1]);
+		//analize tokens to create server and location blocks 
 		std::vector<ServerConfig> configs = parseConfig(tokens);
+		//remove duplicated host:ip servers
 		removeConfDuplicates(configs);
+		//fill unset server directives with reference (./config_files/default.conf)
+		//fill 1st level location directives with reference values
+		//fill unset directives in nested locations with parent directories 
 		fillUnsetDirectives(configs);
 
 		//set up servers
