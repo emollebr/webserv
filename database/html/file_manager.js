@@ -4,7 +4,7 @@ document.addEventListener('DOMContentLoaded', function () {
         event.preventDefault(); // Prevent default form submission
         var formData = new FormData(this); // Create FormData PATH
         // Send POST request to server with FormData
-        fetch('/', {
+        fetch('/uploads', {
             method: 'POST',
             body: formData
         })
@@ -15,13 +15,18 @@ document.addEventListener('DOMContentLoaded', function () {
                 // Refresh file list after successful upload
                 refreshFileList();
             } else {
-                alert('Failed to upload file!');
+                // Handle non-successful response
+                response.text().then(errorMessage => {
+                    console.error('Error:', errorMessage);
+                    alert('Failed to upload file: ' + errorMessage);
+                });
             }
         })
         .catch(error => {
             console.error('Error:', error);
             alert('An error occurred while uploading file.');
         });
+        
     });
 
     function refreshFileList() {
