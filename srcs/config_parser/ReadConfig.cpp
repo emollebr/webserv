@@ -6,7 +6,7 @@
 /*   By: jschott <jschott@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/05 10:20:40 by jschott           #+#    #+#             */
-/*   Updated: 2024/05/06 12:03:08 by jschott          ###   ########.fr       */
+/*   Updated: 2024/05/08 14:49:34 by jschott          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -258,9 +258,13 @@ bool fileExists (std::string file_name) {
 	return file.good();
 }
 
-
-void identifyServerDuplicates(std::vector<ServerConfig> servers){
-	for (std::vector<ServerConfig>::iterator it = servers.begin(); it < servers.end(); it++){
-		
+void fillUnsetDirectives(std::vector<ServerConfig> &config) {
+	if (config.empty())
+		throw std::invalid_argument("Error: Server configuration lost while parsing.") ;
+	std::deque<std::string> tokens = readFile2Buffer("config_files/default.conf");
+	std::vector<ServerConfig> configs = parseConfig(tokens);
+	ServerConfig defaultConf = configs.front();
+	for (std::vector<ServerConfig>::iterator it = config.begin(); it < config.end(); it++){
+		(*it).fillDirectives(defaultConf);
 	}
 }

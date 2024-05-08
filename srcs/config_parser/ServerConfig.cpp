@@ -6,7 +6,7 @@
 /*   By: jschott <jschott@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/12 15:33:23 by jschott           #+#    #+#             */
-/*   Updated: 2024/05/07 16:57:53 by jschott          ###   ########.fr       */
+/*   Updated: 2024/05/08 14:51:08 by jschott          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,11 +16,11 @@
 
 void ServerConfig::init(){
 	std::string	directives[] = {"port", "location", "host",
-									"server_name", "error_page", "listen",
+									"server_name", "error_page",
 									"cgi_extension"};
 	typedef void (ServerConfig::*ServerConfigFunction)(tokeniterator begin, tokeniterator end);							
 	ServerConfigFunction functions[] = {&ServerConfig::validatePort, &ServerConfig::validateLocation, &ServerConfig::validateHost, 
-										&ServerConfig::validateServerName, &ServerConfig::validateErrorPath, &ServerConfig::validateHostPort,
+										&ServerConfig::validateServerName, &ServerConfig::validateErrorPath,
 										&ServerConfig::validateCGIExtension};
 	int size = sizeof(directives) / sizeof(directives[0]);
 	for (int i = 0; i < size; i++){
@@ -242,7 +242,7 @@ void	ServerConfig::validateLocation(tokeniterator begin, tokeniterator end){
 	}
 }
 
-bool	ServerConfig::isValidatePort(char* port_str){
+bool	ServerConfig::isValidPort(char* port_str){
 	char* error = NULL;
 	unsigned long int port = strtoul(port_str, &error, 0);
 	if (strlen(error) > 0 || port > 65535)
@@ -252,7 +252,7 @@ bool	ServerConfig::isValidatePort(char* port_str){
 	return true;
 }
 
-bool	ServerConfig::isValidateHost(char* host){
+bool	ServerConfig::isValidHost(char* host){
 	if (!host)
 		return true;
 	char * IP = new char [strlen(host)];
@@ -268,7 +268,7 @@ bool	ServerConfig::isValidateHost(char* host){
 	return true;
 }
 
-void	ServerConfig::validateHostPort(tokeniterator begin, tokeniterator end){
+/* void	ServerConfig::validateHostPort(tokeniterator begin, tokeniterator end){
 	char *tkns = new char [(*begin).length() + 1];
 	char* host = new char [strlen(tkns)];
 	_host_ports_registry.insert(std::make_pair("test", 13));
@@ -278,7 +278,7 @@ void	ServerConfig::validateHostPort(tokeniterator begin, tokeniterator end){
 		strcpy(tkns, (*begin).c_str());
 		host = strtok(tkns, ":");
 		tkns = strtok(NULL, ":");
-		if (isValidateHost(host) && isValidatePort(tkns)){
+		if (isValidHost(host) && isValidPort(tkns)){
 			size_t port = strtoul(tkns, NULL, 0);
 			std::pair<std::string, size_t> test(host, port);
 			// _host_ports_registry.insert(test);
@@ -291,7 +291,7 @@ void	ServerConfig::validateHostPort(tokeniterator begin, tokeniterator end){
 		}
 			
 	}
-}
+} */
 
 void	ServerConfig::validateHost(tokeniterator begin, tokeniterator end){
 	if (begin == end){
@@ -387,6 +387,40 @@ void	ServerConfig::deletePort(size_t port){
 	std::cout << "erasing: " << port << std::endl;
 	_ports.erase(port);
 	_ports.erase(8080);
+}
+void	ServerConfig::fillDirectives(ServerConfig &reference){
+	std::string	directives[] = {"port", "location", "host",
+									"server_name", "error_page",
+									"cgi_extension"};
+	int size = sizeof(directives) / sizeof(directives[0]);
+	for (int i = 0; i < size; i++){
+		if (!(*_directives_set.find(directives[i])).second){
+			switch (i) {
+			case 0:
+				_ports = reference.getListenPorts();
+				break;
+			case 1:
+				_locations = reference.getLocations();
+				break;
+			case 2:
+				_host = reference.getHost();
+				break;
+			case 3:
+				_server_names = reference.getServerNames();
+				break;
+			case 4:
+				_error_pages = reference.getErrorPages();
+				break;
+			case 5:
+				_cgi_extension = reference.getCGIExtention();
+				break;
+			default:
+				continue ;
+			}
+		(*_directives_set.find(directives[i])).second = true;
+		}
+	}
+
 }
 
 std::ostream& operator<<(std::ostream& os, const ServerConfig& serverconf) {

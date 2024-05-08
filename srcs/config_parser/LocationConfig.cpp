@@ -60,8 +60,8 @@ LocationConfig & LocationConfig::operator=(LocationConfig const & origin){
 	_max_body_size = origin._max_body_size;
 	_upload_location = origin._upload_location;
 	// _cgi_extension = origin._cgi_extension;
-	_allow_get = origin._allow_get;
-	_allow_post = origin._allow_post;
+	// _allow_get = origin._allow_get;
+	// _allow_post = origin._allow_post;
 	_autoindex = origin._autoindex;
 	_locations = origin._locations;
 	_indent_lvl = origin._indent_lvl;
@@ -305,6 +305,49 @@ void LocationConfig::validateAutoindex(tokeniterator begin, tokeniterator end){
 	}
 	else
 		throw std::invalid_argument("invalid number of parameters.");
+}
+
+void LocationConfig::fillNestedLocation(){
+	if (_locations.empty())
+		return ;
+	for (std::map<std::string, LocationConfig>::iterator it = _locations.begin();
+				it != _locations.end(); it++){
+		std::string	directives[] = {"root", "index", "methods",
+									"return", "client_max_body_size",
+									"upload_location", "autoindex"};
+		int size = sizeof(directives) / sizeof(directives[0]);
+		for (int i = 0; i < size; i++){
+			if (!(*(*it).second._directives_set.find(directives[i])).second){
+				switch (i) {
+				case 0:
+					(*it).second._root = _root;
+					break;
+				case 1:
+					(*it).second._index = _root + _index;
+					break;
+				case 2:
+					(*it).second._methods_allowed = _methods_allowed;
+					break;
+				case 3:
+					(*it).second._redirect = _redirect;
+					break;
+				case 4:
+					(*it).second._max_body_size = _max_body_size;
+					break;
+				case 5:
+					(*it).second._upload_location = _upload_location;
+					break;
+				case 6:
+					(*it).second._autoindex = _autoindex;
+					break;
+				default:
+					continue ;
+				}
+			(*(*it).second._directives_set.find(directives[i])).second = true;
+			}
+		}
+		(*it).second.fillNestedLocation();
+	}
 }
 
 LocationConfig::LocationConfig(tokeniterator begin, tokeniterator end){

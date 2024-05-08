@@ -19,6 +19,8 @@ int main (int argc, char** argv){
 	try {
 		std::deque<std::string> tokens = readFile2Buffer(argv[1]);
 		std::vector<ServerConfig> configs = parseConfig(tokens);
+		removeConfDuplicates(configs);
+		fillUnsetDirectives(configs);
 
 		//set up servers
 		std::vector<Server> servers;
