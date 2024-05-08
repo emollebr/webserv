@@ -113,29 +113,6 @@ document.addEventListener('DOMContentLoaded', function () {
     // Initial file list refresh
     refreshFileList();
 
-    // Event delegation for delete buttons
-    document.addEventListener('click', function (event) {
-        if (event.target.classList.contains('deleteButton')) {
-            var filename = event.target.getAttribute('data-filename');
-            // Send DELETE request to server with filename
-            fetch(`${filename}`, {
-                method: 'DELETE'
-            })
-            .then(response => {
-                if (response.ok) {
-                    alert('File deleted successfully!');
-                    // Refresh file list after successful delete
-                    refreshFileList();
-                } else {
-                    alert('Failed to delete file!');
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('An error occurred while deleting file.');
-            });
-        }
-    });
 
     document.addEventListener('click', function (event) {
         if (event.target.classList.contains('downloadButton')) {

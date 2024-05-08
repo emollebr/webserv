@@ -23,7 +23,24 @@ Request::Request(char *buffer, int client, int bytesRead, ServerConfig config) :
         }
     }
 
-    std::cout << "ReqCon: URL is " << _path << std::endl;
+    //check server names
+    std::string host_header = _headers["Host"];
+    size_t colon_pos = host_header.find(':');
+    std::string server_name;
+    size_t port = 0;
+    if (colon_pos != std::string::npos) {
+        server_name = host_header.substr(0, colon_pos);
+        std::istringstream iss(host_header.substr(colon_pos + 1)); // Directly use port string
+        iss >> port;
+    }
+    // Check if the server/port combination is allowed
+    std::set<std::string> valid_names = config.getServerNames();
+    valid_names.insert(config.getHost());
+    std::set<size_t> allowed_ports = config.getListenPorts();
+
+    if (valid_names.find(server_name) == valid_names.end() || port == 0 || allowed_ports.find(port) == allowed_ports.end())
+        throw std::runtime_error("Server/port combination not allowed\n");
+
 
     //Get CGI extension OR locations
     if (_getCGIPath(config.getCGIExtention()) == 0) {
