@@ -55,6 +55,7 @@ char** fillEnvironmentVariables(const std::string& formData) {
 
 
 int 	Request::_handleGet() {
+    std::cout << _body << std::endl;
     char **env = fillEnvironmentVariables(_body);
     if (isCGIRequest())
     {

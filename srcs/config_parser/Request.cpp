@@ -44,7 +44,7 @@ Request::Request(char *buffer, int client, int bytesRead, ServerConfig config) :
         _bytesReceived = bytesRead - bytesProcessed;
         _fullRequest = (_bytesReceived < _contentLength) ? false : true;
     }
-    else if (_method == "GET" && _path.find('&') != std::string::npos) {
+    else if (_method == "GET") {
     // Find the position of '?' in the request object
         std::cout << "ONJECT CONSTRUCTOR: " << _path << std::endl;
         size_t pos = _path.find('?');
