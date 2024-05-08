@@ -109,7 +109,10 @@ int  Request::_getCGIPath(std::map<std::string, std::string> cgi_map) {
         std::string ext = _path.substr(dotPos); // Extract the extension
 	    std::map<std::string, std::string>::iterator cgi_it = cgi_map.find(ext);
         if (cgi_it != cgi_map.end()) {
-            _path = cgi_it->second + _path;
+            _cgi_path = cgi_it->second;
+            _path = _cgi_path + _path;
+            std::cout << "CGI path: " << _cgi_path << std::endl;
+            std::cout << "Path: " << _path << std::endl;
             return 1;
         }
     }
