@@ -40,6 +40,7 @@ void Request::_handleLocation(const std::string& location) {
         std::cout << "Method: " << _method << " not allowed in location: " << location << std::endl; 
         throw MethodNotAllowedException();
     }
+    _handleRedirect();
 }
 
 void    Request::_getDefaultLocation(std::map<std::string, LocationConfig> locations) {
