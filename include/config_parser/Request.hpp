@@ -68,7 +68,7 @@ public:
     int             sendResponse(const char* response, size_t size, int flag);
     void            pendingPostRequest(char* buffer, int bytesRead);
     bool            isCGIRequest();
-    void            executeCGIScript(const std::string& scriptPath, char** env);
+    void            executeCGIScript(char** env);
     std::string     urlDecode(const std::string& str);
 
     bool            hasPendingResponse( void ) {

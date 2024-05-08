@@ -44,7 +44,7 @@ Request::Request(char *buffer, int client, int bytesRead, ServerConfig config) :
         _bytesReceived = bytesRead - bytesProcessed;
         _fullRequest = (_bytesReceived < _contentLength) ? false : true;
     }
-    else if (_method == "GET" && _path.find('&') != std::string::npos) {
+    else if (_method == "GET") {
     // Find the position of '?' in the request object
         std::cout << "ONJECT CONSTRUCTOR: " << _path << std::endl;
         size_t pos = _path.find('?');
@@ -103,18 +103,13 @@ std::string Request::urlDecode(const std::string& str) {
 }
 
 int  Request::_getCGIPath(std::map<std::string, std::string> cgi_map) {
-        std::map<std::string, std::string>::iterator it;
-    for (it = cgi_map.begin(); it != cgi_map.end(); ++it) {
-        std::cout << it->first << " => " << it->second << std::endl;
-    }
 
     size_t dotPos = _path.find_last_of('.');
     if (dotPos != std::string::npos) {
         std::string ext = _path.substr(dotPos); // Extract the extension
 	    std::map<std::string, std::string>::iterator cgi_it = cgi_map.find(ext);
-        std::cout << "getCGIPath extension: " << ext << std::endl;
         if (cgi_it != cgi_map.end()) {
-            _cgi_path = cgi_it->second;
+            _path = cgi_it->second + _path;
             return 1;
         }
     }
@@ -202,12 +197,11 @@ bool Request::isCGIRequest() {
 #include <fcntl.h> // Include for non-blocking I/O
 #include <fcntl.h> // Include for non-blocking I/O
 
-void Request::executeCGIScript(const std::string& scriptPath, char** env) {
+void Request::executeCGIScript(char** env) {
     // Create pipes for inter-process communication
-    std::string path = scriptPath;
+    std::string path = _path;
     if (!path.empty() && path[0] == '/')
         path = path.substr(1);
-    std::cout << "path: " << scriptPath << std::endl;
 
     int pipefd[2];
     if (pipe(pipefd) == -1) {
@@ -342,7 +336,7 @@ const char* Request::_createFileName() {
     
     size_t startPos = filename_start + 10;
     size_t endPos = content.find_last_not_of(" \"\t\r\n") + 1;
-    std::string filename = "database/uploads/" + content.substr(startPos, endPos - startPos);    
+    std::string filename = _root + content.substr(startPos, endPos - startPos);    
 
    if (_fileExists(filename.c_str())) {
       std::string tmp = _generateNewFilename(filename);

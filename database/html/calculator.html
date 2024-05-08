@@ -111,7 +111,7 @@
 
         function calculate() {
             var expression = document.getElementById("display").innerHTML;
-            var url = "/cgi-bin/calculator.php?expression=" + encodeURIComponent(expression);
+            var url = "/calculator.php?expression=" + encodeURIComponent(expression);
             var xhr = new XMLHttpRequest();
             xhr.open("GET", url, true);
             xhr.setRequestHeader("Content-type", "application/x-www-form-urlencoded");

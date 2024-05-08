@@ -58,13 +58,12 @@ int 	Request::_handleGet() {
     char **env = fillEnvironmentVariables(_body);
     if (isCGIRequest())
     {
-       executeCGIScript(_path, env);
+       executeCGIScript(env);
        freeEnvironmentVariables(env);
        return 0;
     }
     if (is_directory(_path.c_str())) {
         std::string index = _location.getIndex();
-        std::cout << "handleGet: autoindex: " << _location.getAutoindex() << std::endl;
         if (!index.empty())
             _path += index;
         else if (_location.getAutoindex())
@@ -107,7 +106,8 @@ int    Request::createResponse() {
     size_t bytesRead = file.read(buffer, (_fileSize - _bytesSent > BUF_SIZE) ? BUF_SIZE : _fileSize - _bytesSent).gcount();
     
     if (bytesRead == 0) {
-        return _sendStatusPage(500, "500 Internal Error: failed to send requested content");        std::cout << "sendResponse: error: Requested file is empty" << std::endl;
+        std::cout << "sendResponse: error: Requested file is empty" << std::endl;
+        return _sendStatusPage(500, "500 Internal Error: failed to send requested content");
     }
 
     if (file) {
@@ -161,22 +161,22 @@ int 	Request::_handlePost() {
     char **env = fillEnvironmentVariables(_body);
     if (isCGIRequest())
     {
-       executeCGIScript(_object, env);
+       executeCGIScript(env);
        freeEnvironmentVariables(env);
        return 0;
     }
     if (!_isFullRequest()) {
         return KEEP_ALIVE; // Return 1 if the request is not a full request
     }
-    const char* filepath = _createFileName();
+    const char* uploadFile = _createFileName();
     
     // Write file data to disk
     int	fd;
-	if ( (fd = open(filepath, O_RDWR|O_CREAT, S_IRWXU|S_IRWXO|S_IRWXG)) == -1 ) {
+	if ( (fd = open(uploadFile, O_RDWR|O_CREAT, S_IRWXU|S_IRWXO|S_IRWXG)) == -1 ) {
         _sendStatusPage(500, "500 Internal Error: failed to save requested content");
     }
 
-    std::ofstream file(filepath, std::ios::out | std::ios::trunc | std::ios::binary);
+    std::ofstream file(uploadFile, std::ios::out | std::ios::trunc | std::ios::binary);
     if ( !file.is_open() ) {
 		_sendStatusPage(500, "500 Internal Error: failed to save requested content");
 	}

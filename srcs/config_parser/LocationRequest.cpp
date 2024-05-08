@@ -29,9 +29,8 @@ void Request::_handleLocation(const std::string& location) {
     //replace URL location with root directive
     if (!_location.getRoot().empty()){
         _root = _location.getRoot();
-        _path = _root + _path;
-       // size_t pos = _path.find(location); 
-        //_path.replace(0, pos - 1, _root);
+        size_t pos = _path.find(location); 
+        _path.replace(pos, location.length(), _root);
         std::cout << "Handle location: prepended root to location, URL is now: " << _path << std::endl;
     }
 
