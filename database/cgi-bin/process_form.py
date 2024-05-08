@@ -3,7 +3,6 @@ from gradio_client import Client
 import os
 import cgi
 import sys
-from gradio_client import Client
 
 form = cgi.FieldStorage()
 

@@ -106,14 +106,15 @@ int  Request::_getCGIPath(std::map<std::string, std::string> cgi_map) {
 
     size_t dotPos = _path.find_last_of('.');
     if (dotPos != std::string::npos) {
-        std::string ext = _path.substr(dotPos); // Extract the extension
-	    std::map<std::string, std::string>::iterator cgi_it = cgi_map.find(ext);
-        if (cgi_it != cgi_map.end()) {
-            _cgi_path = cgi_it->second;
-            _path = _cgi_path + _path;
-            std::cout << "CGI path: " << _cgi_path << std::endl;
-            std::cout << "Path: " << _path << std::endl;
-            return 1;
+       size_t extEndPos = _path.find_first_not_of("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ", dotPos + 1);
+        std::string ext = _path.substr(dotPos, extEndPos - dotPos);
+        if (!ext.empty()) { // Check if extension is not empty
+            std::map<std::string, std::string>::iterator cgi_it = cgi_map.find(ext);
+            if (cgi_it != cgi_map.end()) {
+                _cgi_path = cgi_it->second;
+                _path = _cgi_path + _path;
+                return 1;
+            }
         }
     }
     return 0;
