@@ -6,7 +6,7 @@
 /*   By: jschott <jschott@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/12 15:33:23 by jschott           #+#    #+#             */
-/*   Updated: 2024/05/08 17:18:19 by jschott          ###   ########.fr       */
+/*   Updated: 2024/05/13 17:18:03 by jschott          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -327,26 +327,27 @@ void	ServerConfig::validateErrorPath(tokeniterator begin, tokeniterator end){
 	if (begin >= end)
 		throw std::invalid_argument("invalid number of prameters.");
 	
-	while (*end == "")
-		--end;
+
 
 	std::string errorPage = *end;
 	if (!fileExists(errorPage))
 		throw std::invalid_argument("invalid error file: " + *end);
 	--end;
 
-	for (; begin <= end; begin++){
+	for (NULL; begin <= end; begin++){
+		while (*begin =="")
+			begin++;
 		char * error = NULL;
 		unsigned int statusCode = strtoul((*begin).c_str(), &error, 0);
 		if (strlen(error) > 0 || statusCode < 100 || statusCode > 599)
-			throw std::invalid_argument("invalid parameter: " + *begin);
+			throw std::invalid_argument("invalid status code: " + *begin);
 		if (statusCode < 400)
 			std::cerr << COLOR_WARNING << "Warning: unusual status code for error_pages: " << statusCode << COLOR_STANDARD << std::endl;
 		if (_error_pages.find(statusCode) != _error_pages.end())
 			std::cerr << COLOR_WARNING << "Warning: multiple error_pages for http status code: " << statusCode << ". Will use last." << COLOR_STANDARD << std::endl;
 		_error_pages[statusCode] = errorPage;
-		_directives_set["return"] = true;
 	}
+	_directives_set["return"] = true;
 }
 
 void	ServerConfig::validateCGIExtension(tokeniterator begin, tokeniterator end){

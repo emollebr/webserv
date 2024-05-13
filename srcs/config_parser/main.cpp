@@ -27,6 +27,7 @@ int main (int argc, char** argv){
 	try {
 		//read file content into token queue
 		std::deque<std::string> tokens = readFile2Buffer(argv[1]);
+		// printTokens(tokens);
 		//analize tokens to create server and location blocks 
 		std::vector<ServerConfig> configs = parseConfig(tokens);
 		//remove duplicated host:ip servers

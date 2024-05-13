@@ -223,7 +223,7 @@ void LocationConfig::validateRedirect(tokeniterator begin, tokeniterator end){
 			throw std::invalid_argument("invalid parameter: " + *begin);
 		if (statusCode != 301 && statusCode != 302 &&
 				statusCode != 307 && statusCode != 308)
-			std::cerr << "Warning: unusual status code for redirect: " << statusCode << std::endl;
+			std::cerr << COLOR_WARNING << "Warning: unusual status code for redirect: " << statusCode << COLOR_STANDARD << std::endl;
 		if (++begin != end)
 			throw std::invalid_argument("invalid parameter: " + *begin);
 		if ((*_directives_set.find("return")).second)

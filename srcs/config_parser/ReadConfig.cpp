@@ -6,7 +6,7 @@
 /*   By: jschott <jschott@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/05 10:20:40 by jschott           #+#    #+#             */
-/*   Updated: 2024/05/08 14:49:34 by jschott          ###   ########.fr       */
+/*   Updated: 2024/05/13 17:17:52 by jschott          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,16 +25,15 @@ tokeniterator getClosingBraket (tokeniterator start, tokeniterator end) {
 	std::string	close =	"}])\'\"`";
 	std::string	limiter_open = *start;
 	std::string	limiter_close;
-	// tokeniterator notfound = queue.end();
-	// notfound = end;
 
-	//return NULL if limiter_open is unknows
+	//return NULL if limiter_open is unknown
 	if (open.find(limiter_open) == open.length())
 		return end;
 	//set closing limiter
 	limiter_close = close[open.find(limiter_open)];
 	
 	//iterate through dequeue and return closing limiter if found
+
 	std::stack<std::string> stack;
 	for (tokeniterator pos = start + 1; pos < end; pos++) {
 		if (*pos == limiter_close) {
@@ -126,10 +125,10 @@ void	populateTokens(std::stringstream &bufferstream, std::deque<std::string>	&to
 					// save 
 					tokens.push_back(line.substr(0 , pos));
 					if (pos == std::string::npos)
-						line = line.erase(0, pos);
-					else {
 						line = line.erase();
-						limiter = '\'';
+					else {
+						line = line.erase(0, ++pos);
+						limiter = '\0';
 					}
 				}
 			}
@@ -164,6 +163,11 @@ std::deque<std::string>	readFile2Buffer (std::string filename){
 	//Create Tokens from Input
 	populateTokens(bufferstream, tokens);
 	bufferstream.clear();
+
+	for (tokeniterator it = tokens.begin(); it != tokens.end(); it++) {
+		if (*it == "")
+			tokens.erase(it);
+	}
 
 	return (tokens);		
 }
