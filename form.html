@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Chat</title>
+    <style>
+        #chat-container {
+            width: 400px;
+            margin: 0 auto;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        #chat-messages {
+            height: 300px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+        .user {
+            color: blue;
+        }
+        .ai {
+            color: green;
+        }
+        .loading {
+            color: gray; /* Color of the loading indicator */
+        }
+    </style>
+</head>
+<body>
+    <div id="chat-container">
+        <div id="chat-messages"></div>
+        <input type="text" id="user-input" placeholder="Type your message...">
+        <button onclick="sendMessage()">Send</button>
+        <div id="loading-indicator" class="loading" style="display: none;">...</div>
+    </div>
+
+    <script>
+        function sendMessage() {
+            var userInput = document.getElementById("user-input").value;
+            document.getElementById("user-input").value = ""; // Clear input field
+            var xhr = new XMLHttpRequest();
+            var formData = "input=" + encodeURIComponent(userInput); // Format data as "input=value"
+            displayMessage("User: " + userInput, "user");
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState == XMLHttpRequest.DONE) {
+                    if (xhr.status == 200) {
+                        var response = xhr.responseText;
+                        displayMessage("Asyxs: " + response, "ai");
+                    } else {
+                        displayMessage("Failed to get response from server.", "ai");
+                    }
+                    document.getElementById("loading-indicator").style.display = "none"; // Hide loading indicator
+                }
+            };
+            xhr.open("POST", "cgi-bin/process_form.py", true);
+            xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded"); // Set content type
+            xhr.send(formData);
+
+            // Show loading indicator
+            document.getElementById("loading-indicator").style.display = "block";
+        }
+
+        // Add event listener for "keypress" event on the input field
+        document.getElementById("user-input").addEventListener("keypress", function(event) {
+            if (event.key === "Enter") {
+                // Prevent default behavior of the Enter key (form submission)
+                event.preventDefault();
+                // Call the sendMessage function when Enter is pressed
+                sendMessage();
+            }
+        });
+
+        function displayMessage(message, sender) {
+            var chatMessages = document.getElementById("chat-messages");
+            var messageDiv = document.createElement("div");
+            messageDiv.className = sender;
+            messageDiv.innerText = message;
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight; // Scroll to bottom
+        }
+    </script>
+</body>
+</html>
