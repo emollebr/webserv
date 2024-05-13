@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Calculator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .calculator {
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            text-align: center;
+            width: 300px;
+        }
+        h2 {
+            color: #333;
+        }
+        #display {
+            background-color: #eee;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            padding: 10px;
+            margin-bottom: 10px;
+            text-align: right;
+            font-size: 24px;
+            height: 60px;
+            overflow: auto;
+        }
+        #display p {
+            margin: 0;
+            padding: 0;
+            line-height: 1.5;
+        }
+        .button {
+            background-color: #f1f1f1;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            padding: 15px 20px;
+            margin: 5px;
+            cursor: pointer;
+            font-size: 20px;
+            width: 60px;
+            display: inline-block;
+        }
+        .button:hover {
+            background-color: #ddd;
+        }
+        .button.orange {
+            background-color: #ff9800;
+            color: #fff;
+        }
+        .button.orange:hover {
+            background-color: #f57c00;
+        }
+        .button.red {
+            background-color: #f44336;
+            color: #fff;
+        }
+        .button.red:hover {
+            background-color: #d32f2f;
+        }
+    </style>
+</head>
+<body>
+    <div class="calculator">
+        <h2>Calculator</h2>
+        <div id="display"></div>
+        <div>
+            <button class="button" onclick="append('1')">1</button>
+            <button class="button" onclick="append('2')">2</button>
+            <button class="button" onclick="append('3')">3</button>
+            <button class="button orange" onclick="append('+')">+</button>
+        </div>
+        <div>
+            <button class="button" onclick="append('4')">4</button>
+            <button class="button" onclick="append('5')">5</button>
+            <button class="button" onclick="append('6')">6</button>
+            <button class="button orange" onclick="append('-')">-</button>
+        </div>
+        <div>
+            <button class="button" onclick="append('7')">7</button>
+            <button class="button" onclick="append('8')">8</button>
+            <button class="button" onclick="append('9')">9</button>
+            <button class="button orange" onclick="append('*')">*</button>
+        </div>
+        <div>
+            <button class="button red" onclick="clearDisplay()">C</button>
+            <button class="button" onclick="append('0')">0</button>
+            <button class="button orange" onclick="calculate()">=</button>
+            <button class="button orange" onclick="append('/')">/</button>
+        </div>
+    </div>
+
+    <script>
+        function append(value) {
+            document.getElementById("display").innerHTML += value;
+        }
+
+        function clearDisplay() {
+            document.getElementById("display").innerHTML = "";
+        }
+
+        function calculate() {
+            var expression = document.getElementById("display").innerHTML;
+            var url = "/cgi-bin/calculator.php?expression=" + encodeURIComponent(expression);
+            var xhr = new XMLHttpRequest();
+            xhr.open("GET", url, true);
+            xhr.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState == 4 && xhr.status == 200) {
+                    document.getElementById("display").innerHTML = xhr.responseText;
+                }
+            };
+            xhr.send();
+        }
+    </script>
+</body>
+</html>

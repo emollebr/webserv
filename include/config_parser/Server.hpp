@@ -27,7 +27,7 @@ class Server
 		std::vector<pollfd> 			_sockets;
 		std::map<int, Request*>			_request;
 		ServerConfig					_config;
-		int							_nServerSockets;
+		int								_nServerSockets;
 
 		int				_initSocket(std::string address, size_t port);
 		unsigned int	_ipStringToInt(const std::string& ipAddress);

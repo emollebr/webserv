@@ -44,15 +44,6 @@ std::string getMimeType(const std::string& filename) {
     return "application/octet-stream"; // Default MIME type if extension not found
 }
 
-std::string finishPath(std::string object) {
-    std::string path = object;
-    if (path == "/")
-        path = HTML_INDEX;
-    if (path.find("database") == std::string::npos)
-        path = "database" + path;
-    return path;
-}
-
 std::vector<std::string> listFiles(const std::string& directoryPath) {
     std::vector<std::string> fileList;
     DIR* dir;
@@ -73,17 +64,35 @@ std::vector<std::string> listFiles(const std::string& directoryPath) {
     return fileList;
 }
 
-void handleListFiles(int clientSocket) {
-    std::vector<std::string> files = listFiles("database/uploads");
+bool is_directory(const char* path) {
+    struct stat info;
+    if (stat(path, &info) != 0) {
+        // Failed to retrieve information
+        return false;
+    }
+    return S_ISDIR(info.st_mode);
+}
+
+int Request::_handleListFiles(std::string directory) {
+    std::vector<std::string> files = listFiles(directory);
 
     std::ostringstream response;
     response << "HTTP/1.1 200 OK\r\n"
-             << "Content-Type: text/plain\r\n"
+             << "Content-Type: text/html\r\n" // Change content type to HTML
              << "Connection: close\r\n\r\n";
 
+    // Start HTML body
+    response << "<html><head><title>Files in " << directory << "</title></head><body>\n";
+    
+    // Create hyperlinks for each file
     for (std::vector<std::string>::const_iterator it = files.begin(); it != files.end(); ++it) {
-        response << *it << std::endl;
+        
+        std::string filePath = _object + "/" + *it; // Concatenate directory path with filename
+        response << "<a href=\"" << filePath << "\">" << *it << "</a><br>\n";
     }
 
-    send(clientSocket, response.str().c_str(), response.str().size(), 0);
+    // End HTML body
+    response << "</body></html>";
+
+    return sendResponse(response.str().c_str(), response.str().size(), 0);
 }

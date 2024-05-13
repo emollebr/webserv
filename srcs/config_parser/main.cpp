@@ -1,5 +1,6 @@
 #include "common.hpp"
 #include "ReadConfig.hpp"
+#include "ReadConfig.hpp"
 #include "Server.hpp"
 
 void handleSigint(std::vector<Server> servers) {
@@ -10,9 +11,16 @@ void handleSigint(std::vector<Server> servers) {
 
 int main (int argc, char** argv){
 
-	if (argc < 2)
-		return (1);
+	
 
+	if (argc < 2) {
+		std::cerr << "Missing config file as argument" << std::endl;
+		return (1);
+	}
+	if (argc > 2){
+		std::cerr << COLOR_ERROR << "Error: More than one argument." << COLOR_STANDARD << std::endl;
+		return (1);
+	}
 	signal(SIGPIPE, signal_handler);
     signal(SIGINT, signal_handler);
 
@@ -36,14 +44,13 @@ int main (int argc, char** argv){
 			servers.push_back(serv);
 			std::cout << "Server host: " << configs[i].getHost() << std::endl;
 		}
-		//infinite loop
 		while (true) {
 			for (size_t i = 0; i < servers.size(); ++i) {
 				if (g_signal_received == SIGINT)
-		 			handleSigint(servers);
-		 		servers[i].serverRun();
-		 	}
-		 }
+					handleSigint(servers);
+				servers[i].serverRun();
+			}
+		}
 	} catch (const std::exception& e) {
 		std::cerr << COLOR_ERROR << "Error: " << e.what() << COLOR_STANDARD << std::endl;
 		return (1);

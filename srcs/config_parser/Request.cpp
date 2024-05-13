@@ -1,16 +1,18 @@
 #include "common.hpp"
 
-Request::Request(char *buffer, int client, int bytesRead, size_t maxBodySize, std::map<unsigned int, std::string>	error_pages) : _pendingResponse(0), _bytesSent(0), _errorPages(error_pages), client(client) {
+Request::Request(char *buffer, int client, int bytesRead, ServerConfig config) : _pendingResponse(0), _bytesSent(0),  _errorPages(config.getErrorPages()), _redirStatus(0), client(client) {
     
     std::istringstream iss(buffer);
     std::string line;
     int bytesProcessed = 0;
 
+    //Parse method and PATH
     iss >> _method >> _object >> _protocol;
-    _filePath = finishPath(_object);
-    bytesProcessed += _method.size() + _object.size() + _protocol.size() + 3;
+    _path = _object;
+    bytesProcessed += _method.size() + _path.size() + _protocol.size() + 3;
     std::getline(iss, line);
 
+    //Parse headers
     while (std::getline(iss, line)  && line != "\r") {
         bytesProcessed += line.size() + 1;
         size_t pos = line.find(": ");
@@ -20,56 +22,150 @@ Request::Request(char *buffer, int client, int bytesRead, size_t maxBodySize, st
             _headers[key] = value;
         }
     }
-  
+
+    std::cout << "ReqCon: URL is " << _path << std::endl;
+
+    //Get CGI extension OR locations
+    if (_getCGIPath(config.getCGIExtention()) == 0) {
+        //Find appropriate location
+        std::vector<std::string> tokens = tokenizePath(_path);
+        if (tokens.size() == 0 || !_findLocation(tokens, config.getLocations(), 0)) {
+            //No match found, set default location
+            _getDefaultLocation(config.getLocations());
+        }
+    }
+
+    //TO DO: Adapt to work with CGI
     if (_method == "POST") {
         _boundary = _headers["Content-Type"];
         _boundary.erase(0, 30); // 30 characters to boundary
-
-        //get content headers
-        while (std::getline(iss, line)  && line == "\r") {
-            continue;
-        }
-        while (std::getline(iss, line) && line != "\r") {
-            size_t pos = line.find(": ");
-            if (pos != std::string::npos) {
-                std::string key = line.substr(0, pos);
-                std::string value = line.substr(pos + 2);
-                _headers[key] = value;
-            }
-        }
-
-
-        //save the request body
-        char *bodyStart = std::strstr(buffer, "\r\n\r\n");
-        if (bodyStart != NULL) {
-            if (_object.find("cgi-bin") == std::string::npos) {
-                 _validateContentHeaders(maxBodySize);
-                // Skip an additional 3 occurrences of "\r\n"
-                for (int i = 0; i < 5; ++i) {
-                    bodyStart = std::strstr(bodyStart + 2, "\r\n");
-                    if (bodyStart == NULL) {
-                        break; // Stop if we reach the end of the buffer
-                    }
-                }
-            }
-
-            if (bodyStart != NULL) {
-                bodyStart += 4; // Move past the last "\r\n"
-                size_t bodySize = bytesRead - (bodyStart - buffer); // Calculate the size of the binary data
-                _body.append(bodyStart, bodySize); // Append the binary data
-            }
-        }
-        
+        _parseContentHeaders(buffer, iss.tellg());
+        _parseRequestBody(buffer, bytesRead);
         _bytesReceived = bytesRead - bytesProcessed;
         _fullRequest = (_bytesReceived < _contentLength) ? false : true;
-    } else if (_method == "GET") {
-        
+    }
+    else if (_method == "GET") {
+    // Find the position of '?' in the request object
+        std::cout << "ONJECT CONSTRUCTOR: " << _path << std::endl;
+        size_t pos = _path.find('?');
+        if (pos != std::string::npos) {
+            // Extract the query string after '?'
+            std::string queryString = _path.substr(pos + 1);
+            _path = _path.substr(0, pos);
+            //_filePath = finishPath(_path);
+
+            // Split the query string by '&' to separate key-value pairs
+            std::istringstream queryStream(queryString);
+            std::string keyValue;
+            while (std::getline(queryStream, keyValue, '&')) {
+                // Split each key-value pair by '='
+                size_t equalPos = keyValue.find('=');
+                if (equalPos != std::string::npos) {
+                    std::string key = keyValue.substr(0, equalPos);
+                    std::string value = keyValue.substr(equalPos + 1);
+
+                    // URL decode the key and value
+                    key = urlDecode(key);
+                    value = urlDecode(value);
+
+                    // Store the key-value pair in _body
+                    _body += key + "=" + value + "\n";
+                }
+            }
+        }
     }
     return ;
 }
 
+std::string Request::urlDecode(const std::string& str) {
+    std::ostringstream decodedStream;
+    for (size_t i = 0; i < str.size(); ++i) {
+        if (str[i] == '%') {
+            if (i + 2 < str.size() && isxdigit(str[i + 1]) && isxdigit(str[i + 2])) {
+                int hexValue;
+                std::istringstream hexStream(str.substr(i + 1, 2));
+                hexStream >> std::hex >> hexValue;
+                decodedStream << static_cast<char>(hexValue);
+                i += 2;
+            } else {
+                // Invalid percent encoding, ignore '%'
+                decodedStream << '%';
+            }
+        } else if (str[i] == '+') {
+            // Convert '+' to space
+            decodedStream << ' ';
+        } else {
+            // Copy other characters as is
+            decodedStream << str[i];
+        }
+    }
+    return decodedStream.str();
+}
+
+int  Request::_getCGIPath(std::map<std::string, std::string> cgi_map) {
+        std::map<std::string, std::string>::iterator it;
+    for (it = cgi_map.begin(); it != cgi_map.end(); ++it) {
+        std::cout << it->first << " => " << it->second << std::endl;
+    }
+
+    size_t dotPos = _path.find_last_of('.');
+    if (dotPos != std::string::npos) {
+        std::string ext = _path.substr(dotPos); // Extract the extension
+	    std::map<std::string, std::string>::iterator cgi_it = cgi_map.find(ext);
+        std::cout << "getCGIPath extension: " << ext << std::endl;
+        if (cgi_it != cgi_map.end()) {
+            _cgi_path = cgi_it->second;
+            return 1;
+        }
+    }
+    return 0;
+}
+
+void    Request::_parseContentHeaders(char *buffer, std::streampos pos) {
+    std::string line;
+    std::istringstream iss(buffer);
+    iss.seekg(pos);
+    while (std::getline(iss, line)  && line == "\r") {
+        continue;
+    }
+    while (std::getline(iss, line) && line != "\r") {
+        size_t pos = line.find(": ");
+        if (pos != std::string::npos) {
+            std::string key = line.substr(0, pos);
+            std::string value = line.substr(pos + 2);
+            _headers[key] = value;
+        }
+    }
+}
+
+void Request::_parseRequestBody(char *buffer, int bytesRead) {
+  
+    //save the request body
+    char *bodyStart = std::strstr(buffer, "\r\n\r\n");
+    if (bodyStart != NULL) {
+        if (_path.find("cgi-bin") == std::string::npos) {
+                _validateContentHeaders(_location.getBodySize());
+            // Skip an additional 3 occurrences of "\r\n"
+            for (int i = 0; i < 5; ++i) {
+                bodyStart = std::strstr(bodyStart + 2, "\r\n");
+                if (bodyStart == NULL) {
+                    break; // Stop if we reach the end of the buffer
+                }
+            }
+        }
+
+        if (bodyStart != NULL) {
+            bodyStart += 4; // Move past the last "\r\n"
+            size_t bodySize = bytesRead - (bodyStart - buffer); // Calculate the size of the binary data
+            _body.append(bodyStart, bodySize); // Append the binary data
+        }
+    }
+    
+
+}
+
+//validate content headers /handle errors
 void Request::_validateContentHeaders(size_t maxBodySize) {
-    //validate content headers headers/handle errors
     std::map<std::string, std::string>::const_iterator it = _headers.find("Content-Disposition");
     if (it == _headers.end()) {
         _sendStatusPage(400, "400 Bad Request: Missing 'Content-Disposition' header for POST request");
@@ -90,24 +186,23 @@ void Request::_validateContentHeaders(size_t maxBodySize) {
 }
 
 
-bool Request::isCGIRequest() {
 // Check if the request URL starts with "/cgi-bin/"
-    std::cout << "OBJECTcgi:" << _object << std::endl;
-    std::string url = _object; // Skip space and slash
-    size_t cgiPos = url.find("cgi-bin/");
-    std::cout << "IS CGI\n";
+bool Request::isCGIRequest() {
+    size_t cgiPos = _path.find("cgi-bin/");
     if (cgiPos != std::string::npos) {
         // Request URL starts with "/cgi-bin/", consider it as CGI
         std::cout << "IS CGI\n";
-        return true;
+        if (!_cgi_path.empty())
+            return true;
     }
     // If does not start with "/cgi-bin/", it's not a CGI request
     return false;
 }
 
 #include <fcntl.h> // Include for non-blocking I/O
+#include <fcntl.h> // Include for non-blocking I/O
 
-void Request::executeCGIScript(const std::string& scriptPath, int clientSocket, char** env) {
+void Request::executeCGIScript(const std::string& scriptPath, char** env) {
     // Create pipes for inter-process communication
     std::string path = scriptPath;
     if (!path.empty() && path[0] == '/')
@@ -119,7 +214,11 @@ void Request::executeCGIScript(const std::string& scriptPath, int clientSocket, 
         perror("pipe");
         exit(EXIT_FAILURE);
     }
+    time_t startTime = time(0);
 
+        // Wait for the child process to finish or timeout
+    bool timeout = false;
+    pid_t pidWait = 0;
     pid_t pid = fork();
     if (pid == 0) { // Child process
         // Close read end of the pipe
@@ -147,26 +246,13 @@ void Request::executeCGIScript(const std::string& scriptPath, int clientSocket, 
         close(pipefd[1]);
 
         // Read output from the pipe
-        char buffer[1024];
-        ssize_t bytesRead;
-        std::string responseData;
-        bool timeout = false;
+        
 
         // Set a timeout duration (e.g., 3 seconds)
-        const time_t timeoutDuration = 3; // 3 seconds
-        time_t startTime = time(NULL);
+        const time_t timeoutDuration = 5; // 3 seconds
 
-        // Wait for the child process to finish or timeout
-        pid_t pidWait = 0;
-        while (pidWait == 0 && (time(NULL) - startTime) <= timeoutDuration) {
+        while (pidWait == 0 && (time(0) - startTime) <= timeoutDuration)
             pidWait = waitpid(pid, NULL, WNOHANG);
-            bytesRead = read(pipefd[0], buffer, sizeof(buffer));
-            if (bytesRead > 0) {
-                responseData.append(buffer, bytesRead);
-            }
-        }
-
-        // Check if a timeout occurred
         if (pidWait == 0) {
             timeout = true;
             // Kill the child process
@@ -176,25 +262,32 @@ void Request::executeCGIScript(const std::string& scriptPath, int clientSocket, 
             exit(EXIT_FAILURE);
         }
 
-        // Close read end of the pipe
-        close(pipefd[0]);
+    }
+    std::string responseData;
 
-        // Check if a timeout occurred
-        if (timeout) {
-            const std::string timeoutResponse = "HTTP/1.1 200 OK\nContent-Type: text/html\n\nThe server took too long to process the request.";
-            send(clientSocket, timeoutResponse.c_str(), timeoutResponse.size(), 0);
-            //close(clientSocket);
-        } else {
-            // Send HTTP response with CGI script output
-            std::string response = "HTTP/1.1 200 OK\nContent-Type: text/html\n\n" + responseData;
-            send(clientSocket, response.c_str(), response.size(), 0);
-            //close(clientSocket);
+        if (timeout == false){
+        char buffer[1024];
+        ssize_t bytesRead;
+
+        bytesRead = read(pipefd[0], buffer, sizeof(buffer));
+        if (bytesRead > 0) {
+            responseData.append(buffer, bytesRead);
         }
+        close(pipefd[0]);
+    }
+        if (timeout == true) {
+        const std::string timeoutResponse = "HTTP/1.1 200 OK\nContent-Type: text/html\n\nThe server took too long to process the request.";
+        send(client, timeoutResponse.c_str(), timeoutResponse.size(), 0);
+        //close(clientSocket);
+    } else {
+        // Send HTTP response with CGI script output
+        std::string response = "HTTP/1.1 200 OK\nContent-Type: text/html\n\n" + responseData;
+        send(client, response.c_str(), response.size(), 0);
+        //close(clientSocket);
     }
 }
 
-
-
+//appends the new request body to the pending request
 void    Request::pendingPostRequest(char* buffer, int bytesRead) {
     _body.append(std::string(buffer, bytesRead));
     _bytesReceived += bytesRead;
@@ -206,15 +299,15 @@ bool Request::_fileExists(std::string filename) {
     return file.good();
 }
 
-int		Request::_sendStatusPage(int errorCode, std::string msg) {
-    std::map<unsigned int, std::string>::iterator it = _errorPages.find(errorCode);
+int		Request::_sendStatusPage(int statusCode, std::string msg) {
+    std::map<unsigned int, std::string>::iterator it = _errorPages.find(statusCode);
     if (it != _errorPages.end()) { //check for default error pages
-        _object = it->second;
-        return (createResponse());
+        _path = it->second;
+        return (_handleGet());
     }
     else { //no default || success
-         std::stringstream response;
-        response << "HTTP/1.1 " + intToStr(errorCode) + "\r\nContent-Type: text/plain\r\n" << msg.size() + 1 << "\r\n\r\n" + msg + "\r\n";
+        std::stringstream response;
+        response << "HTTP/1.1 " + intToStr(statusCode) + "\r\nContent-Type: text/plain\r\nContent-Length: " << msg.size() + 1 << "\r\n\r\n" + msg + "\r\n";
         return (sendResponse(response.str().c_str(), response.str().size(), 0));
     }
 }
@@ -260,27 +353,11 @@ const char* Request::_createFileName() {
     return result;
 }
 
-const char* Request::MaxBodySizeExceededException::what() const throw() {
-    return "Max body size exceeded";
-}
-
-const char* Request::MissingRequestHeaderException::what() const throw() {
-    return "Missing request header";
-}
-
-const char* Request::EmptyRequestedFileException::what() const throw() {
-    return "Requested file is empty";
-}
-
-const char* Request::FileReadException::what() const throw() {
-    return "Failed to read requested file";
-}
-
 std::ostream &operator<<(std::ostream &str, Request &rp)
 {
     str << "Client FD: " << rp.client << std::endl;
     str << "Method: " << rp.getMethod() << std::endl;
-    str << "Path: " << rp.getObject() << std::endl;
+    str << "Path: " << rp.getPath() << std::endl;
     str << "Protocol: " << rp.getProtocol() << std::endl;
     str << "Headers: " << std::endl;
     std::map<std::string, std::string> headers = rp.getHeaders();
