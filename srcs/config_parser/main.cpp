@@ -11,8 +11,6 @@ void handleSigint(std::vector<Server> servers) {
 
 int main (int argc, char** argv){
 
-	
-
 	if (argc < 2) {
 		std::cerr << "Missing config file as argument" << std::endl;
 		return (1);
@@ -31,10 +29,13 @@ int main (int argc, char** argv){
 		//set up servers
 		std::vector<Server> servers;
 		for (unsigned long i = 0; i < configs.size(); ++i) {
-			std::cout << configs[i] << std::endl << std::endl;
-			Server serv(configs[i]);
-			servers.push_back(serv);
-			std::cout << "Server host: " << configs[i].getHost() << std::endl;
+			try {
+				Server serv(configs[i]);
+				servers.push_back(serv);
+				std::cout << "Created server with host: " << configs[i].getHost() << std::endl;
+			} catch (const std::exception& e) {
+				std::cout << "Failed to create server with host: " << configs[i].getHost() << "\n" << e.what() << std::endl;
+			}
 		}
 		while (true) {
 			for (size_t i = 0; i < servers.size(); ++i) {
