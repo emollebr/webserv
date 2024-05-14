@@ -24,7 +24,7 @@ class LocationConfig
 private:
 	std::string									_root; 				// /var/ww/html
 	
-// OPTIONAL VALUES
+	// OPTIONAL VALUES
 	std::string									_index;				// index.html index.php
 	std::set<std::string>						_methods_allowed;	// GET POST DELETE
 	std::pair<int, std::string>					_redirect; 			// [statusCode, directory/to/file.html]
