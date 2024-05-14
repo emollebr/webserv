@@ -15,8 +15,6 @@ client = Client("Qwen/Qwen1.5-110B-Chat-demo")
 
 sys.stdout = sys.__stdout__
 
-i = 0
-
 result = client.predict(
 	query=str(input_text),	# str  in 'Input' Textbox component
 	history=[],

@@ -13,7 +13,7 @@
 NAME = webserv
 
 # SOURCES
-SRC_PATH =	srcs/config_parser/
+SRC_PATH =	srcs/
 SRC_FILES =	ReadConfig.cpp \
 			ServerConfig.cpp \
 			LocationConfig.cpp \
@@ -29,7 +29,7 @@ OBJ_PATH = obj/
 OBJS = $(addprefix $(OBJ_PATH), $(SRC_FILES:.cpp=.o))
 
 # INCLUDES
-INCL_PATH =	include/config_parser/
+INCL_PATH =	include/
 HDRS = 		ReadConfig.hpp \
 			ServerConfig.hpp \
 			LocationConfig.hpp \
