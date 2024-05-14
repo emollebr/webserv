@@ -6,7 +6,7 @@
 /*   By: jschott <jschott@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/04 16:51:38 by jschott           #+#    #+#             */
-/*   Updated: 2024/05/08 14:51:46 by jschott          ###   ########.fr       */
+/*   Updated: 2024/05/14 11:22:48 by jschott          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -74,7 +74,6 @@ public:
 	//
 	void	parseServerDirective(tokeniterator begin, tokeniterator end);
 	void	validatePort(tokeniterator begin, tokeniterator end);
-	void	validateLocation(tokeniterator begin, tokeniterator end);
 	void	validateHost(tokeniterator begin, tokeniterator end);
 	void	validateServerName(tokeniterator begin, tokeniterator end);
 	void	validateErrorPath(tokeniterator begin, tokeniterator end);

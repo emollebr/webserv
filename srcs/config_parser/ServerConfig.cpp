@@ -6,7 +6,7 @@
 /*   By: jschott <jschott@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/12 15:33:23 by jschott           #+#    #+#             */
-/*   Updated: 2024/05/14 11:21:33 by jschott          ###   ########.fr       */
+/*   Updated: 2024/05/14 11:23:34 by jschott          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,11 +15,11 @@
 
 
 void ServerConfig::init(){
-	std::string	directives[] = {"port", "location", "host",
+	std::string	directives[] = {"port", "host",
 									"server_name", "error_page",
 									"cgi_extension"};
 	typedef void (ServerConfig::*ServerConfigFunction)(tokeniterator begin, tokeniterator end);							
-	ServerConfigFunction functions[] = {&ServerConfig::validatePort, &ServerConfig::validateLocation, &ServerConfig::validateHost, 
+	ServerConfigFunction functions[] = {&ServerConfig::validatePort, &ServerConfig::validateHost, 
 										&ServerConfig::validateServerName, &ServerConfig::validateErrorPath,
 										&ServerConfig::validateCGIExtension};
 	int size = sizeof(directives) / sizeof(directives[0]);
@@ -109,7 +109,6 @@ ServerConfig::~ServerConfig() {
 /* SETTER */
 void ServerConfig::addLocation(std::string location, LocationConfig config) {
 	if (_locations.find(location) == _locations.end())
-		// return ;
 		_locations[location] = config;
 	return ;
 }
@@ -118,18 +117,11 @@ void ServerConfig::setServerName(std::set<std::string> server_names) {
 	if ((_directives_set.find("server_name") != _directives_set.end() )
 			&& (*_directives_set.find("server_name")).second)
 	_server_names = server_names;
-	// else
-		// throw exception
 }
 
 /* GETTER */
 std::set<std::pair <std::string, size_t> > ServerConfig::getListen() const{
 	
-	// if (_host_ports_registry.empty()){
-	// 	std::cout << "nothing to see here" << std::endl;
-	// 	return std::set<std::pair <std::string, size_t> >();
-	// }
-	// _host_ports_registry.insert(test);
 	std::set<std::pair <std::string, size_t> > listen;
 	listen = _host_ports_registry;
 	return listen;
@@ -183,7 +175,6 @@ std::string	const ServerConfig::getErrorPath(int statusCode) const{
 	return NULL;
 }
 
-
 std::map<std::string, std::string> ServerConfig::getCGIExtention() const{
 	if (_error_pages.empty())
 		return std::map<std::string, std::string>();
@@ -209,7 +200,6 @@ void	ServerConfig::parseServerDirective(tokeniterator begin, tokeniterator end){
 		throw std::invalid_argument("invalid server directive: " + *begin);
 }
 
-
 void	ServerConfig::validatePort(tokeniterator begin, tokeniterator end){
 	for (; begin <= end; begin++) {
 		char* error = NULL;
@@ -219,20 +209,6 @@ void	ServerConfig::validatePort(tokeniterator begin, tokeniterator end){
 		if (port > 49151)
 			std::cerr << COLOR_WARNING << "Warning: Unusual status port: " << port << COLOR_STANDARD << std::endl;
 		_ports.insert(port);
-	}
-}
-
-void	ServerConfig::validateLocation(tokeniterator begin, tokeniterator end){
-	std::cout << "I HAVE BEEN USED" << std::endl;
-	if (begin == end)
-		return ;
-	else
-		throw std::invalid_argument("missing parameter.");
-	try	{
-			_locations[*begin] = LocationConfig(begin, end);
-	}
-	catch(const std::exception& e)	{
-		throw std::invalid_argument(e.what());
 	}
 }
 

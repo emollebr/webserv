@@ -24,10 +24,8 @@ void LocationConfig::init(){
 											&LocationConfig::validateIndex, 
 											&LocationConfig::validateMethods, 
 											&LocationConfig::validateRedirect, 
-											// &LocationConfig::validateCGI, 
 											&LocationConfig::validateBodySize, 
 											&LocationConfig::validateUploadLocation, 
-											// &LocationConfig::validateCGIExtension,
 											&LocationConfig::validateAutoindex};
 	int size = sizeof(directives) / sizeof(directives[0]);
 	for (int i = 0; i < size; i++){
@@ -56,12 +54,8 @@ LocationConfig & LocationConfig::operator=(LocationConfig const & origin){
 	_index = origin._index;
 	_methods_allowed = origin._methods_allowed;
 	_redirect = origin._redirect;
-	// _CGI = origin._CGI;
 	_max_body_size = origin._max_body_size;
 	_upload_location = origin._upload_location;
-	// _cgi_extension = origin._cgi_extension;
-	// _allow_get = origin._allow_get;
-	// _allow_post = origin._allow_post;
 	_autoindex = origin._autoindex;
 	_locations = origin._locations;
 	_indent_lvl = origin._indent_lvl;
@@ -77,10 +71,6 @@ LocationConfig::~LocationConfig(){
 std::string	LocationConfig::getIndex() const{
 	return (_index);
 }
-
-/* bool LocationConfig::getIndex(std::string index){
-	return (_);
-} */
 
 std::set<std::string> LocationConfig::getMethods() const{
 	if (_methods_allowed.empty())
@@ -105,10 +95,6 @@ std::pair<int, std::string>	LocationConfig::getRedirect() const{
 	return _redirect;
 }
 
-/* std::string	LocationConfig::getCGI() const{
-	return _CGI;
-} */
-
 size_t LocationConfig::getBodySize() const{
 	return _max_body_size;	
 }
@@ -116,10 +102,6 @@ size_t LocationConfig::getBodySize() const{
 std::string LocationConfig::getUploadLocation() const{
 	return _upload_location;
 }
-
-/* std::string LocationConfig::getCGIExtension() const{
-	return _cgi_extension;
-} */
 
 std::map<std::string, LocationConfig> const LocationConfig::getLocations() const{
 	if (_locations.empty())
@@ -236,18 +218,6 @@ void LocationConfig::validateRedirect(tokeniterator begin, tokeniterator end){
 		throw std::invalid_argument("Invalid return arguments.");
 }
 
-/* void LocationConfig::validateCGI(tokeniterator begin, tokeniterator end){
-	if (begin == end){
-		if (directoryExists(*begin)) {
-			_CGI = (*begin);
-		}
-		else
-			throw std::invalid_argument("invalid parameter: " + *begin);
-	}
-	else
-		throw std::invalid_argument("invalid number of parameters.");
-} */
-
 void LocationConfig::validateBodySize(tokeniterator begin, tokeniterator end){
 
 	if (begin == end){
@@ -287,11 +257,6 @@ void LocationConfig::validateUploadLocation(tokeniterator begin, tokeniterator e
 	else
 		throw std::invalid_argument("invalid number of parameters.");
 }
-
-/* void LocationConfig::validateCGIExtension(tokeniterator begin, tokeniterator end){
-	if (begin == end)
-		_cgi_extension = *begin;
-} */
 
 void LocationConfig::validateAutoindex(tokeniterator begin, tokeniterator end){	
 	if (begin == end){
@@ -345,7 +310,8 @@ void LocationConfig::fillNestedLocation(){
 				default:
 					continue ;
 				}
-			(*(*it).second._directives_set.find(directives[i])).second = true;
+			if (this->directiveSet(directives[i]))
+				(*(*it).second._directives_set.find(directives[i])).second = true;
 			}
 		}
 		(*it).second.fillNestedLocation();
@@ -395,35 +361,46 @@ LocationConfig::LocationConfig(tokeniterator begin, tokeniterator end){
 		}
 }
 
+bool	LocationConfig::directiveSet(std::string directive) const{
+	return ((*_directives_set.find(directive)).second);
+}
+
 std::ostream& operator<<(std::ostream& os, const LocationConfig& locationconf) {
-	// os << "++START LOCATION CONFIGURATION++" << std::endl << std::endl;
 
 	std::string indent = "\t\t";
 	for (int lvl = locationconf.getIndent(); lvl >= 0; lvl--)
 		indent += "\t";
 
 	std::vector<std::string> printbuff;
-	os <<  indent << "root\t\t\t" << locationconf.getRoot() << ";" << std::endl;
+	if (locationconf.directiveSet("root"))
+		os <<  indent << "root\t\t\t" << locationconf.getRoot() << ";" << std::endl;
 
-	os <<  indent << "index\t\t\t" << locationconf.getIndex() << ";" << std::endl;
+	if (locationconf.directiveSet("index"))
+		os <<  indent << "index\t\t\t" << locationconf.getIndex() << ";" << std::endl;
 	
-	os <<  indent << "methods\t\t\t";
-	std::set<std::string> printset = locationconf.getMethods();
-	for (std::set<std::string>::iterator it = printset.begin(); it != printset.end(); it++){
-		os << *it;
-  		std::set<std::string>::iterator next_it = it;
-		++next_it;
-		if (next_it != printset.end())
-			os << " ";
-	}
-	os << ";" << std::endl;
+	if (locationconf.directiveSet("methods")) {
+		os <<  indent << "methods\t\t\t";
+		std::set<std::string> printset = locationconf.getMethods();
+		for (std::set<std::string>::iterator it = printset.begin(); it != printset.end(); it++){
+			os << *it;
+			std::set<std::string>::iterator next_it = it;
+			++next_it;
+			if (next_it != printset.end())
+				os << " ";
+		}
+		os << ";" << std::endl;
+	}	
 
-	os <<  indent << "return\t\t\t" << locationconf.getRedirect().first << " " << locationconf.getRedirect().second << ";" << std::endl;
-	// os <<  indent << "CGI\t\t\t" << locationconf.getCGI() << ";" << std::endl;
+	if (locationconf.directiveSet("redirect"))
+		os <<  indent << "return\t\t\t" << locationconf.getRedirect().first << " " << locationconf.getRedirect().second << ";" << std::endl;
+	
 	os <<  indent << "client_max_body_size\t" << locationconf.getBodySize() << ";" << std::endl;
-	os <<  indent << "upload location\t\t" << locationconf.getUploadLocation() << ";" << std::endl;
-	// os <<  indent << "CGI extension\t\t" << locationconf.getCGIExtension() << ";" << std::endl;
+	
+	if (locationconf.directiveSet("upload_location"))
+		os <<  indent << "upload location\t\t" << locationconf.getUploadLocation() << ";" << std::endl;
+	
 	os <<  indent << "autoindex\t\t" << locationconf.getAutoindex() << ";" << std::endl;
+	
 	std::map<std::string, LocationConfig> locations = locationconf.getLocations();
 	for (std::map<std::string, LocationConfig>::iterator it = locations.begin(); it != locations.end(); it++){
 		(*it).second.set_indent(locationconf.getIndent() + 1);

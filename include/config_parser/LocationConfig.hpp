@@ -28,10 +28,8 @@ private:
 	std::string									_index;				// index.html index.php
 	std::set<std::string>						_methods_allowed;	// GET POST DELETE
 	std::pair<int, std::string>					_redirect; 			// [statusCode, directory/to/file.html]
-	// std::string									_CGI; // /cgi_bin/script
 	size_t										_max_body_size; 	// 42 | 42M | 42G
 	std::string									_upload_location; 	// /uploads
-	// std::string									_cgi_extension; // .php
 	bool										_autoindex; 		// 0 | off
 	std::map<std::string, LocationConfig>		_locations;			// nested location blocks
 
@@ -40,7 +38,7 @@ private:
 	std::map<std::string, void (LocationConfig::*)(tokeniterator begin, tokeniterator end)> 
 												_directives_validation_funcs;	// registry with functions that validate 
 
-	void						init();
+	void										init();
 
 public:
 	LocationConfig();
@@ -55,10 +53,8 @@ public:
 	std::string									getIndex() const;
 	std::set<std::string>						getMethods() const;
 	std::pair<int, std::string>					getRedirect() const;
-	// std::string								getCGI() const;
 	size_t										getBodySize() const;
 	std::string									getUploadLocation() const;
-	// std::string								getCGIExtension() const;
 	std::map<std::string, LocationConfig> const	getLocations() const;
 	bool										getAllowGET() const;
 	bool										getAllowPOST() const;
@@ -75,15 +71,14 @@ public:
 	void										validateIndex(tokeniterator begin, tokeniterator end);
 	void										validateMethods(tokeniterator begin, tokeniterator end);
 	void										validateRedirect(tokeniterator begin, tokeniterator end);
-	// void										validateCGI(tokeniterator begin, tokeniterator end);
 	void										validateBodySize(tokeniterator begin, tokeniterator end);
 	void										validateUploadLocation(tokeniterator begin, tokeniterator end);
-	// void										validateCGIExtension(tokeniterator begin, tokeniterator end);
 	void										validateAutoindex(tokeniterator begin, tokeniterator end);
 
 	//CHECK FOR VALUES
 	bool										hasIndex(std::string index);
 	bool										hasMethod(std::string method);
+	bool										directiveSet(std::string directive) const;
 
 	//FILL NESTED LOCATIONS
 	void										fillNestedLocation();
