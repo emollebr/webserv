@@ -6,7 +6,7 @@
 /*   By: jschott <jschott@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/15 14:23:34 by jschott           #+#    #+#             */
-/*   Updated: 2024/05/08 14:11:04 by jschott          ###   ########.fr       */
+/*   Updated: 2024/05/14 18:35:36 by jschott          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -48,6 +48,3 @@ std::deque<std::string>		readFile2Buffer (std::string filename);
 std::vector<ServerConfig>	parseConfig (std::deque<std::string> tokens);
 bool						directoryExists (std::string dir_name);
 bool 						fileExists (std::string file_name);
-// void						checkNestedLocations();
-void 						removeConfDuplicates(std::vector<ServerConfig> &config);
-void						fillUnsetDirectives(std::vector<ServerConfig> &config);

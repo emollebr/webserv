@@ -154,12 +154,13 @@ int Server::_handleRequest(int i) {
 }
 
 void Server::handleSigint() {
-    for (int i = _sockets.size() - 1; i > 0; --i) {
+    int i = _sockets.size() - 1;
+    for (; i > _nServerSockets; --i) {
         if (_request.find(_sockets[i].fd) != _request.end()) {
             _disconnectClient(i);
         }
     }
-    if (_sockets.size() > 0)
+    for (; i >= 0; --i)
         close(_sockets[0].fd);
 }
 

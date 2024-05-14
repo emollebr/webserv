@@ -1,8 +1,5 @@
 {
 <<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> origin/levi
 	"files.associations": {
 		"array": "cpp",
 		"atomic": "cpp",
@@ -18,10 +15,6 @@
 		"cstdint": "cpp",
 		"cstdio": "cpp",
 		"cstdlib": "cpp",
-<<<<<<< HEAD
-=======
-		"cstring": "cpp",
->>>>>>> origin/levi
 		"cwchar": "cpp",
 		"cwctype": "cpp",
 		"deque": "cpp",
@@ -42,10 +35,6 @@
 		"tuple": "cpp",
 		"type_traits": "cpp",
 		"utility": "cpp",
-<<<<<<< HEAD
-=======
-		"fstream": "cpp",
->>>>>>> origin/levi
 		"initializer_list": "cpp",
 		"iosfwd": "cpp",
 		"iostream": "cpp",
@@ -56,7 +45,6 @@
 		"ostream": "cpp",
 		"ranges": "cpp",
 		"span": "cpp",
-<<<<<<< HEAD
 		"stdexcept": "cpp",
 		"streambuf": "cpp",
 		"typeinfo": "cpp",
@@ -127,12 +115,4 @@
         "list": "cpp"
     }
 >>>>>>> origin/esther
-=======
-		"sstream": "cpp",
-		"stdexcept": "cpp",
-		"streambuf": "cpp",
-		"cinttypes": "cpp",
-		"typeinfo": "cpp"
-	}
->>>>>>> origin/levi
 }

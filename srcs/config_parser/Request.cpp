@@ -23,7 +23,24 @@ Request::Request(char *buffer, int client, int bytesRead, ServerConfig config) :
         }
     }
 
-    std::cout << "ReqCon: URL is " << _path << std::endl;
+    //check server names
+    std::string host_header = _headers["Host"];
+    size_t colon_pos = host_header.find(':');
+    std::string server_name;
+    size_t port = 0;
+    if (colon_pos != std::string::npos) {
+        server_name = host_header.substr(0, colon_pos);
+        std::istringstream iss(host_header.substr(colon_pos + 1)); // Directly use port string
+        iss >> port;
+    }
+    // Check if the server/port combination is allowed
+    std::set<std::string> valid_names = config.getServerNames();
+    valid_names.insert(config.getHost());
+    std::set<size_t> allowed_ports = config.getListenPorts();
+
+    if (valid_names.find(server_name) == valid_names.end() || port == 0 || allowed_ports.find(port) == allowed_ports.end())
+        throw std::runtime_error("Server/port combination not allowed\n");
+
 
     //Get CGI extension OR locations
     if (_getCGIPath(config.getCGIExtention()) == 0) {
@@ -103,19 +120,18 @@ std::string Request::urlDecode(const std::string& str) {
 }
 
 int  Request::_getCGIPath(std::map<std::string, std::string> cgi_map) {
-        std::map<std::string, std::string>::iterator it;
-    for (it = cgi_map.begin(); it != cgi_map.end(); ++it) {
-        std::cout << it->first << " => " << it->second << std::endl;
-    }
 
     size_t dotPos = _path.find_last_of('.');
     if (dotPos != std::string::npos) {
-        std::string ext = _path.substr(dotPos); // Extract the extension
-	    std::map<std::string, std::string>::iterator cgi_it = cgi_map.find(ext);
-        std::cout << "getCGIPath extension: " << ext << std::endl;
-        if (cgi_it != cgi_map.end()) {
-            _cgi_path = cgi_it->second;
-            return 1;
+       size_t extEndPos = _path.find_first_not_of("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ", dotPos + 1);
+        std::string ext = _path.substr(dotPos, extEndPos - dotPos);
+        if (!ext.empty()) { // Check if extension is not empty
+            std::map<std::string, std::string>::iterator cgi_it = cgi_map.find(ext);
+            if (cgi_it != cgi_map.end()) {
+                _cgi_path = cgi_it->second;
+                _path = _cgi_path + _path;
+                return 1;
+            }
         }
     }
     return 0;
@@ -202,12 +218,11 @@ bool Request::isCGIRequest() {
 #include <fcntl.h> // Include for non-blocking I/O
 #include <fcntl.h> // Include for non-blocking I/O
 
-void Request::executeCGIScript(const std::string& scriptPath, char** env) {
+void Request::executeCGIScript(char** env) {
     // Create pipes for inter-process communication
-    std::string path = scriptPath;
+    std::string path = _path;
     if (!path.empty() && path[0] == '/')
         path = path.substr(1);
-    std::cout << "path: " << scriptPath << std::endl;
 
     int pipefd[2];
     if (pipe(pipefd) == -1) {
@@ -342,7 +357,7 @@ const char* Request::_createFileName() {
     
     size_t startPos = filename_start + 10;
     size_t endPos = content.find_last_not_of(" \"\t\r\n") + 1;
-    std::string filename = "database/uploads/" + content.substr(startPos, endPos - startPos);    
+    std::string filename = _root + content.substr(startPos, endPos - startPos);    
 
    if (_fileExists(filename.c_str())) {
       std::string tmp = _generateNewFilename(filename);

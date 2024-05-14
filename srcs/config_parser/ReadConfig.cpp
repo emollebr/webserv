@@ -6,7 +6,7 @@
 /*   By: jschott <jschott@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/05 10:20:40 by jschott           #+#    #+#             */
-/*   Updated: 2024/05/13 17:17:52 by jschott          ###   ########.fr       */
+/*   Updated: 2024/05/14 18:36:24 by jschott          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,15 +25,16 @@ tokeniterator getClosingBraket (tokeniterator start, tokeniterator end) {
 	std::string	close =	"}])\'\"`";
 	std::string	limiter_open = *start;
 	std::string	limiter_close;
+	// tokeniterator notfound = queue.end();
+	// notfound = end;
 
-	//return NULL if limiter_open is unknown
+	//return NULL if limiter_open is unknows
 	if (open.find(limiter_open) == open.length())
 		return end;
 	//set closing limiter
 	limiter_close = close[open.find(limiter_open)];
 	
 	//iterate through dequeue and return closing limiter if found
-
 	std::stack<std::string> stack;
 	for (tokeniterator pos = start + 1; pos < end; pos++) {
 		if (*pos == limiter_close) {
@@ -125,10 +126,10 @@ void	populateTokens(std::stringstream &bufferstream, std::deque<std::string>	&to
 					// save 
 					tokens.push_back(line.substr(0 , pos));
 					if (pos == std::string::npos)
-						line = line.erase();
+						line = line.erase(0, pos);
 					else {
-						line = line.erase(0, ++pos);
-						limiter = '\0';
+						line = line.erase();
+						limiter = '\'';
 					}
 				}
 			}
@@ -163,11 +164,6 @@ std::deque<std::string>	readFile2Buffer (std::string filename){
 	//Create Tokens from Input
 	populateTokens(bufferstream, tokens);
 	bufferstream.clear();
-
-	for (tokeniterator it = tokens.begin(); it != tokens.end(); it++) {
-		if (*it == "")
-			tokens.erase(it);
-	}
 
 	return (tokens);		
 }
@@ -262,13 +258,9 @@ bool fileExists (std::string file_name) {
 	return file.good();
 }
 
-void fillUnsetDirectives(std::vector<ServerConfig> &config) {
-	if (config.empty())
-		throw std::invalid_argument("Error: Server configuration lost while parsing.") ;
-	std::deque<std::string> tokens = readFile2Buffer("config_files/default.conf");
-	std::vector<ServerConfig> configs = parseConfig(tokens);
-	ServerConfig defaultConf = configs.front();
-	for (std::vector<ServerConfig>::iterator it = config.begin(); it < config.end(); it++){
-		(*it).fillDirectives(defaultConf);
+
+void identifyServerDuplicates(std::vector<ServerConfig> servers){
+	for (std::vector<ServerConfig>::iterator it = servers.begin(); it < servers.end(); it++){
+		
 	}
 }

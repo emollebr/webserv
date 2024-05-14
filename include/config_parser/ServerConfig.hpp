@@ -6,7 +6,7 @@
 /*   By: jschott <jschott@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/04 16:51:38 by jschott           #+#    #+#             */
-/*   Updated: 2024/05/14 11:22:48 by jschott          ###   ########.fr       */
+/*   Updated: 2024/05/14 18:36:02 by jschott          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -55,12 +55,10 @@ public:
 	
 	~ServerConfig();
 
-	//SETTER
 	void 										addLocation(std::string location, LocationConfig config);
 	// void										setErrorPath(std::string error_path);
 	void										setServerName(std::set<std::string> server_name);
 	
-	//GETTER
 	std::set<std::pair <std::string, size_t> > 	getListen() const;
 	std::set<size_t>							getListenPorts() const;
 	std::string									getHost() const;
@@ -71,21 +69,44 @@ public:
 	std::string	const							getErrorPath(int StatusCode) const;
 	std::map<std::string, std::string>			getCGIExtention() const;
 
-	//
+	void	validateHostPort(tokeniterator begin, tokeniterator end);
+	bool	isValidateHost(char* IP);
+	bool	isValidatePort(char* port);
+
+	
 	void	parseServerDirective(tokeniterator begin, tokeniterator end);
 	void	validatePort(tokeniterator begin, tokeniterator end);
+	void	validateLocation(tokeniterator begin, tokeniterator end);
 	void	validateHost(tokeniterator begin, tokeniterator end);
 	void	validateServerName(tokeniterator begin, tokeniterator end);
 	void	validateErrorPath(tokeniterator begin, tokeniterator end);
 	void	validateCGIExtension(tokeniterator begin, tokeniterator end);
-	void	validateHostPort(tokeniterator begin, tokeniterator end);
 
-	//UTILS
 	void	deletePort(size_t port);
-	void	fillDirectives(ServerConfig &reference);
-	bool	isValidHost(char* IP);
-	bool	isValidPort(char* port);
 
+	class InvalidConfigException : public std::exception{
+		public:
+			virtual const char* what() const throw(){
+				return ("Error: Invalid data");
+			};
+	};
+
+	class InvalidDirectiveException : public std::exception{
+			// std::string message;
+		public:
+			// InvalidDirectiveException(const std::string &msg) : message(msg){}
+			virtual const char* what() const throw(){
+				return ("Error: Invalid directive: ");
+				// return message.c_str();
+			}
+	};
+	
+	class InvalidDataException : public std::exception{
+		public:
+			virtual const char* what() const throw(){
+				return ("Error: Invalid data");
+			};
+	};
 };
 
 const ServerConfig*	parseServer(std::deque<std::string> tokens, tokeniterator begin, tokeniterator end);
