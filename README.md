@@ -2,7 +2,7 @@
 
 ## Overview
 
-WebServer is a simple yet efficient web server implementation written in C++. It supports multiple concurrent connections, basic HTTP methods (GET, POST, DELETE), is configured similarly to NGINX and is capable of serving static files, handling errors, and more. This project is designed to provide a fundamental understanding of how web servers work and can be used as a learning tool or a starting point for further development.
+WebServer is a simple yet efficient web server implementation written in C++. It supports multiple concurrent connections, basic HTTP methods (GET, POST, DELETE), is configured similarly to NGINX and is capable of serving static files, handling errors, CGIs and more. This project is designed to provide a fundamental understanding of how web servers work and can be used as a learning tool or a starting point for further development.
 
 ## Features
 
@@ -10,6 +10,7 @@ WebServer is a simple yet efficient web server implementation written in C++. It
 - Handles GET, POST, and DELETE methods
 - Serves static files
 - Handles multiple concurrent connections using `poll`
+- Supports CGI scripts using GET and POST methods
 - Configurable through a simple configuration file
 - Basic logging of requests and errors
 
