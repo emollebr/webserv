@@ -61,7 +61,6 @@ server {
 		autoindex off;
 		root ./database/html/;
 		index index.html;
-		client_max_body_size		100;
 	}
 
 	location /images {
