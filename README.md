@@ -26,7 +26,7 @@ WebServer is a simple yet efficient web server implementation written in C++. It
 
     ```bash
     git clone https://github.com/emollebr/webserv.git
-    cd webserver
+    cd webserv
     ```
 
 2. Build the project:
