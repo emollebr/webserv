@@ -1,4 +1,5 @@
-# webserv
+# WebServ
+Developed by [Jakob Schott](https://github.com/jakobsitory), [Levi Jimenez](https://github.com/pepelevi) and [Esther Møllebro](https://github.com/emollebr).
 
 ## Overview
 
